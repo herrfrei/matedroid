@@ -744,7 +744,7 @@ private fun SummaryRow(
         ) {
             SummaryItem(
                 icon = Icons.Outlined.AllInclusive,
-                value = "%.1f km".format(totalDistance),
+                value = "%.0f km".format(totalDistance),
                 label = "Total",
                 iconColor = iconColor,
                 valueColor = valueColor,
@@ -752,7 +752,7 @@ private fun SummaryRow(
             )
             SummaryItem(
                 icon = Icons.Filled.Speed,
-                value = "%.1f km".format(avgDistance),
+                value = "%.0f km".format(avgDistance),
                 label = avgLabel,
                 iconColor = iconColor,
                 valueColor = valueColor,
