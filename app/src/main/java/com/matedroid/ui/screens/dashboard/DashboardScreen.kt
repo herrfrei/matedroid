@@ -120,6 +120,7 @@ fun DashboardScreen(
     onNavigateToBattery: (carId: Int, efficiency: Double?, exteriorColor: String?) -> Unit = { _, _, _ -> },
     onNavigateToMileage: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     onNavigateToUpdates: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
+    onNavigateToStats: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
