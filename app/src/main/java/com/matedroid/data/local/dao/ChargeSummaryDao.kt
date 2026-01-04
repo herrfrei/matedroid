@@ -104,6 +104,22 @@ interface ChargeSummaryDao {
     """)
     suspend fun mostExpensiveChargeInRange(carId: Int, startDate: String, endDate: String): ChargeSummary?
 
+    // Most expensive per kWh charge
+    @Query("""
+        SELECT * FROM charges_summary
+        WHERE carId = :carId AND cost IS NOT NULL AND energyAdded > 0
+        ORDER BY (cost / energyAdded) DESC LIMIT 1
+    """)
+    suspend fun mostExpensivePerKwhCharge(carId: Int): ChargeSummary?
+
+    @Query("""
+        SELECT * FROM charges_summary
+        WHERE carId = :carId AND cost IS NOT NULL AND energyAdded > 0
+        AND startDate >= :startDate AND startDate < :endDate
+        ORDER BY (cost / energyAdded) DESC LIMIT 1
+    """)
+    suspend fun mostExpensivePerKwhChargeInRange(carId: Int, startDate: String, endDate: String): ChargeSummary?
+
     // Average charge duration
     @Query("SELECT AVG(durationMin) FROM charges_summary WHERE carId = :carId")
     suspend fun avgDuration(carId: Int): Double?

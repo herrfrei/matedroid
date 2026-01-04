@@ -55,6 +55,7 @@ data class QuickStats(
     val leastEfficientDrive: DriveSummary?,
     val biggestCharge: ChargeSummary?,
     val mostExpensiveCharge: ChargeSummary?,
+    val mostExpensivePerKwhCharge: ChargeSummary?,
 
     // === Time Stats ===
     val firstDriveDate: String?,

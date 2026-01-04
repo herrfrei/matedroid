@@ -76,6 +76,7 @@ class StatsRepository @Inject constructor(
             leastEfficientDrive = driveSummaryDao.leastEfficientDrive(carId),
             biggestCharge = chargeSummaryDao.biggestCharge(carId),
             mostExpensiveCharge = chargeSummaryDao.mostExpensiveCharge(carId),
+            mostExpensivePerKwhCharge = chargeSummaryDao.mostExpensivePerKwhCharge(carId),
 
             firstDriveDate = driveSummaryDao.firstDriveDate(carId),
             firstChargeDate = chargeSummaryDao.firstChargeDate(carId),
@@ -108,6 +109,7 @@ class StatsRepository @Inject constructor(
             leastEfficientDrive = driveSummaryDao.leastEfficientDrive(carId), // No range version
             biggestCharge = chargeSummaryDao.biggestChargeInRange(carId, startDate, endDate),
             mostExpensiveCharge = chargeSummaryDao.mostExpensiveChargeInRange(carId, startDate, endDate),
+            mostExpensivePerKwhCharge = chargeSummaryDao.mostExpensivePerKwhChargeInRange(carId, startDate, endDate),
 
             firstDriveDate = driveSummaryDao.firstDriveDate(carId), // Always show first ever
             firstChargeDate = chargeSummaryDao.firstChargeDate(carId), // Always show first ever

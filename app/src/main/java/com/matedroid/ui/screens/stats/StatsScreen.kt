@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.DirectionsCar
@@ -44,7 +45,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -223,6 +223,17 @@ private fun StatsContent(
             }
         }
 
+        // Records (at the top)
+        item {
+            RecordsCard(
+                quickStats = stats.quickStats,
+                deepStats = stats.deepStats,
+                palette = palette,
+                onDriveClick = onNavigateToDriveDetail,
+                onChargeClick = onNavigateToChargeDetail
+            )
+        }
+
         // Quick Stats - Drives Overview
         item {
             QuickStatsDrivesCard(quickStats = stats.quickStats, palette = palette)
@@ -231,16 +242,6 @@ private fun StatsContent(
         // Quick Stats - Charges Overview
         item {
             QuickStatsChargesCard(quickStats = stats.quickStats, palette = palette)
-        }
-
-        // Quick Stats - Records
-        item {
-            RecordsCard(
-                quickStats = stats.quickStats,
-                palette = palette,
-                onDriveClick = onNavigateToDriveDetail,
-                onChargeClick = onNavigateToChargeDetail
-            )
         }
 
         // Deep Stats - only if available
@@ -439,6 +440,7 @@ private fun QuickStatsChargesCard(quickStats: QuickStats, palette: CarColorPalet
 @Composable
 private fun RecordsCard(
     quickStats: QuickStats,
+    deepStats: DeepStats?,
     palette: CarColorPalette,
     onDriveClick: (Int) -> Unit,
     onChargeClick: (Int) -> Unit
@@ -471,7 +473,7 @@ private fun RecordsCard(
                 emoji = "📏",
                 label = "Longest Drive",
                 value = "%.1f km".format(drive.distance),
-                subtext = drive.startAddress.take(25) + " → " + drive.endAddress.take(25),
+                subtext = drive.startDate.take(10),
                 palette = palette,
                 onClick = { onDriveClick(drive.driveId) }
             )
@@ -481,7 +483,7 @@ private fun RecordsCard(
                 emoji = "🏎️",
                 label = "Top Speed",
                 value = "${drive.speedMax} km/h",
-                subtext = drive.startAddress.take(25) + " → " + drive.endAddress.take(25),
+                subtext = drive.startDate.take(10),
                 palette = palette,
                 onClick = { onDriveClick(drive.driveId) }
             )
@@ -491,9 +493,19 @@ private fun RecordsCard(
                 emoji = "🌱",
                 label = "Most Efficient",
                 value = "%.0f Wh/km".format(drive.efficiency ?: 0.0),
-                subtext = "%.1f km drive".format(drive.distance),
+                subtext = drive.startDate.take(10),
                 palette = palette,
                 onClick = { onDriveClick(drive.driveId) }
+            )
+        }
+        deepStats?.driveWithMostClimbing?.let { record ->
+            RecordCard(
+                emoji = "⛰️",
+                label = "Most Climbing",
+                value = record.elevationGainM?.let { "+$it m" } ?: "N/A",
+                subtext = record.date?.take(10) ?: "",
+                palette = palette,
+                onClick = { onDriveClick(record.driveId) }
             )
         }
         quickStats.biggestCharge?.let { charge ->
@@ -501,10 +513,36 @@ private fun RecordsCard(
                 emoji = "⚡",
                 label = "Biggest Charge",
                 value = "%.0f kWh".format(charge.energyAdded),
-                subtext = charge.address.take(40),
+                subtext = charge.startDate.take(10),
                 palette = palette,
                 onClick = { onChargeClick(charge.chargeId) }
             )
+        }
+        quickStats.mostExpensiveCharge?.let { charge ->
+            charge.cost?.let { cost ->
+                RecordCard(
+                    emoji = "💸",
+                    label = "Most Expensive",
+                    value = "%.2f €".format(cost),
+                    subtext = charge.startDate.take(10),
+                    palette = palette,
+                    onClick = { onChargeClick(charge.chargeId) }
+                )
+            }
+        }
+        quickStats.mostExpensivePerKwhCharge?.let { charge ->
+            charge.cost?.let { cost ->
+                if (charge.energyAdded > 0) {
+                    RecordCard(
+                        emoji = "📈",
+                        label = "Priciest per kWh",
+                        value = "%.3f €/kWh".format(cost / charge.energyAdded),
+                        subtext = charge.startDate.take(10),
+                        palette = palette,
+                        onClick = { onChargeClick(charge.chargeId) }
+                    )
+                }
+            }
         }
         quickStats.busiestDay?.let { day ->
             RecordCard(
@@ -542,15 +580,6 @@ private fun ElevationStatsCard(deepStats: DeepStats, palette: CarColorPalette) {
                 label = "Lowest Point",
                 value = deepStats.minElevationM?.let { "$it m" } ?: "N/A",
                 modifier = Modifier.weight(1f)
-            )
-        }
-        deepStats.driveWithMostClimbing?.let { record ->
-            Spacer(modifier = Modifier.height(12.dp))
-            RecordItem(
-                emoji = "⛰️",
-                label = "Most Climbing",
-                value = record.elevationGainM?.let { "+$it m" } ?: "N/A",
-                subtext = record.date?.take(10) ?: ""
             )
         }
     }
@@ -809,11 +838,9 @@ private fun RecordCard(
             }
             if (onClick != null) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "View details",
-                    modifier = Modifier
-                        .size(20.dp)
-                        .graphicsLayer { rotationZ = 180f },
+                    modifier = Modifier.size(24.dp),
                     tint = palette.onSurfaceVariant
                 )
             }
