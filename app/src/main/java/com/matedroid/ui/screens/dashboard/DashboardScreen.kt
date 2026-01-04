@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.DriveEta
 import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import com.matedroid.ui.icons.CustomIcons
@@ -260,6 +261,11 @@ fun DashboardScreen(
                             uiState.selectedCarId?.let { carId ->
                                 onNavigateToUpdates(carId, uiState.selectedCarExterior?.exteriorColor)
                             }
+                        },
+                        onNavigateToStats = {
+                            uiState.selectedCarId?.let { carId ->
+                                onNavigateToStats(carId, uiState.selectedCarExterior?.exteriorColor)
+                            }
                         }
                     )
                 }
@@ -354,7 +360,8 @@ private fun DashboardContent(
     onNavigateToDrives: () -> Unit = {},
     onNavigateToBattery: () -> Unit = {},
     onNavigateToMileage: () -> Unit = {},
-    onNavigateToUpdates: () -> Unit = {}
+    onNavigateToUpdates: () -> Unit = {},
+    onNavigateToStats: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val palette = CarColorPalettes.forExteriorColor(carExterior?.exteriorColor, isDarkTheme)
@@ -374,7 +381,8 @@ private fun DashboardContent(
             carModel = carModel,
             carTrimBadging = carTrimBadging,
             carExterior = carExterior,
-            onNavigateToBattery = onNavigateToBattery
+            onNavigateToBattery = onNavigateToBattery,
+            onNavigateToStats = onNavigateToStats
         )
 
         // Location Section - show if we have coordinates
@@ -402,7 +410,8 @@ private fun CarImage(
     carModel: String?,
     carTrimBadging: String?,
     carExterior: CarExterior?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToStats: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val assetPath = remember(carModel, carTrimBadging, carExterior) {
@@ -443,12 +452,20 @@ private fun CarImage(
 
     if (bitmap != null) {
         Box(
-            modifier = modifier.height(210.dp),
+            modifier = modifier
+                .height(210.dp)
+                .then(
+                    if (onNavigateToStats != null) {
+                        Modifier.clickable(onClick = onNavigateToStats)
+                    } else {
+                        Modifier
+                    }
+                ),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = "Car image",
+                contentDescription = "Car image - tap for stats",
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
@@ -457,6 +474,25 @@ private fun CarImage(
                     },
                 contentScale = ContentScale.Fit
             )
+            // Chart icon overlay in top-right corner
+            if (onNavigateToStats != null) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
+                        .padding(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Analytics,
+                        contentDescription = "View stats",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         }
     }
 }
@@ -572,7 +608,8 @@ private fun BatteryCard(
     carModel: String? = null,
     carTrimBadging: String? = null,
     carExterior: CarExterior? = null,
-    onNavigateToBattery: () -> Unit = {}
+    onNavigateToBattery: () -> Unit = {},
+    onNavigateToStats: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val palette = CarColorPalettes.forExteriorColor(carExterior?.exteriorColor, isDarkTheme)
@@ -609,7 +646,8 @@ private fun BatteryCard(
                 carModel = carModel,
                 carTrimBadging = carTrimBadging,
                 carExterior = carExterior,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                onNavigateToStats = onNavigateToStats
             )
 
             // Battery info row - tappable to navigate to battery health
