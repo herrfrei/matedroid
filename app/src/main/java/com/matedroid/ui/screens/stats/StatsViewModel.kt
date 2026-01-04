@@ -17,6 +17,7 @@ import javax.inject.Inject
 
 data class StatsUiState(
     val isLoading: Boolean = true,
+    val isRefreshing: Boolean = false,
     val carStats: CarStats? = null,
     val availableYears: List<Int> = emptyList(),
     val selectedYearFilter: YearFilter = YearFilter.AllTime,
@@ -46,7 +47,11 @@ class StatsViewModel @Inject constructor(
     }
 
     fun refresh() {
-        loadStats()
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            loadStatsInternal()
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
     }
 
     fun clearError() {
@@ -54,51 +59,52 @@ class StatsViewModel @Inject constructor(
     }
 
     private fun loadStats() {
-        val id = carId ?: return
-
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+            loadStatsInternal()
+            _uiState.update { it.copy(isLoading = false) }
+        }
+    }
 
-            try {
-                // Check if we have any data
-                val hasData = statsRepository.hasData(id)
-                if (!hasData) {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = "No data available yet. Sync in progress..."
-                        )
-                    }
-                    return@launch
-                }
+    private suspend fun loadStatsInternal() {
+        val id = carId ?: return
 
-                // Load available years for filter
-                val years = statsRepository.getAvailableYears(id)
-
-                // Load stats with current filter
-                val yearFilter = _uiState.value.selectedYearFilter
-                val stats = statsRepository.getStats(id, yearFilter)
-
-                // Get deep sync progress
-                val deepProgress = statsRepository.getDeepSyncProgress(id)
-
+        try {
+            // Check if we have any data
+            val hasData = statsRepository.hasData(id)
+            if (!hasData) {
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
-                        carStats = stats,
-                        availableYears = years,
-                        deepSyncProgress = deepProgress,
-                        syncProgress = stats.syncProgress,
-                        error = null
+                        error = "No data available yet. Sync in progress..."
                     )
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load stats"
-                    )
-                }
+                return
+            }
+
+            // Load available years for filter
+            val years = statsRepository.getAvailableYears(id)
+
+            // Load stats with current filter
+            val yearFilter = _uiState.value.selectedYearFilter
+            val stats = statsRepository.getStats(id, yearFilter)
+
+            // Get deep sync progress
+            val deepProgress = statsRepository.getDeepSyncProgress(id)
+
+            _uiState.update {
+                it.copy(
+                    carStats = stats,
+                    availableYears = years,
+                    deepSyncProgress = deepProgress,
+                    syncProgress = stats.syncProgress,
+                    error = null
+                )
+            }
+        } catch (e: Exception) {
+            _uiState.update {
+                it.copy(
+                    error = e.message ?: "Failed to load stats"
+                )
             }
         }
     }

@@ -337,7 +337,13 @@ fun NavGraph(
             StatsScreen(
                 carId = carId,
                 exteriorColor = exteriorColor,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDriveDetail = { driveId ->
+                    navController.navigate(Screen.DriveDetail.createRoute(carId, driveId, exteriorColor))
+                },
+                onNavigateToChargeDetail = { chargeId ->
+                    navController.navigate(Screen.ChargeDetail.createRoute(carId, chargeId, exteriorColor))
+                }
             )
         }
     }

@@ -1,5 +1,6 @@
 package com.matedroid.ui.screens.stats
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -71,6 +73,8 @@ fun StatsScreen(
     carId: Int,
     exteriorColor: String? = null,
     onNavigateBack: () -> Unit,
+    onNavigateToDriveDetail: (Int) -> Unit = {},
+    onNavigateToChargeDetail: (Int) -> Unit = {},
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -109,7 +113,7 @@ fun StatsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         PullToRefreshBox(
-            isRefreshing = false,
+            isRefreshing = uiState.isRefreshing,
             onRefresh = { viewModel.refresh() },
             modifier = Modifier
                 .fillMaxSize()
@@ -134,7 +138,9 @@ fun StatsScreen(
                     selectedYearFilter = uiState.selectedYearFilter,
                     deepSyncProgress = uiState.deepSyncProgress,
                     palette = palette,
-                    onYearFilterSelected = { viewModel.setYearFilter(it) }
+                    onYearFilterSelected = { viewModel.setYearFilter(it) },
+                    onNavigateToDriveDetail = onNavigateToDriveDetail,
+                    onNavigateToChargeDetail = onNavigateToChargeDetail
                 )
             }
         }
@@ -191,7 +197,9 @@ private fun StatsContent(
     selectedYearFilter: YearFilter,
     deepSyncProgress: Float,
     palette: CarColorPalette,
-    onYearFilterSelected: (YearFilter) -> Unit
+    onYearFilterSelected: (YearFilter) -> Unit,
+    onNavigateToDriveDetail: (Int) -> Unit,
+    onNavigateToChargeDetail: (Int) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -227,7 +235,12 @@ private fun StatsContent(
 
         // Quick Stats - Records
         item {
-            RecordsCard(quickStats = stats.quickStats, palette = palette)
+            RecordsCard(
+                quickStats = stats.quickStats,
+                palette = palette,
+                onDriveClick = onNavigateToDriveDetail,
+                onChargeClick = onNavigateToChargeDetail
+            )
         }
 
         // Deep Stats - only if available
@@ -366,7 +379,7 @@ private fun QuickStatsDrivesCard(quickStats: QuickStats, palette: CarColorPalett
             )
             StatItem(
                 label = "Energy Used",
-                value = "%.1f kWh".format(quickStats.totalEnergyConsumedKwh),
+                value = "%.0f kWh".format(quickStats.totalEnergyConsumedKwh),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -401,7 +414,7 @@ private fun QuickStatsChargesCard(quickStats: QuickStats, palette: CarColorPalet
             )
             StatItem(
                 label = "Energy Added",
-                value = "%.1f kWh".format(quickStats.totalEnergyAddedKwh),
+                value = "%.0f kWh".format(quickStats.totalEnergyAddedKwh),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -424,50 +437,83 @@ private fun QuickStatsChargesCard(quickStats: QuickStats, palette: CarColorPalet
 }
 
 @Composable
-private fun RecordsCard(quickStats: QuickStats, palette: CarColorPalette) {
-    StatsCard(
-        title = "Records",
-        icon = CustomIcons.Trophy,
-        palette = palette
+private fun RecordsCard(
+    quickStats: QuickStats,
+    palette: CarColorPalette,
+    onDriveClick: (Int) -> Unit,
+    onChargeClick: (Int) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Section header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+        ) {
+            Icon(
+                imageVector = CustomIcons.Trophy,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = palette.accent
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Records",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = palette.onSurface
+            )
+        }
+
         quickStats.longestDrive?.let { drive ->
-            RecordItem(
+            RecordCard(
                 emoji = "📏",
                 label = "Longest Drive",
                 value = "%.1f km".format(drive.distance),
-                subtext = drive.startAddress.take(25) + " → " + drive.endAddress.take(25)
+                subtext = drive.startAddress.take(25) + " → " + drive.endAddress.take(25),
+                palette = palette,
+                onClick = { onDriveClick(drive.driveId) }
             )
         }
         quickStats.fastestDrive?.let { drive ->
-            RecordItem(
+            RecordCard(
                 emoji = "🏎️",
                 label = "Top Speed",
                 value = "${drive.speedMax} km/h",
-                subtext = drive.startAddress.take(25) + " → " + drive.endAddress.take(25)
+                subtext = drive.startAddress.take(25) + " → " + drive.endAddress.take(25),
+                palette = palette,
+                onClick = { onDriveClick(drive.driveId) }
             )
         }
         quickStats.mostEfficientDrive?.let { drive ->
-            RecordItem(
+            RecordCard(
                 emoji = "🌱",
                 label = "Most Efficient",
                 value = "%.0f Wh/km".format(drive.efficiency ?: 0.0),
-                subtext = "%.1f km drive".format(drive.distance)
+                subtext = "%.1f km drive".format(drive.distance),
+                palette = palette,
+                onClick = { onDriveClick(drive.driveId) }
             )
         }
         quickStats.biggestCharge?.let { charge ->
-            RecordItem(
+            RecordCard(
                 emoji = "⚡",
                 label = "Biggest Charge",
-                value = "%.1f kWh".format(charge.energyAdded),
-                subtext = charge.address.take(40)
+                value = "%.0f kWh".format(charge.energyAdded),
+                subtext = charge.address.take(40),
+                palette = palette,
+                onClick = { onChargeClick(charge.chargeId) }
             )
         }
         quickStats.busiestDay?.let { day ->
-            RecordItem(
+            RecordCard(
                 emoji = "📅",
                 label = "Busiest Day",
                 value = "${day.count} drives",
-                subtext = day.day
+                subtext = day.day,
+                palette = palette,
+                onClick = null // Not navigable
             )
         }
     }
@@ -704,6 +750,74 @@ private fun StatItem(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun RecordCard(
+    emoji: String,
+    label: String,
+    value: String,
+    subtext: String,
+    palette: CarColorPalette,
+    onClick: (() -> Unit)?
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable { onClick() }
+                } else {
+                    Modifier
+                }
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = palette.surface
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = emoji,
+                style = MaterialTheme.typography.titleLarge
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.onSurfaceVariant
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = palette.onSurface
+                )
+                if (subtext.isNotEmpty()) {
+                    Text(
+                        text = subtext,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = palette.onSurfaceVariant
+                    )
+                }
+            }
+            if (onClick != null) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "View details",
+                    modifier = Modifier
+                        .size(20.dp)
+                        .graphicsLayer { rotationZ = 180f },
+                    tint = palette.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
