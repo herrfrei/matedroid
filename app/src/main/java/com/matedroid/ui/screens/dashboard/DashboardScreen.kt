@@ -474,22 +474,29 @@ private fun CarImage(
                     },
                 contentScale = ContentScale.Fit
             )
-            // Chart icon overlay in top-right corner
+            // Stats button on middle-right side
             if (onNavigateToStats != null) {
-                Box(
+                Row(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .size(36.dp)
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 4.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
-                        .padding(6.dp)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Analytics,
                         contentDescription = "View stats",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

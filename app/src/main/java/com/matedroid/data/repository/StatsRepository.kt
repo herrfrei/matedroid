@@ -176,10 +176,14 @@ class StatsRepository @Inject constructor(
             },
             driveWithMostClimbing = driveWithMostGain?.let { agg ->
                 val drive = driveSummaryDao.get(agg.driveId)
+                // Net elevation gain = end elevation - start elevation
+                val netElevationGain = if (agg.startElevation != null && agg.endElevation != null) {
+                    agg.endElevation - agg.startElevation
+                } else null
                 DriveElevationRecord(
                     driveId = agg.driveId,
                     elevationM = agg.maxElevation ?: 0,
-                    elevationGainM = agg.elevationGain,
+                    elevationGainM = netElevationGain,
                     date = drive?.startDate
                 )
             },
@@ -277,10 +281,13 @@ class StatsRepository @Inject constructor(
             },
             driveWithMostClimbing = aggregateDao.driveWithMostElevationGain(carId)?.let { agg ->
                 val drive = driveSummaryDao.get(agg.driveId)
+                val netElevationGain = if (agg.startElevation != null && agg.endElevation != null) {
+                    agg.endElevation - agg.startElevation
+                } else null
                 DriveElevationRecord(
                     driveId = agg.driveId,
                     elevationM = agg.maxElevation ?: 0,
-                    elevationGainM = agg.elevationGain,
+                    elevationGainM = netElevationGain,
                     date = drive?.startDate
                 )
             },

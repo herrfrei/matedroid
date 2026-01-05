@@ -2,6 +2,8 @@ package com.matedroid.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.matedroid.data.local.dao.AggregateDao
 import com.matedroid.data.local.dao.ChargeSummaryDao
 import com.matedroid.data.local.dao.DriveSummaryDao
@@ -32,7 +34,7 @@ import com.matedroid.data.local.entity.SyncState
         DriveDetailAggregate::class,
         ChargeDetailAggregate::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -44,5 +46,16 @@ abstract class StatsDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "matedroid_stats.db"
+
+        /** Migration from V1 to V2: Add start/end elevation for net climb calculation */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add startElevation and endElevation columns to drive_detail_aggregates
+                db.execSQL("ALTER TABLE drive_detail_aggregates ADD COLUMN startElevation INTEGER")
+                db.execSQL("ALTER TABLE drive_detail_aggregates ADD COLUMN endElevation INTEGER")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2)
     }
 }

@@ -192,6 +192,10 @@ class SyncRepository @Inject constructor(
         val elevations = positions.mapNotNull { it.elevation }
         val hasElevationData = elevations.isNotEmpty()
 
+        // First and last elevations for net climb calculation
+        val startElevation = positions.firstOrNull()?.elevation
+        val endElevation = positions.lastOrNull()?.elevation
+
         var elevationGain = 0
         var elevationLoss = 0
         if (elevations.size > 1) {
@@ -220,6 +224,8 @@ class SyncRepository @Inject constructor(
 
             maxElevation = elevations.maxOrNull(),
             minElevation = elevations.minOrNull(),
+            startElevation = startElevation,
+            endElevation = endElevation,
             elevationGain = if (hasElevationData) elevationGain else null,
             elevationLoss = if (hasElevationData) elevationLoss else null,
             hasElevationData = hasElevationData,

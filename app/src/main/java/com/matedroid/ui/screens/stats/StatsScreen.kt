@@ -273,11 +273,6 @@ private fun StatsContent(
 
         // Deep Stats - only if available
         stats.deepStats?.let { deepStats ->
-            // Elevation Stats
-            item {
-                ElevationStatsCard(deepStats = deepStats, palette = palette)
-            }
-
             // Temperature Stats
             item {
                 TemperatureStatsCard(deepStats = deepStats, palette = palette)
@@ -476,6 +471,15 @@ private fun QuickStatsChargesCard(quickStats: QuickStats, palette: CarColorPalet
     }
 }
 
+/** Data class for a single record item */
+private data class RecordData(
+    val emoji: String,
+    val label: String,
+    val value: String,
+    val subtext: String,
+    val onClick: (() -> Unit)?
+)
+
 @Composable
 private fun RecordsCard(
     quickStats: QuickStats,
@@ -484,6 +488,70 @@ private fun RecordsCard(
     onDriveClick: (Int) -> Unit,
     onChargeClick: (Int) -> Unit
 ) {
+    // Build list of records
+    val records = mutableListOf<RecordData>()
+
+    quickStats.longestDrive?.let { drive ->
+        records.add(RecordData("📏", "Longest Drive", "%.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+    }
+    quickStats.fastestDrive?.let { drive ->
+        records.add(RecordData("🏎️", "Top Speed", "${drive.speedMax} km/h", drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+    }
+    quickStats.mostEfficientDrive?.let { drive ->
+        records.add(RecordData("🌱", "Most Efficient", "%.0f Wh/km".format(drive.efficiency ?: 0.0), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+    }
+    deepStats?.driveWithMaxElevation?.let { record ->
+        records.add(RecordData("🏔️", "Highest Point", "${record.elevationM} m", record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+    }
+    deepStats?.driveWithMostClimbing?.let { record ->
+        records.add(RecordData("⛰️", "Most Climbing", record.elevationGainM?.let { "+$it m" } ?: "N/A", record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+    }
+    // Temperature records - driving (red/blue thermometer)
+    deepStats?.hottestDrive?.let { record ->
+        records.add(RecordData("🌡️", "Hottest Drive", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+    }
+    deepStats?.coldestDrive?.let { record ->
+        records.add(RecordData("🧊", "Coldest Drive", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+    }
+    // Temperature records - cabin (sweating/freezing emoji)
+    deepStats?.maxCabinTempC?.let { temp ->
+        // For cabin temps we don't have a specific drive record, so show temp only
+        deepStats.hottestDrive?.let { record ->
+            records.add(RecordData("🥵", "Hottest Cabin", "%.1f°C".format(temp), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+        }
+    }
+    deepStats?.minCabinTempC?.let { temp ->
+        deepStats.coldestDrive?.let { record ->
+            records.add(RecordData("🥶", "Coldest Cabin", "%.1f°C".format(temp), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+        }
+    }
+    // Charge records
+    quickStats.biggestCharge?.let { charge ->
+        records.add(RecordData("⚡", "Biggest Charge", "%.0f kWh".format(charge.energyAdded), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+    }
+    quickStats.mostExpensiveCharge?.let { charge ->
+        charge.cost?.let { cost ->
+            records.add(RecordData("💸", "Most Expensive", "%.2f €".format(cost), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+        }
+    }
+    quickStats.mostExpensivePerKwhCharge?.let { charge ->
+        charge.cost?.let { cost ->
+            if (charge.energyAdded > 0) {
+                records.add(RecordData("📈", "Priciest/kWh", "%.3f €".format(cost / charge.energyAdded), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+            }
+        }
+    }
+    // Temperature records - charging
+    deepStats?.hottestCharge?.let { record ->
+        records.add(RecordData("☀️", "Hottest Charge", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
+    }
+    deepStats?.coldestCharge?.let { record ->
+        records.add(RecordData("❄️", "Coldest Charge", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
+    }
+    quickStats.busiestDay?.let { day ->
+        records.add(RecordData("📅", "Busiest Day", "${day.count} drives", day.day, null))
+    }
+
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -507,122 +575,35 @@ private fun RecordsCard(
             )
         }
 
-        quickStats.longestDrive?.let { drive ->
-            RecordCard(
-                emoji = "📏",
-                label = "Longest Drive",
-                value = "%.1f km".format(drive.distance),
-                subtext = drive.startDate.take(10),
-                palette = palette,
-                onClick = { onDriveClick(drive.driveId) }
-            )
-        }
-        quickStats.fastestDrive?.let { drive ->
-            RecordCard(
-                emoji = "🏎️",
-                label = "Top Speed",
-                value = "${drive.speedMax} km/h",
-                subtext = drive.startDate.take(10),
-                palette = palette,
-                onClick = { onDriveClick(drive.driveId) }
-            )
-        }
-        quickStats.mostEfficientDrive?.let { drive ->
-            RecordCard(
-                emoji = "🌱",
-                label = "Most Efficient",
-                value = "%.0f Wh/km".format(drive.efficiency ?: 0.0),
-                subtext = drive.startDate.take(10),
-                palette = palette,
-                onClick = { onDriveClick(drive.driveId) }
-            )
-        }
-        deepStats?.driveWithMostClimbing?.let { record ->
-            RecordCard(
-                emoji = "⛰️",
-                label = "Most Climbing",
-                value = record.elevationGainM?.let { "+$it m" } ?: "N/A",
-                subtext = record.date?.take(10) ?: "",
-                palette = palette,
-                onClick = { onDriveClick(record.driveId) }
-            )
-        }
-        quickStats.biggestCharge?.let { charge ->
-            RecordCard(
-                emoji = "⚡",
-                label = "Biggest Charge",
-                value = "%.0f kWh".format(charge.energyAdded),
-                subtext = charge.startDate.take(10),
-                palette = palette,
-                onClick = { onChargeClick(charge.chargeId) }
-            )
-        }
-        quickStats.mostExpensiveCharge?.let { charge ->
-            charge.cost?.let { cost ->
-                RecordCard(
-                    emoji = "💸",
-                    label = "Most Expensive",
-                    value = "%.2f €".format(cost),
-                    subtext = charge.startDate.take(10),
-                    palette = palette,
-                    onClick = { onChargeClick(charge.chargeId) }
-                )
-            }
-        }
-        quickStats.mostExpensivePerKwhCharge?.let { charge ->
-            charge.cost?.let { cost ->
-                if (charge.energyAdded > 0) {
+        // Display records in 2-column grid
+        records.chunked(2).forEach { rowRecords ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                rowRecords.forEach { record ->
                     RecordCard(
-                        emoji = "📈",
-                        label = "Priciest per kWh",
-                        value = "%.3f €/kWh".format(cost / charge.energyAdded),
-                        subtext = charge.startDate.take(10),
+                        emoji = record.emoji,
+                        label = record.label,
+                        value = record.value,
+                        subtext = record.subtext,
                         palette = palette,
-                        onClick = { onChargeClick(charge.chargeId) }
+                        onClick = record.onClick,
+                        modifier = Modifier.weight(1f)
                     )
                 }
+                // Fill remaining space if odd number of records in last row
+                if (rowRecords.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
-        }
-        quickStats.busiestDay?.let { day ->
-            RecordCard(
-                emoji = "📅",
-                label = "Busiest Day",
-                value = "${day.count} drives",
-                subtext = day.day,
-                palette = palette,
-                onClick = null // Not navigable
-            )
         }
     }
 }
 
 // ======== Deep Stats Cards ========
 
-@Composable
-private fun ElevationStatsCard(deepStats: DeepStats, palette: CarColorPalette) {
-    if (deepStats.maxElevationM == null && deepStats.minElevationM == null) {
-        return // No elevation data
-    }
-
-    StatsCard(
-        title = "Elevation",
-        icon = Icons.Default.Terrain,
-        palette = palette
-    ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            StatItem(
-                label = "Highest Point",
-                value = deepStats.maxElevationM?.let { "$it m" } ?: "N/A",
-                modifier = Modifier.weight(1f)
-            )
-            StatItem(
-                label = "Lowest Point",
-                value = deepStats.minElevationM?.let { "$it m" } ?: "N/A",
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
+// Note: ElevationStatsCard removed - highest point now shown in Records section
 
 @Composable
 private fun TemperatureStatsCard(deepStats: DeepStats, palette: CarColorPalette) {
@@ -828,11 +809,11 @@ private fun RecordCard(
     value: String,
     subtext: String,
     palette: CarColorPalette,
-    onClick: (() -> Unit)?
+    onClick: (() -> Unit)?,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .then(
                 if (onClick != null) {
                     Modifier.clickable { onClick() }
@@ -847,31 +828,34 @@ private fun RecordCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = emoji,
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleMedium
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = label,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = palette.onSurfaceVariant
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant,
+                    maxLines = 1
                 )
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
-                    color = palette.onSurface
+                    color = palette.onSurface,
+                    maxLines = 1
                 )
                 if (subtext.isNotEmpty()) {
                     Text(
                         text = subtext,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.onSurfaceVariant,
+                        maxLines = 1
                     )
                 }
             }
@@ -879,7 +863,7 @@ private fun RecordCard(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "View details",
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(18.dp),
                     tint = palette.onSurfaceVariant
                 )
             }
