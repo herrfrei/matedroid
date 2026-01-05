@@ -1,9 +1,8 @@
 package com.matedroid.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.matedroid.data.local.entity.ChargeSummary
 import kotlinx.coroutines.flow.Flow
 
@@ -12,10 +11,10 @@ interface ChargeSummaryDao {
 
     // === CRUD Operations ===
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAll(charges: List<ChargeSummary>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(charge: ChargeSummary)
 
     @Query("SELECT * FROM charges_summary WHERE chargeId = :chargeId")

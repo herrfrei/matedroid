@@ -1,9 +1,8 @@
 package com.matedroid.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.matedroid.data.local.entity.DriveSummary
 import kotlinx.coroutines.flow.Flow
 
@@ -12,10 +11,10 @@ interface DriveSummaryDao {
 
     // === CRUD Operations ===
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsertAll(drives: List<DriveSummary>)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Upsert
     suspend fun upsert(drive: DriveSummary)
 
     @Query("SELECT * FROM drives_summary WHERE driveId = :driveId")
