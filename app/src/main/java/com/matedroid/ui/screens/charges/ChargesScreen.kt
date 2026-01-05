@@ -240,7 +240,7 @@ private fun ChargesContent(
                     // Will be correct once sync has processed charge details
                     isDcCharge = charge.chargeId in dcChargeIds,
                     currencySymbol = currencySymbol,
-                    onEditCost = if (teslamateBaseUrl.isNotBlank() && (charge.cost == null || charge.cost == 0.0)) {
+                    onEditCost = if (teslamateBaseUrl.isNotBlank()) {
                         {
                             val url = "$teslamateBaseUrl/charge-cost/${charge.chargeId}"
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
