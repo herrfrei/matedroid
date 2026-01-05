@@ -34,7 +34,7 @@ import com.matedroid.data.local.entity.SyncState
         DriveDetailAggregate::class,
         ChargeDetailAggregate::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -56,6 +56,18 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2)
+        /** Migration from V2 to V3: Fix isFastCharger detection using power threshold */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // DC chargers are typically > 22kW, update isFastCharger based on actual power
+                db.execSQL("""
+                    UPDATE charge_detail_aggregates
+                    SET isFastCharger = 1
+                    WHERE maxChargerPower > 22
+                """)
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
     }
 }
