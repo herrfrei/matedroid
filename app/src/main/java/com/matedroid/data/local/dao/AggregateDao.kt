@@ -279,6 +279,38 @@ interface AggregateDao {
     @Query("SELECT chargeId FROM charge_detail_aggregates WHERE carId = :carId AND isFastCharger = 1")
     suspend fun getDcChargeIds(carId: Int): List<Int>
 
+    // Sum of energy added for AC charges (join with summary to get energyAdded)
+    @Query("""
+        SELECT COALESCE(SUM(c.energyAdded), 0.0) FROM charge_detail_aggregates a
+        JOIN charges_summary c ON a.chargeId = c.chargeId
+        WHERE a.carId = :carId AND a.isFastCharger = 0
+    """)
+    suspend fun sumAcChargeEnergy(carId: Int): Double
+
+    @Query("""
+        SELECT COALESCE(SUM(c.energyAdded), 0.0) FROM charge_detail_aggregates a
+        JOIN charges_summary c ON a.chargeId = c.chargeId
+        WHERE a.carId = :carId AND a.isFastCharger = 0
+        AND c.startDate >= :startDate AND c.startDate < :endDate
+    """)
+    suspend fun sumAcChargeEnergyInRange(carId: Int, startDate: String, endDate: String): Double
+
+    // Sum of energy added for DC charges
+    @Query("""
+        SELECT COALESCE(SUM(c.energyAdded), 0.0) FROM charge_detail_aggregates a
+        JOIN charges_summary c ON a.chargeId = c.chargeId
+        WHERE a.carId = :carId AND a.isFastCharger = 1
+    """)
+    suspend fun sumDcChargeEnergy(carId: Int): Double
+
+    @Query("""
+        SELECT COALESCE(SUM(c.energyAdded), 0.0) FROM charge_detail_aggregates a
+        JOIN charges_summary c ON a.chargeId = c.chargeId
+        WHERE a.carId = :carId AND a.isFastCharger = 1
+        AND c.startDate >= :startDate AND c.startDate < :endDate
+    """)
+    suspend fun sumDcChargeEnergyInRange(carId: Int, startDate: String, endDate: String): Double
+
     // Get all processed charge IDs (for checking if we have aggregate data)
     @Query("SELECT chargeId FROM charge_detail_aggregates WHERE carId = :carId")
     suspend fun getAllProcessedChargeIds(carId: Int): List<Int>

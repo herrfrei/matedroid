@@ -238,6 +238,8 @@ class StatsRepository @Inject constructor(
 
             acChargeCount = aggregateDao.countAcCharges(carId),
             dcChargeCount = aggregateDao.countDcCharges(carId),
+            acChargeEnergyKwh = aggregateDao.sumAcChargeEnergy(carId),
+            dcChargeEnergyKwh = aggregateDao.sumDcChargeEnergy(carId),
 
             driveDetailsProcessed = driveCount,
             chargeDetailsProcessed = chargeCount
@@ -341,6 +343,8 @@ class StatsRepository @Inject constructor(
 
             acChargeCount = aggregateDao.countAcChargesInRange(carId, startDate, endDate),
             dcChargeCount = aggregateDao.countDcChargesInRange(carId, startDate, endDate),
+            acChargeEnergyKwh = aggregateDao.sumAcChargeEnergyInRange(carId, startDate, endDate),
+            dcChargeEnergyKwh = aggregateDao.sumDcChargeEnergyInRange(carId, startDate, endDate),
 
             driveDetailsProcessed = driveCount,
             chargeDetailsProcessed = chargeCount

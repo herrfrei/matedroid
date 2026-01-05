@@ -1,8 +1,10 @@
 package com.matedroid.ui.screens.stats
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -46,6 +49,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.lazy.LazyColumn as LogLazyColumn
 import androidx.compose.foundation.lazy.items as logItems
 import androidx.compose.foundation.rememberScrollState
@@ -714,53 +719,85 @@ private fun ChargingPowerCard(deepStats: DeepStats, palette: CarColorPalette) {
 
 @Composable
 private fun AcDcRatioCard(deepStats: DeepStats, palette: CarColorPalette) {
-    val total = deepStats.acChargeCount + deepStats.dcChargeCount
-    if (total == 0) {
+    val totalEnergy = deepStats.acChargeEnergyKwh + deepStats.dcChargeEnergyKwh
+    if (totalEnergy <= 0) {
         return // No charge data
     }
 
-    val acPercent = (deepStats.acChargeCount * 100f / total).toInt()
-    val dcPercent = (deepStats.dcChargeCount * 100f / total).toInt()
+    val acRatio = (deepStats.acChargeEnergyKwh / totalEnergy).toFloat()
+    val acColor = Color(0xFF4CAF50) // Green
+    val dcColor = Color(0xFFFFC107) // Yellow/Amber
 
     StatsCard(
         title = "AC/DC Charging Ratio",
         icon = Icons.Default.BatteryChargingFull,
         palette = palette
     ) {
+        // Energy stats row
         Row(modifier = Modifier.fillMaxWidth()) {
             StatItem(
-                label = "AC Charges",
-                value = "${deepStats.acChargeCount} ($acPercent%)",
+                label = "AC Energy",
+                value = "%.1f kWh".format(deepStats.acChargeEnergyKwh),
                 modifier = Modifier.weight(1f)
             )
             StatItem(
-                label = "DC Charges",
-                value = "${deepStats.dcChargeCount} ($dcPercent%)",
+                label = "DC Energy",
+                value = "%.1f kWh".format(deepStats.dcChargeEnergyKwh),
                 modifier = Modifier.weight(1f)
             )
         }
+
         Spacer(modifier = Modifier.height(12.dp))
-        // Progress bar showing ratio
-        LinearProgressIndicator(
-            progress = { acPercent / 100f },
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.tertiary
-        )
+
+        // Custom ratio bar (thicker, green/yellow)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(dcColor)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(acRatio)
+                    .background(acColor)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Labels with counts below
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "AC (Home/Destination)",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "DC (Supercharger)",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.tertiary
-            )
+            Column {
+                Text(
+                    text = "AC",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = acColor
+                )
+                Text(
+                    text = "${deepStats.acChargeCount} charges",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "DC",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = dcColor
+                )
+                Text(
+                    text = "${deepStats.dcChargeCount} charges",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant
+                )
+            }
         }
     }
 }

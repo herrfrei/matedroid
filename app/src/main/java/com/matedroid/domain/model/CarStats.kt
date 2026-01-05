@@ -98,6 +98,8 @@ data class DeepStats(
     // === AC/DC Ratio ===
     val acChargeCount: Int,
     val dcChargeCount: Int,
+    val acChargeEnergyKwh: Double,
+    val dcChargeEnergyKwh: Double,
 
     // === Sync Progress ===
     val driveDetailsProcessed: Int,
