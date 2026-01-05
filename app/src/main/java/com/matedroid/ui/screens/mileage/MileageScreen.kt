@@ -25,8 +25,14 @@ import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.outlined.AllInclusive
+import androidx.compose.material.icons.outlined.Info
 import com.matedroid.ui.icons.CustomIcons
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import java.time.format.DateTimeFormatter
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -228,7 +234,8 @@ private fun YearOverviewContent(
                 avgDistance = uiState.avgYearlyDistance,
                 avgLabel = "Avg/Year",
                 driveCount = uiState.totalLifetimeDriveCount,
-                palette = palette
+                palette = palette,
+                firstDriveDate = uiState.firstDriveDate
             )
         }
 
@@ -776,12 +783,38 @@ private fun SummaryRow(
     avgDistance: Double,
     avgLabel: String,
     driveCount: Int,
-    palette: CarColorPalette? = null
+    palette: CarColorPalette? = null,
+    firstDriveDate: LocalDate? = null
 ) {
     val containerColor = palette?.surface ?: MaterialTheme.colorScheme.surfaceVariant
     val iconColor = palette?.accent ?: ChartBlue
     val valueColor = palette?.onSurface ?: MaterialTheme.colorScheme.onSurface
     val labelColor = palette?.onSurfaceVariant ?: MaterialTheme.colorScheme.onSurfaceVariant
+
+    var showAvgInfoDialog by remember { mutableStateOf(false) }
+
+    // Info dialog explaining the avg/year calculation
+    if (showAvgInfoDialog && firstDriveDate != null) {
+        val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault())
+        val formattedDate = firstDriveDate.format(dateFormatter)
+        val daysSinceFirst = java.time.temporal.ChronoUnit.DAYS.between(firstDriveDate, LocalDate.now())
+
+        AlertDialog(
+            onDismissRequest = { showAvgInfoDialog = false },
+            title = { Text("Average per Year") },
+            text = {
+                Text(
+                    "Based on your average daily driving since your first recorded drive on $formattedDate ($daysSinceFirst days ago).\n\n" +
+                    "Calculation: total distance ÷ days × 365"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showAvgInfoDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -801,13 +834,15 @@ private fun SummaryRow(
                 valueColor = valueColor,
                 labelColor = labelColor
             )
-            SummaryItem(
+            SummaryItemWithInfo(
                 icon = Icons.Filled.Speed,
                 value = "%.0f km".format(avgDistance),
                 label = avgLabel,
                 iconColor = iconColor,
                 valueColor = valueColor,
-                labelColor = labelColor
+                labelColor = labelColor,
+                showInfoIcon = firstDriveDate != null,
+                onInfoClick = { showAvgInfoDialog = true }
             )
             SummaryItem(
                 icon = Icons.Filled.DirectionsCar,
@@ -849,6 +884,53 @@ private fun SummaryItem(
             style = MaterialTheme.typography.labelSmall,
             color = labelColor
         )
+    }
+}
+
+@Composable
+private fun SummaryItemWithInfo(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    iconColor: Color = ChartBlue,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
+    labelColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    showInfoIcon: Boolean = false,
+    onInfoClick: () -> Unit = {}
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = if (showInfoIcon) Modifier.clickable { onInfoClick() } else Modifier
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = labelColor
+            )
+            if (showInfoIcon) {
+                Spacer(modifier = Modifier.width(2.dp))
+                Icon(
+                    imageVector = Icons.Outlined.Info,
+                    contentDescription = "Info about calculation",
+                    tint = labelColor,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+        }
     }
 }
 

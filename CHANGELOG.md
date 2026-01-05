@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Background sync of drive/charge details for Deep Stats computation
 - **Charges**: Tap the Cost card to edit the charge cost directly in Teslamate (requires Teslamate Base URL in Settings)
 - **Settings**: New "Teslamate Settings" section with Base URL for direct Teslamate integration
+- **Mileage**: Info icon next to "Avg/Year" explaining how the calculation works
+
+### Fixed
+- **Mileage**: Fixed incorrect Avg/Year calculation that counted calendar years instead of actual elapsed time since first drive (fixes #10)
 
 ## [0.7.1] - 2025-12-25
 

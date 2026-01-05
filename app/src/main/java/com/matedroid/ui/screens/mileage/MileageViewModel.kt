@@ -55,6 +55,7 @@ data class MileageUiState(
     val yearlyData: List<YearlyMileage> = emptyList(),
     val totalLifetimeDistance: Double = 0.0,
     val avgYearlyDistance: Double = 0.0,
+    val firstDriveDate: LocalDate? = null,
     val totalLifetimeDriveCount: Int = 0,
 
     // Year detail view state
@@ -216,13 +217,29 @@ class MileageViewModel @Inject constructor(
         // Calculate lifetime totals
         val totalLifetimeDistance = yearlyData.sumOf { it.totalDistance }
         val totalLifetimeDriveCount = yearlyData.sumOf { it.driveCount }
-        val avgYearlyDistance = if (yearlyData.isNotEmpty()) totalLifetimeDistance / yearlyData.size else 0.0
+
+        // Find the earliest drive date
+        val firstDriveDate = drives.mapNotNull { parseDateTime(it.startDate)?.toLocalDate() }
+            .minOrNull()
+
+        // Calculate avg/year based on daily average × 365
+        val avgYearlyDistance = if (firstDriveDate != null && totalLifetimeDistance > 0) {
+            val daysSinceFirstDrive = java.time.temporal.ChronoUnit.DAYS.between(firstDriveDate, LocalDate.now())
+            if (daysSinceFirstDrive > 0) {
+                (totalLifetimeDistance / daysSinceFirstDrive) * 365
+            } else {
+                totalLifetimeDistance // If same day, just show total
+            }
+        } else {
+            0.0
+        }
 
         _uiState.update {
             it.copy(
                 yearlyData = yearlyData,
                 totalLifetimeDistance = totalLifetimeDistance,
                 avgYearlyDistance = avgYearlyDistance,
+                firstDriveDate = firstDriveDate,
                 totalLifetimeDriveCount = totalLifetimeDriveCount
             )
         }
