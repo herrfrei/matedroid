@@ -276,21 +276,18 @@ private fun StatsContent(
             QuickStatsChargesCard(quickStats = stats.quickStats, palette = palette)
         }
 
+        // AC/DC Ratio (moved here, near charges)
+        stats.deepStats?.let { deepStats ->
+            item {
+                AcDcRatioCard(deepStats = deepStats, palette = palette)
+            }
+        }
+
         // Deep Stats - only if available
         stats.deepStats?.let { deepStats ->
             // Temperature Stats
             item {
                 TemperatureStatsCard(deepStats = deepStats, palette = palette)
-            }
-
-            // Charging Power Stats
-            item {
-                ChargingPowerCard(deepStats = deepStats, palette = palette)
-            }
-
-            // AC/DC Ratio
-            item {
-                AcDcRatioCard(deepStats = deepStats, palette = palette)
             }
         }
     }
@@ -684,35 +681,6 @@ private fun TemperatureStatsCard(deepStats: DeepStats, palette: CarColorPalette)
                     modifier = Modifier.weight(1f)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun ChargingPowerCard(deepStats: DeepStats, palette: CarColorPalette) {
-    if (deepStats.maxChargerPowerKw == null) {
-        return // No charging power data
-    }
-
-    StatsCard(
-        title = "Charging Power",
-        icon = Icons.Default.ElectricBolt,
-        palette = palette
-    ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            StatItem(
-                label = "Max Power Achieved",
-                value = "${deepStats.maxChargerPowerKw} kW",
-                modifier = Modifier.weight(1f)
-            )
-        }
-        deepStats.chargeWithMaxPower?.let { record ->
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "on ${record.date?.take(10) ?: "unknown date"}",
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.onSurfaceVariant
-            )
         }
     }
 }
