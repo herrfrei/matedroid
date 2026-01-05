@@ -49,21 +49,30 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
-      - name: Rename APK
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Rename APKs
         run: |
           VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
           mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/matedroid-${VERSION}.apk
+          mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/matedroid-${VERSION}-debug.apk
           echo "APK_NAME=matedroid-${VERSION}.apk" >> $GITHUB_ENV
+          echo "APK_NAME_DEBUG=matedroid-${VERSION}-debug.apk" >> $GITHUB_ENV
 
-      - name: Upload APK to release
+      - name: Upload APKs to release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/${{ env.APK_NAME }}
+          files: |
+            app/build/outputs/apk/release/${{ env.APK_NAME }}
+            app/build/outputs/apk/debug/${{ env.APK_NAME_DEBUG }}
 
-      - name: Upload APK as artifact
+      - name: Upload APKs as artifacts
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APK_NAME }}
-          path: app/build/outputs/apk/release/${{ env.APK_NAME }}
+          name: apks
+          path: |
+            app/build/outputs/apk/release/${{ env.APK_NAME }}
+            app/build/outputs/apk/debug/${{ env.APK_NAME_DEBUG }}
