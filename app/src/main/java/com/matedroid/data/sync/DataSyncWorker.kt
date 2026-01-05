@@ -57,17 +57,16 @@ class DataSyncWorker @AssistedInject constructor(
         return createForegroundInfo("Syncing data...")
     }
 
+    // Track if foreground service is available (may fail on Android 14+ from background)
+    private var foregroundAvailable = true
+
     override suspend fun doWork(): Result {
         log("Starting data sync worker (attempt ${runAttemptCount})")
 
         // Run as foreground service to prevent being killed when screen is off
         // This shows a persistent notification during sync
-        try {
-            setForeground(createForegroundInfo("Starting sync..."))
-        } catch (e: Exception) {
-            log("Could not start foreground service: ${e.message}")
-            // Continue anyway - expedited work may still work
-        }
+        // On Android 14+, this may fail if started from background
+        foregroundAvailable = trySetForeground("Starting sync...")
 
         try {
             // Get list of cars
@@ -96,8 +95,8 @@ class DataSyncWorker @AssistedInject constructor(
             var hasNetworkError = false
             for ((index, car) in cars.withIndex()) {
                 try {
-                    // Update notification with current car
-                    setForeground(createForegroundInfo("Syncing car ${index + 1}/${cars.size}..."))
+                    // Update notification with current car (only if foreground available)
+                    trySetForeground("Syncing car ${index + 1}/${cars.size}...")
 
                     val success = syncRepository.syncCar(car.carId)
                     if (!success) {
@@ -145,6 +144,22 @@ class DataSyncWorker @AssistedInject constructor(
                e.cause is IOException ||
                e.cause is UnknownHostException ||
                isNetworkError(e.message)
+    }
+
+    /**
+     * Try to set foreground service. Returns true if successful, false otherwise.
+     * On Android 14+, this may fail if the app is in the background.
+     */
+    private suspend fun trySetForeground(progress: String): Boolean {
+        if (!foregroundAvailable) return false
+        return try {
+            setForeground(createForegroundInfo(progress))
+            true
+        } catch (e: Exception) {
+            log("Could not set foreground service: ${e.message}")
+            foregroundAvailable = false
+            false
+        }
     }
 
     /**
