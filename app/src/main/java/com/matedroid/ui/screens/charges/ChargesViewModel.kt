@@ -54,6 +54,8 @@ data class ChargesUiState(
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
     val selectedFilter: DateFilter = DateFilter.LAST_7_DAYS,  // Preserve filter in ViewModel
+    val scrollPosition: Int = 0,  // First visible item index
+    val scrollOffset: Int = 0,    // Scroll offset within first item
     val summary: ChargesSummary = ChargesSummary(),
     val currencySymbol: String = "€"
 )
@@ -125,6 +127,10 @@ class ChargesViewModel @Inject constructor(
 
     fun clearError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    fun saveScrollPosition(firstVisibleIndex: Int, offset: Int) {
+        _uiState.update { it.copy(scrollPosition = firstVisibleIndex, scrollOffset = offset) }
     }
 
     private fun loadCharges(startDate: LocalDate? = null, endDate: LocalDate? = null) {

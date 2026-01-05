@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -134,9 +135,14 @@ fun ChargesScreen(
                     summary = uiState.summary,
                     currencySymbol = uiState.currencySymbol,
                     selectedFilter = uiState.selectedFilter,
+                    initialScrollPosition = uiState.scrollPosition,
+                    initialScrollOffset = uiState.scrollOffset,
                     palette = palette,
                     onFilterSelected = { viewModel.setDateFilter(it) },
-                    onChargeClick = onNavigateToChargeDetail
+                    onChargeClick = { chargeId, scrollIndex, scrollOffset ->
+                        viewModel.saveScrollPosition(scrollIndex, scrollOffset)
+                        onNavigateToChargeDetail(chargeId)
+                    }
                 )
             }
         }
@@ -154,11 +160,19 @@ private fun ChargesContent(
     summary: ChargesSummary,
     currencySymbol: String,
     selectedFilter: DateFilter,
+    initialScrollPosition: Int,
+    initialScrollOffset: Int,
     palette: CarColorPalette,
     onFilterSelected: (DateFilter) -> Unit,
-    onChargeClick: (Int) -> Unit
+    onChargeClick: (chargeId: Int, scrollIndex: Int, scrollOffset: Int) -> Unit
 ) {
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = initialScrollPosition,
+        initialFirstVisibleItemScrollOffset = initialScrollOffset
+    )
+
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -220,7 +234,13 @@ private fun ChargesContent(
                     charge = charge,
                     isDcCharge = if (isProcessed) charge.chargeId in dcChargeIds else null,
                     currencySymbol = currencySymbol,
-                    onClick = { onChargeClick(charge.chargeId) }
+                    onClick = {
+                        onChargeClick(
+                            charge.chargeId,
+                            listState.firstVisibleItemIndex,
+                            listState.firstVisibleItemScrollOffset
+                        )
+                    }
                 )
             }
         }
