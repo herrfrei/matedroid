@@ -129,7 +129,6 @@ fun ChargesScreen(
                 ChargesContent(
                     charges = uiState.charges,
                     dcChargeIds = uiState.dcChargeIds,
-                    processedChargeIds = uiState.processedChargeIds,
                     chartData = uiState.chartData,
                     chartGranularity = uiState.chartGranularity,
                     summary = uiState.summary,
@@ -154,7 +153,6 @@ fun ChargesScreen(
 private fun ChargesContent(
     charges: List<ChargeData>,
     dcChargeIds: Set<Int>,
-    processedChargeIds: Set<Int>,
     chartData: List<ChargeChartData>,
     chartGranularity: ChartGranularity,
     summary: ChargesSummary,
@@ -229,10 +227,11 @@ private fun ChargesContent(
             }
         } else {
             items(charges, key = { it.chargeId }) { charge ->
-                val isProcessed = charge.chargeId in processedChargeIds
                 ChargeItem(
                     charge = charge,
-                    isDcCharge = if (isProcessed) charge.chargeId in dcChargeIds else null,
+                    // Show DC badge if in dcChargeIds, AC otherwise
+                    // Will be correct once sync has processed charge details
+                    isDcCharge = charge.chargeId in dcChargeIds,
                     currencySymbol = currencySymbol,
                     onClick = {
                         onChargeClick(
@@ -372,7 +371,7 @@ private fun SummaryItem(
 @Composable
 private fun ChargeItem(
     charge: ChargeData,
-    isDcCharge: Boolean?,  // null means we don't have aggregate data yet
+    isDcCharge: Boolean,
     currencySymbol: String,
     onClick: () -> Unit
 ) {
@@ -423,11 +422,8 @@ private fun ChargeItem(
                             )
                         }
                     }
-                    // AC/DC Badge - only show if we have aggregate data
-                    if (isDcCharge != null) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        ChargeTypeBadge(isDcCharge = isDcCharge)
-                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    ChargeTypeBadge(isDcCharge = isDcCharge)
                 }
             }
 
