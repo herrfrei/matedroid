@@ -291,7 +291,10 @@ fun NavGraph(
             MileageScreen(
                 carId = carId,
                 exteriorColor = exteriorColor,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDriveDetail = { driveId ->
+                    navController.navigate(Screen.DriveDetail.createRoute(carId, driveId, exteriorColor))
+                }
             )
         }
 
