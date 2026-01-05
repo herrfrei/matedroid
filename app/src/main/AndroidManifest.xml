@@ -39,6 +39,12 @@
                 tools:node="remove" />
         </provider>
 
+        <!-- WorkManager foreground service for long-running sync -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+
     </application>
 
 </manifest>
