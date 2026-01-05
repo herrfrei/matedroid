@@ -480,6 +480,11 @@ private data class RecordData(
     val onClick: (() -> Unit)?
 )
 
+/** Group of related records */
+private data class RecordGroup(
+    val records: List<RecordData>
+)
+
 @Composable
 private fun RecordsCard(
     quickStats: QuickStats,
@@ -488,69 +493,80 @@ private fun RecordsCard(
     onDriveClick: (Int) -> Unit,
     onChargeClick: (Int) -> Unit
 ) {
-    // Build list of records
-    val records = mutableListOf<RecordData>()
+    // Build list of record groups - each group starts on left column
+    val groups = mutableListOf<RecordGroup>()
 
+    // Group 1: Drive performance records
+    val driveRecords = mutableListOf<RecordData>()
     quickStats.longestDrive?.let { drive ->
-        records.add(RecordData("📏", "Longest Drive", "%.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+        driveRecords.add(RecordData("📏", "Longest Drive", "%.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
     quickStats.fastestDrive?.let { drive ->
-        records.add(RecordData("🏎️", "Top Speed", "${drive.speedMax} km/h", drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+        driveRecords.add(RecordData("🏎️", "Top Speed", "${drive.speedMax} km/h", drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
     quickStats.mostEfficientDrive?.let { drive ->
-        records.add(RecordData("🌱", "Most Efficient", "%.0f Wh/km".format(drive.efficiency ?: 0.0), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+        driveRecords.add(RecordData("🌱", "Most Efficient", "%.0f Wh/km".format(drive.efficiency ?: 0.0), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
+    if (driveRecords.isNotEmpty()) groups.add(RecordGroup(driveRecords))
+
+    // Group 2: Elevation records
+    val elevationRecords = mutableListOf<RecordData>()
     deepStats?.driveWithMaxElevation?.let { record ->
-        records.add(RecordData("🏔️", "Highest Point", "${record.elevationM} m", record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+        elevationRecords.add(RecordData("🏔️", "Highest Point", "${record.elevationM} m", record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
     }
     deepStats?.driveWithMostClimbing?.let { record ->
-        records.add(RecordData("⛰️", "Most Climbing", record.elevationGainM?.let { "+$it m" } ?: "N/A", record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+        elevationRecords.add(RecordData("⛰️", "Most Climbing", record.elevationGainM?.let { "+$it m" } ?: "N/A", record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
     }
-    // Temperature records - driving (red/blue thermometer)
+    if (elevationRecords.isNotEmpty()) groups.add(RecordGroup(elevationRecords))
+
+    // Group 3: Driving temperature records
+    val driveTempRecords = mutableListOf<RecordData>()
     deepStats?.hottestDrive?.let { record ->
-        records.add(RecordData("🌡️", "Hottest Drive", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+        driveTempRecords.add(RecordData("🌡️", "Hottest Drive", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
     }
     deepStats?.coldestDrive?.let { record ->
-        records.add(RecordData("🧊", "Coldest Drive", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
+        driveTempRecords.add(RecordData("🧊", "Coldest Drive", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
     }
-    // Temperature records - cabin (sweating/freezing emoji)
-    deepStats?.maxCabinTempC?.let { temp ->
-        // For cabin temps we don't have a specific drive record, so show temp only
-        deepStats.hottestDrive?.let { record ->
-            records.add(RecordData("🥵", "Hottest Cabin", "%.1f°C".format(temp), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
-        }
-    }
-    deepStats?.minCabinTempC?.let { temp ->
-        deepStats.coldestDrive?.let { record ->
-            records.add(RecordData("🥶", "Coldest Cabin", "%.1f°C".format(temp), record.date?.take(10) ?: "") { onDriveClick(record.driveId) })
-        }
-    }
-    // Charge records
+    if (driveTempRecords.isNotEmpty()) groups.add(RecordGroup(driveTempRecords))
+
+    // Group 4: Charge records
+    val chargeRecords = mutableListOf<RecordData>()
     quickStats.biggestCharge?.let { charge ->
-        records.add(RecordData("⚡", "Biggest Charge", "%.0f kWh".format(charge.energyAdded), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+        chargeRecords.add(RecordData("⚡", "Biggest Charge", "%.0f kWh".format(charge.energyAdded), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+    }
+    deepStats?.chargeWithMaxPower?.let { record ->
+        chargeRecords.add(RecordData("⚡", "Peak Power", "${record.powerKw} kW", record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
     }
     quickStats.mostExpensiveCharge?.let { charge ->
         charge.cost?.let { cost ->
-            records.add(RecordData("💸", "Most Expensive", "%.2f €".format(cost), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+            chargeRecords.add(RecordData("💸", "Most Expensive", "%.2f €".format(cost), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
         }
     }
     quickStats.mostExpensivePerKwhCharge?.let { charge ->
         charge.cost?.let { cost ->
             if (charge.energyAdded > 0) {
-                records.add(RecordData("📈", "Priciest/kWh", "%.3f €".format(cost / charge.energyAdded), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
+                chargeRecords.add(RecordData("📈", "Priciest/kWh", "%.3f €".format(cost / charge.energyAdded), charge.startDate.take(10)) { onChargeClick(charge.chargeId) })
             }
         }
     }
-    // Temperature records - charging
+    if (chargeRecords.isNotEmpty()) groups.add(RecordGroup(chargeRecords))
+
+    // Group 5: Charging temperature records
+    val chargeTempRecords = mutableListOf<RecordData>()
     deepStats?.hottestCharge?.let { record ->
-        records.add(RecordData("☀️", "Hottest Charge", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
+        chargeTempRecords.add(RecordData("☀️", "Hottest Charge", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
     }
     deepStats?.coldestCharge?.let { record ->
-        records.add(RecordData("❄️", "Coldest Charge", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
+        chargeTempRecords.add(RecordData("❄️", "Coldest Charge", "%.1f°C".format(record.tempC), record.date?.take(10) ?: "") { onChargeClick(record.chargeId) })
     }
+    if (chargeTempRecords.isNotEmpty()) groups.add(RecordGroup(chargeTempRecords))
+
+    // Group 6: Other records
+    val otherRecords = mutableListOf<RecordData>()
     quickStats.busiestDay?.let { day ->
-        records.add(RecordData("📅", "Busiest Day", "${day.count} drives", day.day, null))
+        otherRecords.add(RecordData("📅", "Busiest Day", "${day.count} drives", day.day, null))
     }
+    if (otherRecords.isNotEmpty()) groups.add(RecordGroup(otherRecords))
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -575,26 +591,29 @@ private fun RecordsCard(
             )
         }
 
-        // Display records in 2-column grid
-        records.chunked(2).forEach { rowRecords ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                rowRecords.forEach { record ->
-                    RecordCard(
-                        emoji = record.emoji,
-                        label = record.label,
-                        value = record.value,
-                        subtext = record.subtext,
-                        palette = palette,
-                        onClick = record.onClick,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // Fill remaining space if odd number of records in last row
-                if (rowRecords.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
+        // Display records in 2-column grid, grouped by theme
+        // Each group starts on the left column (leaves blank space if previous group had odd count)
+        groups.forEach { group ->
+            group.records.chunked(2).forEach { rowRecords ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowRecords.forEach { record ->
+                        RecordCard(
+                            emoji = record.emoji,
+                            label = record.label,
+                            value = record.value,
+                            subtext = record.subtext,
+                            palette = palette,
+                            onClick = record.onClick,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Fill remaining space if odd number of records
+                    if (rowRecords.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }

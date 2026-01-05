@@ -378,8 +378,16 @@ class StatsRepository @Inject constructor(
 
     /**
      * Get the sync completion percentage for deep stats.
+     * Returns 1.0 if sync is marked complete, regardless of actual count
+     * (some items may have failed but sync is done).
      */
     suspend fun getDeepSyncProgress(carId: Int): Float {
+        // If sync is marked complete, return 1.0
+        val progress = syncManager.getProgressForCar(carId)
+        if (progress?.phase == com.matedroid.domain.model.SyncPhase.COMPLETE) {
+            return 1f
+        }
+
         val totalDrives = driveSummaryDao.count(carId)
         val totalCharges = chargeSummaryDao.count(carId)
         val processedDrives = aggregateDao.countDriveAggregates(carId)

@@ -261,8 +261,11 @@ class SyncRepository @Inject constructor(
         // Temperature stats
         val temps = points.mapNotNull { it.outsideTemp }
 
-        // Determine if fast charger (DC)
-        val isFastCharger = chargerDetails?.fastChargerPresent == true
+        // Determine if fast charger (DC) - check multiple indicators
+        // Some API versions may use different fields
+        val maxPower = powers.maxOrNull() ?: 0
+        val isFastCharger = chargerDetails?.fastChargerPresent == true ||
+                            maxPower > 22  // DC chargers are typically > 22kW
 
         return ChargeDetailAggregate(
             chargeId = detail.chargeId,
