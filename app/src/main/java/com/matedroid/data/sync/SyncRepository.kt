@@ -126,17 +126,20 @@ class SyncRepository @Inject constructor(
      */
     suspend fun syncDriveDetails(carId: Int): Boolean {
         val unprocessedIds = driveSummaryDao.getUnprocessedDriveIds(carId, SchemaVersion.CURRENT)
-        log("Processing ${unprocessedIds.size} drive details for car $carId")
+        val total = unprocessedIds.size
+        log("Processing $total drive details for car $carId")
 
-        for (driveId in unprocessedIds) {
+        unprocessedIds.forEachIndexed { index, driveId ->
+            val remaining = total - index - 1
             when (val result = teslamateRepository.getDriveDetail(carId, driveId)) {
                 is ApiResult.Success -> {
                     val aggregate = computeDriveAggregate(carId, result.data)
                     aggregateDao.upsertDriveAggregate(aggregate)
                     syncManager.updateDriveDetailProgress(carId, driveId)
+                    log("Drive $driveId synced ($remaining remaining)")
                 }
                 is ApiResult.Error -> {
-                    logError("Failed to fetch drive $driveId: ${result.message}")
+                    logError("Drive $driveId failed: ${result.message} ($remaining remaining)")
                     // Continue with next drive instead of failing entirely
                 }
             }
@@ -154,17 +157,20 @@ class SyncRepository @Inject constructor(
      */
     suspend fun syncChargeDetails(carId: Int): Boolean {
         val unprocessedIds = chargeSummaryDao.getUnprocessedChargeIds(carId, SchemaVersion.CURRENT)
-        log("Processing ${unprocessedIds.size} charge details for car $carId")
+        val total = unprocessedIds.size
+        log("Processing $total charge details for car $carId")
 
-        for (chargeId in unprocessedIds) {
+        unprocessedIds.forEachIndexed { index, chargeId ->
+            val remaining = total - index - 1
             when (val result = teslamateRepository.getChargeDetail(carId, chargeId)) {
                 is ApiResult.Success -> {
                     val aggregate = computeChargeAggregate(carId, result.data)
                     aggregateDao.upsertChargeAggregate(aggregate)
                     syncManager.updateChargeDetailProgress(carId, chargeId)
+                    log("Charge $chargeId synced ($remaining remaining)")
                 }
                 is ApiResult.Error -> {
-                    logError("Failed to fetch charge $chargeId: ${result.message}")
+                    logError("Charge $chargeId failed: ${result.message} ($remaining remaining)")
                     // Continue with next charge instead of failing entirely
                 }
             }
