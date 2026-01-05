@@ -72,6 +72,7 @@ private val ChartBlue = Color(0xFF42A5F5)
 fun MileageScreen(
     carId: Int,
     exteriorColor: String? = null,
+    targetDay: String? = null,
     onNavigateBack: () -> Unit,
     onNavigateToDriveDetail: (Int) -> Unit = {},
     viewModel: MileageViewModel = hiltViewModel()
@@ -83,6 +84,18 @@ fun MileageScreen(
 
     LaunchedEffect(carId) {
         viewModel.setCarId(carId)
+    }
+
+    // Auto-navigate to target day if provided
+    LaunchedEffect(targetDay, uiState.isLoading) {
+        if (targetDay != null && !uiState.isLoading && uiState.allDrives.isNotEmpty()) {
+            try {
+                val date = LocalDate.parse(targetDay)
+                viewModel.navigateToDay(date)
+            } catch (e: Exception) {
+                // Invalid date format, ignore
+            }
+        }
     }
 
     LaunchedEffect(uiState.error) {

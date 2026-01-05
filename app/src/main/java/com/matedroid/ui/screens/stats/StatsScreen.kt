@@ -89,6 +89,7 @@ fun StatsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDriveDetail: (Int) -> Unit = {},
     onNavigateToChargeDetail: (Int) -> Unit = {},
+    onNavigateToDayDetail: (String) -> Unit = {},
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -165,6 +166,7 @@ fun StatsScreen(
                     onYearFilterSelected = { viewModel.setYearFilter(it) },
                     onNavigateToDriveDetail = onNavigateToDriveDetail,
                     onNavigateToChargeDetail = onNavigateToChargeDetail,
+                    onNavigateToDayDetail = onNavigateToDayDetail,
                     onSyncProgressClick = if (BuildConfig.DEBUG) {
                         { showSyncLogsDialog = true }
                     } else null
@@ -227,6 +229,7 @@ private fun StatsContent(
     onYearFilterSelected: (YearFilter) -> Unit,
     onNavigateToDriveDetail: (Int) -> Unit,
     onNavigateToChargeDetail: (Int) -> Unit,
+    onNavigateToDayDetail: (String) -> Unit,
     onSyncProgressClick: (() -> Unit)? = null
 ) {
     LazyColumn(
@@ -262,7 +265,8 @@ private fun StatsContent(
                 deepStats = stats.deepStats,
                 palette = palette,
                 onDriveClick = onNavigateToDriveDetail,
-                onChargeClick = onNavigateToChargeDetail
+                onChargeClick = onNavigateToChargeDetail,
+                onDayClick = onNavigateToDayDetail
             )
         }
 
@@ -416,7 +420,7 @@ private fun QuickStatsDrivesCard(quickStats: QuickStats, palette: CarColorPalett
             )
             StatItem(
                 label = "Energy Used",
-                value = "%.0f kWh".format(quickStats.totalEnergyConsumedKwh),
+                value = formatEnergy(quickStats.totalEnergyConsumedKwh),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -451,7 +455,7 @@ private fun QuickStatsChargesCard(quickStats: QuickStats, palette: CarColorPalet
             )
             StatItem(
                 label = "Energy Added",
-                value = "%.0f kWh".format(quickStats.totalEnergyAddedKwh),
+                value = formatEnergy(quickStats.totalEnergyAddedKwh),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -493,7 +497,8 @@ private fun RecordsCard(
     deepStats: DeepStats?,
     palette: CarColorPalette,
     onDriveClick: (Int) -> Unit,
-    onChargeClick: (Int) -> Unit
+    onChargeClick: (Int) -> Unit,
+    onDayClick: (String) -> Unit
 ) {
     // Build list of record groups - each group starts on left column
     val groups = mutableListOf<RecordGroup>()
@@ -563,15 +568,15 @@ private fun RecordsCard(
     }
     if (chargeTempRecords.isNotEmpty()) groups.add(RecordGroup(chargeTempRecords))
 
-    // Group 6: Other records
-    val otherRecords = mutableListOf<RecordData>()
+    // Group 6: Day records
+    val dayRecords = mutableListOf<RecordData>()
     quickStats.mostDistanceDay?.let { day ->
-        otherRecords.add(RecordData("🛣️", "Most Distance Day", "%.1f km".format(day.totalDistance), day.day, null))
+        dayRecords.add(RecordData("🛣️", "Most Distance Day", "%.1f km".format(day.totalDistance), day.day) { onDayClick(day.day) })
     }
     quickStats.busiestDay?.let { day ->
-        otherRecords.add(RecordData("📅", "Busiest Day", "${day.count} drives", day.day, null))
+        dayRecords.add(RecordData("📅", "Busiest Day", "${day.count} drives", day.day) { onDayClick(day.day) })
     }
-    if (otherRecords.isNotEmpty()) groups.add(RecordGroup(otherRecords))
+    if (dayRecords.isNotEmpty()) groups.add(RecordGroup(dayRecords))
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)

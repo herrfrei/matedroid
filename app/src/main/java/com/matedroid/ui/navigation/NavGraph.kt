@@ -72,10 +72,13 @@ sealed class Screen(val route: String) {
             }
         }
     }
-    data object Mileage : Screen("mileage/{carId}?exteriorColor={exteriorColor}") {
-        fun createRoute(carId: Int, exteriorColor: String? = null): String {
-            return if (exteriorColor != null) {
-                "mileage/$carId?exteriorColor=$exteriorColor"
+    data object Mileage : Screen("mileage/{carId}?exteriorColor={exteriorColor}&targetDay={targetDay}") {
+        fun createRoute(carId: Int, exteriorColor: String? = null, targetDay: String? = null): String {
+            val params = mutableListOf<String>()
+            if (exteriorColor != null) params.add("exteriorColor=$exteriorColor")
+            if (targetDay != null) params.add("targetDay=$targetDay")
+            return if (params.isNotEmpty()) {
+                "mileage/$carId?${params.joinToString("&")}"
             } else {
                 "mileage/$carId"
             }
@@ -283,14 +286,21 @@ fun NavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("targetDay") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val carId = backStackEntry.arguments?.getInt("carId") ?: return@composable
             val exteriorColor = backStackEntry.arguments?.getString("exteriorColor")
+            val targetDay = backStackEntry.arguments?.getString("targetDay")
             MileageScreen(
                 carId = carId,
                 exteriorColor = exteriorColor,
+                targetDay = targetDay,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDriveDetail = { driveId ->
                     navController.navigate(Screen.DriveDetail.createRoute(carId, driveId, exteriorColor))
@@ -346,6 +356,9 @@ fun NavGraph(
                 },
                 onNavigateToChargeDetail = { chargeId ->
                     navController.navigate(Screen.ChargeDetail.createRoute(carId, chargeId, exteriorColor))
+                },
+                onNavigateToDayDetail = { targetDay ->
+                    navController.navigate(Screen.Mileage.createRoute(carId, exteriorColor, targetDay))
                 }
             )
         }
