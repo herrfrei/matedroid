@@ -1,6 +1,5 @@
 package com.matedroid.data.sync
 
-import android.util.Log
 import com.matedroid.data.api.models.ChargeData
 import com.matedroid.data.api.models.ChargeDetail
 import com.matedroid.data.api.models.DriveData
@@ -28,12 +27,16 @@ class SyncRepository @Inject constructor(
     private val driveSummaryDao: DriveSummaryDao,
     private val chargeSummaryDao: ChargeSummaryDao,
     private val aggregateDao: AggregateDao,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val logCollector: SyncLogCollector
 ) {
     companion object {
         private const val TAG = "SyncRepository"
         private const val THROTTLE_DELAY_MS = 100L  // Delay between API calls
     }
+
+    private fun log(message: String) = logCollector.log(TAG, message)
+    private fun logError(message: String, error: Throwable? = null) = logCollector.logError(TAG, message, error)
 
     /**
      * Sync all data for a car.
@@ -41,7 +44,7 @@ class SyncRepository @Inject constructor(
      * Phase 2: Sync details (slow, 1 API call per drive/charge)
      */
     suspend fun syncCar(carId: Int): Boolean {
-        Log.d(TAG, "Starting sync for car $carId")
+        log("Starting sync for car $carId")
 
         // Phase 1: Sync summaries
         syncManager.updateSummaryProgress(carId, "Fetching drives and charges...")
@@ -56,7 +59,7 @@ class SyncRepository @Inject constructor(
 
         // Check if details need syncing
         if (syncManager.areDetailsSynced(carId)) {
-            Log.d(TAG, "Details already synced for car $carId")
+            log("Details already synced for car $carId")
             return true
         }
 
@@ -77,7 +80,7 @@ class SyncRepository @Inject constructor(
         }
 
         syncManager.markSyncComplete(carId)
-        Log.d(TAG, "Sync complete for car $carId")
+        log("Sync complete for car $carId")
         return true
     }
 
@@ -86,17 +89,17 @@ class SyncRepository @Inject constructor(
      * Fast operation - 2 API calls regardless of data size.
      */
     suspend fun syncSummaries(carId: Int): Boolean {
-        Log.d(TAG, "Syncing summaries for car $carId")
+        log("Syncing summaries for car $carId")
 
         // Fetch and store drives
         when (val drivesResult = teslamateRepository.getDrives(carId)) {
             is ApiResult.Success -> {
                 val summaries = drivesResult.data.map { it.toDriveSummary(carId) }
                 driveSummaryDao.upsertAll(summaries)
-                Log.d(TAG, "Synced ${summaries.size} drives for car $carId")
+                log("Synced ${summaries.size} drives for car $carId")
             }
             is ApiResult.Error -> {
-                Log.e(TAG, "Failed to fetch drives: ${drivesResult.message}")
+                logError("Failed to fetch drives: ${drivesResult.message}")
                 return false
             }
         }
@@ -106,10 +109,10 @@ class SyncRepository @Inject constructor(
             is ApiResult.Success -> {
                 val summaries = chargesResult.data.map { it.toChargeSummary(carId) }
                 chargeSummaryDao.upsertAll(summaries)
-                Log.d(TAG, "Synced ${summaries.size} charges for car $carId")
+                log("Synced ${summaries.size} charges for car $carId")
             }
             is ApiResult.Error -> {
-                Log.e(TAG, "Failed to fetch charges: ${chargesResult.message}")
+                logError("Failed to fetch charges: ${chargesResult.message}")
                 return false
             }
         }
@@ -123,7 +126,7 @@ class SyncRepository @Inject constructor(
      */
     suspend fun syncDriveDetails(carId: Int): Boolean {
         val unprocessedIds = driveSummaryDao.getUnprocessedDriveIds(carId, SchemaVersion.CURRENT)
-        Log.d(TAG, "Processing ${unprocessedIds.size} drive details for car $carId")
+        log("Processing ${unprocessedIds.size} drive details for car $carId")
 
         for (driveId in unprocessedIds) {
             when (val result = teslamateRepository.getDriveDetail(carId, driveId)) {
@@ -133,7 +136,7 @@ class SyncRepository @Inject constructor(
                     syncManager.updateDriveDetailProgress(carId, driveId)
                 }
                 is ApiResult.Error -> {
-                    Log.e(TAG, "Failed to fetch drive $driveId: ${result.message}")
+                    logError("Failed to fetch drive $driveId: ${result.message}")
                     // Continue with next drive instead of failing entirely
                 }
             }
@@ -151,7 +154,7 @@ class SyncRepository @Inject constructor(
      */
     suspend fun syncChargeDetails(carId: Int): Boolean {
         val unprocessedIds = chargeSummaryDao.getUnprocessedChargeIds(carId, SchemaVersion.CURRENT)
-        Log.d(TAG, "Processing ${unprocessedIds.size} charge details for car $carId")
+        log("Processing ${unprocessedIds.size} charge details for car $carId")
 
         for (chargeId in unprocessedIds) {
             when (val result = teslamateRepository.getChargeDetail(carId, chargeId)) {
@@ -161,7 +164,7 @@ class SyncRepository @Inject constructor(
                     syncManager.updateChargeDetailProgress(carId, chargeId)
                 }
                 is ApiResult.Error -> {
-                    Log.e(TAG, "Failed to fetch charge $chargeId: ${result.message}")
+                    logError("Failed to fetch charge $chargeId: ${result.message}")
                     // Continue with next charge instead of failing entirely
                 }
             }

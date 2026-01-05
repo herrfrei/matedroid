@@ -3,6 +3,7 @@ package com.matedroid.ui.screens.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.matedroid.data.repository.StatsRepository
+import com.matedroid.data.sync.SyncLogCollector
 import com.matedroid.domain.model.CarStats
 import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
@@ -28,11 +29,15 @@ data class StatsUiState(
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
-    private val statsRepository: StatsRepository
+    private val statsRepository: StatsRepository,
+    private val syncLogCollector: SyncLogCollector
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StatsUiState())
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
+
+    /** Sync logs for debug viewing */
+    val syncLogs: StateFlow<List<String>> = syncLogCollector.logs
 
     private var carId: Int? = null
 

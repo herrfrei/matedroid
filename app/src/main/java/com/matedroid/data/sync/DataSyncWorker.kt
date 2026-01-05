@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.os.Build
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
@@ -33,7 +32,8 @@ class DataSyncWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val teslamateRepository: TeslamateRepository,
     private val syncRepository: SyncRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val logCollector: SyncLogCollector
 ) : CoroutineWorker(appContext, workerParams) {
 
     companion object {
@@ -43,6 +43,9 @@ class DataSyncWorker @AssistedInject constructor(
         const val CHANNEL_ID = "sync_channel"
     }
 
+    private fun log(message: String) = logCollector.log(TAG, message)
+    private fun logError(message: String, error: Throwable? = null) = logCollector.logError(TAG, message, error)
+
     /**
      * Required for expedited work - provides foreground info for older API levels.
      */
@@ -51,24 +54,24 @@ class DataSyncWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Starting data sync worker")
+        log("Starting data sync worker")
 
         // Get list of cars
         val carsResult = teslamateRepository.getCars()
         val cars = when (carsResult) {
             is ApiResult.Success -> carsResult.data
             is ApiResult.Error -> {
-                Log.e(TAG, "Failed to fetch cars: ${carsResult.message}")
+                logError("Failed to fetch cars: ${carsResult.message}")
                 return Result.retry()
             }
         }
 
         if (cars.isEmpty()) {
-            Log.d(TAG, "No cars found, nothing to sync")
+            log("No cars found, nothing to sync")
             return Result.success()
         }
 
-        Log.d(TAG, "Found ${cars.size} cars to sync")
+        log("Found ${cars.size} cars to sync")
 
         // Sync all cars in parallel
         val results = coroutineScope {
@@ -77,7 +80,7 @@ class DataSyncWorker @AssistedInject constructor(
                     try {
                         syncRepository.syncCar(car.carId)
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error syncing car ${car.carId}", e)
+                        logError("Error syncing car ${car.carId}", e)
                         syncManager.markSyncError(car.carId, e.message ?: "Unknown error")
                         false
                     }
@@ -86,7 +89,7 @@ class DataSyncWorker @AssistedInject constructor(
         }
 
         val allSuccess = results.all { it }
-        Log.d(TAG, "Sync complete. All success: $allSuccess")
+        log("Sync complete. All success: $allSuccess")
 
         return if (allSuccess) Result.success() else Result.success() // Still success to not retry indefinitely
     }

@@ -46,11 +46,20 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.lazy.LazyColumn as LogLazyColumn
+import androidx.compose.foundation.lazy.items as logItems
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.matedroid.BuildConfig
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -78,9 +87,11 @@ fun StatsScreen(
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val syncLogs by viewModel.syncLogs.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val isDarkTheme = isSystemInDarkTheme()
     val palette = CarColorPalettes.forExteriorColor(exteriorColor, isDarkTheme)
+    var showSyncLogsDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(carId) {
         viewModel.setCarId(carId)
@@ -91,6 +102,14 @@ fun StatsScreen(
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
         }
+    }
+
+    // Debug sync logs dialog
+    if (showSyncLogsDialog && BuildConfig.DEBUG) {
+        SyncLogsDialog(
+            logs = syncLogs,
+            onDismiss = { showSyncLogsDialog = false }
+        )
     }
 
     Scaffold(
@@ -140,7 +159,10 @@ fun StatsScreen(
                     palette = palette,
                     onYearFilterSelected = { viewModel.setYearFilter(it) },
                     onNavigateToDriveDetail = onNavigateToDriveDetail,
-                    onNavigateToChargeDetail = onNavigateToChargeDetail
+                    onNavigateToChargeDetail = onNavigateToChargeDetail,
+                    onSyncProgressClick = if (BuildConfig.DEBUG) {
+                        { showSyncLogsDialog = true }
+                    } else null
                 )
             }
         }
@@ -199,7 +221,8 @@ private fun StatsContent(
     palette: CarColorPalette,
     onYearFilterSelected: (YearFilter) -> Unit,
     onNavigateToDriveDetail: (Int) -> Unit,
-    onNavigateToChargeDetail: (Int) -> Unit
+    onNavigateToChargeDetail: (Int) -> Unit,
+    onSyncProgressClick: (() -> Unit)? = null
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -219,7 +242,11 @@ private fun StatsContent(
         // Sync progress indicator if deep sync is ongoing
         if (deepSyncProgress < 1f && deepSyncProgress > 0f) {
             item {
-                SyncProgressCard(progress = deepSyncProgress, palette = palette)
+                SyncProgressCard(
+                    progress = deepSyncProgress,
+                    palette = palette,
+                    onClick = onSyncProgressClick
+                )
             }
         }
 
@@ -309,9 +336,21 @@ private fun YearFilterChips(
 }
 
 @Composable
-private fun SyncProgressCard(progress: Float, palette: CarColorPalette) {
+private fun SyncProgressCard(
+    progress: Float,
+    palette: CarColorPalette,
+    onClick: (() -> Unit)? = null
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable { onClick() }
+                } else {
+                    Modifier
+                }
+            ),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         )
@@ -886,4 +925,46 @@ private fun RecordItem(
             }
         }
     }
+}
+
+/**
+ * Debug-only dialog showing sync logs like adb logcat.
+ */
+@Composable
+private fun SyncLogsDialog(
+    logs: List<String>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Sync Logs")
+        },
+        text = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+            ) {
+                LogLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    reverseLayout = true // Show newest logs at the bottom
+                ) {
+                    logItems(logs.reversed()) { log ->
+                        Text(
+                            text = log,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
 }
