@@ -39,7 +39,7 @@ data class QuickStats(
     val avgEfficiencyWhKm: Double,
     val maxSpeedKmh: Int?,
     val avgDriveMinutes: Double?,
-    val totalDrivingDays: Int,
+    val totalDrivingDays: Int?,
 
     // === Charges Overview ===
     val totalCharges: Int,

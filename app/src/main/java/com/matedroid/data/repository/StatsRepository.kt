@@ -94,19 +94,19 @@ class StatsRepository @Inject constructor(
             totalEnergyConsumedKwh = driveSummaryDao.sumEnergyConsumedInRange(carId, startDate, endDate),
             avgEfficiencyWhKm = driveSummaryDao.avgEfficiencyInRange(carId, startDate, endDate),
             maxSpeedKmh = driveSummaryDao.maxSpeedInRange(carId, startDate, endDate),
-            avgDriveMinutes = driveSummaryDao.avgDuration(carId), // No range version
-            totalDrivingDays = driveSummaryDao.countDrivingDays(carId), // No range version
+            avgDriveMinutes = null, // Not critical for year view
+            totalDrivingDays = null, // Not critical for year view
 
             totalCharges = chargeSummaryDao.countInRange(carId, startDate, endDate),
             totalEnergyAddedKwh = chargeSummaryDao.sumEnergyAddedInRange(carId, startDate, endDate),
             totalCost = chargeSummaryDao.sumCostInRange(carId, startDate, endDate).takeIf { it > 0 },
-            avgCostPerKwh = chargeSummaryDao.avgCostPerKwh(carId), // No range version
-            avgChargeMinutes = chargeSummaryDao.avgDuration(carId), // No range version
+            avgCostPerKwh = null, // Not critical for year view
+            avgChargeMinutes = null, // Not critical for year view
 
             longestDrive = driveSummaryDao.longestDriveInRange(carId, startDate, endDate),
-            fastestDrive = driveSummaryDao.fastestDrive(carId), // No range version
-            mostEfficientDrive = driveSummaryDao.mostEfficientDrive(carId), // No range version
-            leastEfficientDrive = driveSummaryDao.leastEfficientDrive(carId), // No range version
+            fastestDrive = driveSummaryDao.fastestDriveInRange(carId, startDate, endDate),
+            mostEfficientDrive = driveSummaryDao.mostEfficientDriveInRange(carId, startDate, endDate),
+            leastEfficientDrive = driveSummaryDao.leastEfficientDriveInRange(carId, startDate, endDate),
             biggestCharge = chargeSummaryDao.biggestChargeInRange(carId, startDate, endDate),
             mostExpensiveCharge = chargeSummaryDao.mostExpensiveChargeInRange(carId, startDate, endDate),
             mostExpensivePerKwhCharge = chargeSummaryDao.mostExpensivePerKwhChargeInRange(carId, startDate, endDate),
@@ -255,13 +255,23 @@ class StatsRepository @Inject constructor(
         val startDate = "$year-01-01T00:00:00"
         val endDate = "${year + 1}-01-01T00:00:00"
 
-        // For year-filtered deep stats, we use range queries where available
-        // and fall back to all-time for records
+        // Elevation records for year
+        val driveWithMaxElev = aggregateDao.driveWithMaxElevationInRange(carId, startDate, endDate)
+        val driveWithMostGain = aggregateDao.driveWithMostElevationGainInRange(carId, startDate, endDate)
+
+        // Temperature records for year
+        val hottestDriveAgg = aggregateDao.hottestDriveInRange(carId, startDate, endDate)
+        val coldestDriveAgg = aggregateDao.coldestDriveInRange(carId, startDate, endDate)
+        val hottestChargeAgg = aggregateDao.hottestChargeInRange(carId, startDate, endDate)
+        val coldestChargeAgg = aggregateDao.coldestChargeInRange(carId, startDate, endDate)
+
+        // Power record for year
+        val chargeWithMaxPowerAgg = aggregateDao.chargeWithMaxPowerInRange(carId, startDate, endDate)
 
         return DeepStats(
             maxElevationM = aggregateDao.maxElevationInRange(carId, startDate, endDate),
-            minElevationM = aggregateDao.minElevation(carId), // No range version
-            driveWithMaxElevation = aggregateDao.driveWithMaxElevation(carId)?.let { agg ->
+            minElevationM = null, // Not shown in UI
+            driveWithMaxElevation = driveWithMaxElev?.let { agg ->
                 val drive = driveSummaryDao.get(agg.driveId)
                 DriveElevationRecord(
                     driveId = agg.driveId,
@@ -270,16 +280,8 @@ class StatsRepository @Inject constructor(
                     date = drive?.startDate
                 )
             },
-            driveWithMinElevation = aggregateDao.driveWithMinElevation(carId)?.let { agg ->
-                val drive = driveSummaryDao.get(agg.driveId)
-                DriveElevationRecord(
-                    driveId = agg.driveId,
-                    elevationM = agg.minElevation ?: 0,
-                    elevationGainM = agg.elevationGain,
-                    date = drive?.startDate
-                )
-            },
-            driveWithMostClimbing = aggregateDao.driveWithMostElevationGain(carId)?.let { agg ->
+            driveWithMinElevation = null, // Not shown in UI
+            driveWithMostClimbing = driveWithMostGain?.let { agg ->
                 val drive = driveSummaryDao.get(agg.driveId)
                 val netElevationGain = if (agg.startElevation != null && agg.endElevation != null) {
                     agg.endElevation - agg.startElevation
@@ -293,10 +295,10 @@ class StatsRepository @Inject constructor(
             },
 
             maxOutsideTempDrivingC = aggregateDao.maxOutsideTempDrivingInRange(carId, startDate, endDate),
-            minOutsideTempDrivingC = aggregateDao.minOutsideTempDriving(carId), // No range version
-            maxCabinTempC = aggregateDao.maxInsideTemp(carId), // No range version
-            minCabinTempC = aggregateDao.minInsideTemp(carId), // No range version
-            hottestDrive = aggregateDao.hottestDrive(carId)?.let { agg ->
+            minOutsideTempDrivingC = null, // Not needed for records
+            maxCabinTempC = null, // Not needed for records
+            minCabinTempC = null, // Not needed for records
+            hottestDrive = hottestDriveAgg?.let { agg ->
                 val drive = driveSummaryDao.get(agg.driveId)
                 DriveTempRecord(
                     driveId = agg.driveId,
@@ -304,7 +306,7 @@ class StatsRepository @Inject constructor(
                     date = drive?.startDate
                 )
             },
-            coldestDrive = aggregateDao.coldestDrive(carId)?.let { agg ->
+            coldestDrive = coldestDriveAgg?.let { agg ->
                 val drive = driveSummaryDao.get(agg.driveId)
                 DriveTempRecord(
                     driveId = agg.driveId,
@@ -314,8 +316,8 @@ class StatsRepository @Inject constructor(
             },
 
             maxOutsideTempChargingC = aggregateDao.maxOutsideTempChargingInRange(carId, startDate, endDate),
-            minOutsideTempChargingC = aggregateDao.minOutsideTempCharging(carId), // No range version
-            hottestCharge = aggregateDao.hottestCharge(carId)?.let { agg ->
+            minOutsideTempChargingC = null, // Not needed for records
+            hottestCharge = hottestChargeAgg?.let { agg ->
                 val charge = chargeSummaryDao.get(agg.chargeId)
                 ChargeTempRecord(
                     chargeId = agg.chargeId,
@@ -323,7 +325,7 @@ class StatsRepository @Inject constructor(
                     date = charge?.startDate
                 )
             },
-            coldestCharge = aggregateDao.coldestCharge(carId)?.let { agg ->
+            coldestCharge = coldestChargeAgg?.let { agg ->
                 val charge = chargeSummaryDao.get(agg.chargeId)
                 ChargeTempRecord(
                     chargeId = agg.chargeId,
@@ -333,7 +335,7 @@ class StatsRepository @Inject constructor(
             },
 
             maxChargerPowerKw = aggregateDao.maxChargerPowerInRange(carId, startDate, endDate),
-            chargeWithMaxPower = aggregateDao.chargeWithMaxPower(carId)?.let { agg ->
+            chargeWithMaxPower = chargeWithMaxPowerAgg?.let { agg ->
                 val charge = chargeSummaryDao.get(agg.chargeId)
                 ChargePowerRecord(
                     chargeId = agg.chargeId,

@@ -114,6 +114,14 @@ interface DriveSummaryDao {
     """)
     suspend fun fastestDrive(carId: Int): DriveSummary?
 
+    @Query("""
+        SELECT * FROM drives_summary
+        WHERE carId = :carId
+        AND startDate >= :startDate AND startDate < :endDate
+        ORDER BY speedMax DESC LIMIT 1
+    """)
+    suspend fun fastestDriveInRange(carId: Int, startDate: String, endDate: String): DriveSummary?
+
     // Best efficiency (lowest Wh/km, excluding very short drives)
     @Query("""
         SELECT * FROM drives_summary
@@ -122,6 +130,14 @@ interface DriveSummaryDao {
     """)
     suspend fun mostEfficientDrive(carId: Int): DriveSummary?
 
+    @Query("""
+        SELECT * FROM drives_summary
+        WHERE carId = :carId AND efficiency > 0 AND distance > 5
+        AND startDate >= :startDate AND startDate < :endDate
+        ORDER BY efficiency ASC LIMIT 1
+    """)
+    suspend fun mostEfficientDriveInRange(carId: Int, startDate: String, endDate: String): DriveSummary?
+
     // Worst efficiency (highest Wh/km)
     @Query("""
         SELECT * FROM drives_summary
@@ -129,6 +145,14 @@ interface DriveSummaryDao {
         ORDER BY efficiency DESC LIMIT 1
     """)
     suspend fun leastEfficientDrive(carId: Int): DriveSummary?
+
+    @Query("""
+        SELECT * FROM drives_summary
+        WHERE carId = :carId AND efficiency > 0 AND distance > 5
+        AND startDate >= :startDate AND startDate < :endDate
+        ORDER BY efficiency DESC LIMIT 1
+    """)
+    suspend fun leastEfficientDriveInRange(carId: Int, startDate: String, endDate: String): DriveSummary?
 
     // Average drive duration
     @Query("SELECT AVG(durationMin) FROM drives_summary WHERE carId = :carId")
