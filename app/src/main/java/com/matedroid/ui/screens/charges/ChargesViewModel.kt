@@ -27,6 +27,14 @@ enum class ChartGranularity {
     DAILY, WEEKLY, MONTHLY
 }
 
+enum class DateFilter(val label: String, val days: Long?) {
+    LAST_7_DAYS("Last 7 days", 7),
+    LAST_30_DAYS("Last 30 days", 30),
+    LAST_90_DAYS("Last 90 days", 90),
+    LAST_YEAR("Last year", 365),
+    ALL_TIME("All time", null)
+}
+
 data class ChargeChartData(
     val label: String,
     val count: Int,
@@ -39,11 +47,13 @@ data class ChargesUiState(
     val isRefreshing: Boolean = false,
     val charges: List<ChargeData> = emptyList(),
     val dcChargeIds: Set<Int> = emptySet(),
+    val processedChargeIds: Set<Int> = emptySet(),  // Charges that have aggregate data
     val chartData: List<ChargeChartData> = emptyList(),
     val chartGranularity: ChartGranularity = ChartGranularity.MONTHLY,
     val error: String? = null,
     val startDate: LocalDate? = null,
     val endDate: LocalDate? = null,
+    val selectedFilter: DateFilter = DateFilter.LAST_7_DAYS,  // Preserve filter in ViewModel
     val summary: ChargesSummary = ChargesSummary(),
     val currencySymbol: String = "€"
 )
@@ -86,16 +96,22 @@ class ChargesViewModel @Inject constructor(
     }
 
     fun setCarId(id: Int) {
-        carId = id
+        if (carId != id) {
+            carId = id
+            // Apply default filter on first load
+            setDateFilter(_uiState.value.selectedFilter)
+        }
     }
 
-    fun setDateFilter(startDate: LocalDate?, endDate: LocalDate?) {
-        _uiState.update { it.copy(startDate = startDate, endDate = endDate) }
-        loadCharges(startDate, endDate)
+    fun setDateFilter(filter: DateFilter) {
+        val endDate = LocalDate.now()
+        val startDate = filter.days?.let { endDate.minusDays(it) }
+        _uiState.update { it.copy(startDate = startDate, endDate = if (filter.days != null) endDate else null, selectedFilter = filter) }
+        loadCharges(startDate, if (filter.days != null) endDate else null)
     }
 
     fun clearDateFilter() {
-        _uiState.update { it.copy(startDate = null, endDate = null) }
+        _uiState.update { it.copy(startDate = null, endDate = null, selectedFilter = DateFilter.ALL_TIME) }
         loadCharges(null, null)
     }
 
@@ -127,9 +143,14 @@ class ChargesViewModel @Inject constructor(
             val startDateStr = startDate?.let { "${it}T00:00:00Z" }
             val endDateStr = endDate?.let { "${it}T23:59:59Z" }
 
-            // Fetch DC charge IDs from local database
+            // Fetch charge IDs from local database aggregates
             val dcChargeIds = try {
                 aggregateDao.getDcChargeIds(id).toSet()
+            } catch (e: Exception) {
+                emptySet()
+            }
+            val processedChargeIds = try {
+                aggregateDao.getAllProcessedChargeIds(id).toSet()
             } catch (e: Exception) {
                 emptySet()
             }
@@ -155,6 +176,7 @@ class ChargesViewModel @Inject constructor(
                             isRefreshing = false,
                             charges = displayedCharges,
                             dcChargeIds = dcChargeIds,
+                            processedChargeIds = processedChargeIds,
                             chartData = chartData,
                             chartGranularity = granularity,
                             summary = summary,

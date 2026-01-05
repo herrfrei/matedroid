@@ -49,9 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,17 +63,8 @@ import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.InteractiveBarChart
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-enum class DateFilter(val label: String, val days: Long?) {
-    LAST_7_DAYS("Last 7 days", 7),
-    LAST_30_DAYS("Last 30 days", 30),
-    LAST_90_DAYS("Last 90 days", 90),
-    LAST_YEAR("Last year", 365),
-    ALL_TIME("All time", null)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,33 +77,17 @@ fun ChargesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var selectedFilter by remember { mutableStateOf(DateFilter.LAST_7_DAYS) }
     val isDarkTheme = isSystemInDarkTheme()
     val palette = CarColorPalettes.forExteriorColor(exteriorColor, isDarkTheme)
 
     LaunchedEffect(carId) {
         viewModel.setCarId(carId)
-        // Apply default 7-day filter on initial load
-        val endDate = LocalDate.now()
-        val startDate = endDate.minusDays(7)
-        viewModel.setDateFilter(startDate, endDate)
     }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
-        }
-    }
-
-    fun applyDateFilter(filter: DateFilter) {
-        selectedFilter = filter
-        if (filter.days != null) {
-            val endDate = LocalDate.now()
-            val startDate = endDate.minusDays(filter.days)
-            viewModel.setDateFilter(startDate, endDate)
-        } else {
-            viewModel.clearDateFilter()
         }
     }
 
@@ -155,13 +128,14 @@ fun ChargesScreen(
                 ChargesContent(
                     charges = uiState.charges,
                     dcChargeIds = uiState.dcChargeIds,
+                    processedChargeIds = uiState.processedChargeIds,
                     chartData = uiState.chartData,
                     chartGranularity = uiState.chartGranularity,
                     summary = uiState.summary,
                     currencySymbol = uiState.currencySymbol,
-                    selectedFilter = selectedFilter,
+                    selectedFilter = uiState.selectedFilter,
                     palette = palette,
-                    onFilterSelected = { applyDateFilter(it) },
+                    onFilterSelected = { viewModel.setDateFilter(it) },
                     onChargeClick = onNavigateToChargeDetail
                 )
             }
@@ -174,6 +148,7 @@ fun ChargesScreen(
 private fun ChargesContent(
     charges: List<ChargeData>,
     dcChargeIds: Set<Int>,
+    processedChargeIds: Set<Int>,
     chartData: List<ChargeChartData>,
     chartGranularity: ChartGranularity,
     summary: ChargesSummary,
@@ -240,9 +215,10 @@ private fun ChargesContent(
             }
         } else {
             items(charges, key = { it.chargeId }) { charge ->
+                val isProcessed = charge.chargeId in processedChargeIds
                 ChargeItem(
                     charge = charge,
-                    isDcCharge = charge.chargeId in dcChargeIds,
+                    isDcCharge = if (isProcessed) charge.chargeId in dcChargeIds else null,
                     currencySymbol = currencySymbol,
                     onClick = { onChargeClick(charge.chargeId) }
                 )
@@ -376,7 +352,7 @@ private fun SummaryItem(
 @Composable
 private fun ChargeItem(
     charge: ChargeData,
-    isDcCharge: Boolean,
+    isDcCharge: Boolean?,  // null means we don't have aggregate data yet
     currencySymbol: String,
     onClick: () -> Unit
 ) {
@@ -427,9 +403,11 @@ private fun ChargeItem(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // AC/DC Badge
-                    ChargeTypeBadge(isDcCharge = isDcCharge)
+                    // AC/DC Badge - only show if we have aggregate data
+                    if (isDcCharge != null) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        ChargeTypeBadge(isDcCharge = isDcCharge)
+                    }
                 }
             }
 

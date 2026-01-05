@@ -279,6 +279,10 @@ interface AggregateDao {
     @Query("SELECT chargeId FROM charge_detail_aggregates WHERE carId = :carId AND isFastCharger = 1")
     suspend fun getDcChargeIds(carId: Int): List<Int>
 
+    // Get all processed charge IDs (for checking if we have aggregate data)
+    @Query("SELECT chargeId FROM charge_detail_aggregates WHERE carId = :carId")
+    suspend fun getAllProcessedChargeIds(carId: Int): List<Int>
+
     // Total processed aggregates count (for progress)
     @Query("SELECT COUNT(*) FROM drive_detail_aggregates WHERE carId = :carId")
     suspend fun countDriveAggregates(carId: Int): Int
