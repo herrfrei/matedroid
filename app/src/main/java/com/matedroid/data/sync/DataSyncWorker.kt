@@ -60,6 +60,15 @@ class DataSyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         log("Starting data sync worker (attempt ${runAttemptCount})")
 
+        // Run as foreground service to prevent being killed when screen is off
+        // This shows a persistent notification during sync
+        try {
+            setForeground(createForegroundInfo("Starting sync..."))
+        } catch (e: Exception) {
+            log("Could not start foreground service: ${e.message}")
+            // Continue anyway - expedited work may still work
+        }
+
         try {
             // Get list of cars
             val carsResult = teslamateRepository.getCars()
@@ -85,8 +94,11 @@ class DataSyncWorker @AssistedInject constructor(
 
             // Sync cars sequentially to better handle network errors
             var hasNetworkError = false
-            for (car in cars) {
+            for ((index, car) in cars.withIndex()) {
                 try {
+                    // Update notification with current car
+                    setForeground(createForegroundInfo("Syncing car ${index + 1}/${cars.size}..."))
+
                     val success = syncRepository.syncCar(car.carId)
                     if (!success) {
                         log("Sync incomplete for car ${car.carId}, will retry")
