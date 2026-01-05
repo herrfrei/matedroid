@@ -717,6 +717,14 @@ private fun ChargingPowerCard(deepStats: DeepStats, palette: CarColorPalette) {
     }
 }
 
+private fun formatEnergy(kwh: Double): String {
+    return if (kwh >= 1000) {
+        "%.1f MWh".format(kwh / 1000)
+    } else {
+        "%.0f kWh".format(kwh)
+    }
+}
+
 @Composable
 private fun AcDcRatioCard(deepStats: DeepStats, palette: CarColorPalette) {
     val totalEnergy = deepStats.acChargeEnergyKwh + deepStats.dcChargeEnergyKwh
@@ -737,12 +745,12 @@ private fun AcDcRatioCard(deepStats: DeepStats, palette: CarColorPalette) {
         Row(modifier = Modifier.fillMaxWidth()) {
             StatItem(
                 label = "AC Energy",
-                value = "%.1f kWh".format(deepStats.acChargeEnergyKwh),
+                value = formatEnergy(deepStats.acChargeEnergyKwh),
                 modifier = Modifier.weight(1f)
             )
             StatItem(
                 label = "DC Energy",
-                value = "%.1f kWh".format(deepStats.dcChargeEnergyKwh),
+                value = formatEnergy(deepStats.dcChargeEnergyKwh),
                 modifier = Modifier.weight(1f)
             )
         }
