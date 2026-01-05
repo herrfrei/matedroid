@@ -8,6 +8,7 @@ import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import com.matedroid.data.sync.DataSyncWorker
 import dagger.hilt.android.HiltAndroidApp
@@ -43,6 +44,7 @@ class MateDroidApp : Application(), Configuration.Provider {
 
         val syncRequest = OneTimeWorkRequestBuilder<DataSyncWorker>()
             .setConstraints(constraints)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .addTag(DataSyncWorker.TAG)
             .build()
 

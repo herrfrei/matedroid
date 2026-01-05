@@ -43,11 +43,15 @@ class DataSyncWorker @AssistedInject constructor(
         const val CHANNEL_ID = "sync_channel"
     }
 
+    /**
+     * Required for expedited work - provides foreground info for older API levels.
+     */
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        return createForegroundInfo("Syncing data...")
+    }
+
     override suspend fun doWork(): Result {
         Log.d(TAG, "Starting data sync worker")
-
-        // Run as foreground service to prevent being killed
-        setForeground(createForegroundInfo("Syncing data..."))
 
         // Get list of cars
         val carsResult = teslamateRepository.getCars()
