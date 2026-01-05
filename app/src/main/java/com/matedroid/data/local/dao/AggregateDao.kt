@@ -81,13 +81,12 @@ interface AggregateDao {
     """)
     suspend fun driveWithMinElevation(carId: Int): DriveDetailAggregate?
 
-    // Drive with most net elevation gain (end - start altitude)
+    // Drive with most accumulated elevation gain (total meters climbed)
     @Query("""
         SELECT a.* FROM drive_detail_aggregates a
         WHERE a.carId = :carId
-        AND a.startElevation IS NOT NULL
-        AND a.endElevation IS NOT NULL
-        ORDER BY (a.endElevation - a.startElevation) DESC LIMIT 1
+        AND a.elevationGain IS NOT NULL
+        ORDER BY a.elevationGain DESC LIMIT 1
     """)
     suspend fun driveWithMostElevationGain(carId: Int): DriveDetailAggregate?
 
@@ -95,10 +94,9 @@ interface AggregateDao {
         SELECT a.* FROM drive_detail_aggregates a
         JOIN drives_summary d ON a.driveId = d.driveId
         WHERE a.carId = :carId
-        AND a.startElevation IS NOT NULL
-        AND a.endElevation IS NOT NULL
+        AND a.elevationGain IS NOT NULL
         AND d.startDate >= :startDate AND d.startDate < :endDate
-        ORDER BY (a.endElevation - a.startElevation) DESC LIMIT 1
+        ORDER BY a.elevationGain DESC LIMIT 1
     """)
     suspend fun driveWithMostElevationGainInRange(carId: Int, startDate: String, endDate: String): DriveDetailAggregate?
 
