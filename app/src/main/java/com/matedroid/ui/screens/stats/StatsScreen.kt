@@ -563,6 +563,9 @@ private fun RecordsCard(
 
     // Group 6: Other records
     val otherRecords = mutableListOf<RecordData>()
+    quickStats.mostDistanceDay?.let { day ->
+        otherRecords.add(RecordData("🛣️", "Most Distance Day", "%.1f km".format(day.totalDistance), day.day, null))
+    }
     quickStats.busiestDay?.let { day ->
         otherRecords.add(RecordData("📅", "Busiest Day", "${day.count} drives", day.day, null))
     }

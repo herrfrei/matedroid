@@ -1,6 +1,7 @@
 package com.matedroid.domain.model
 
 import com.matedroid.data.local.dao.BusiestDayResult
+import com.matedroid.data.local.dao.MostDistanceDayResult
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.DriveSummary
 
@@ -60,7 +61,8 @@ data class QuickStats(
     // === Time Stats ===
     val firstDriveDate: String?,
     val firstChargeDate: String?,
-    val busiestDay: BusiestDayResult?
+    val busiestDay: BusiestDayResult?,
+    val mostDistanceDay: MostDistanceDayResult?
 )
 
 /**

@@ -80,7 +80,8 @@ class StatsRepository @Inject constructor(
 
             firstDriveDate = driveSummaryDao.firstDriveDate(carId),
             firstChargeDate = chargeSummaryDao.firstChargeDate(carId),
-            busiestDay = driveSummaryDao.busiestDay(carId)
+            busiestDay = driveSummaryDao.busiestDay(carId),
+            mostDistanceDay = driveSummaryDao.mostDistanceDay(carId)
         )
     }
 
@@ -113,7 +114,8 @@ class StatsRepository @Inject constructor(
 
             firstDriveDate = driveSummaryDao.firstDriveDate(carId), // Always show first ever
             firstChargeDate = chargeSummaryDao.firstChargeDate(carId), // Always show first ever
-            busiestDay = driveSummaryDao.busiestDayInRange(carId, startDate, endDate)
+            busiestDay = driveSummaryDao.busiestDayInRange(carId, startDate, endDate),
+            mostDistanceDay = driveSummaryDao.mostDistanceDayInRange(carId, startDate, endDate)
         )
     }
 

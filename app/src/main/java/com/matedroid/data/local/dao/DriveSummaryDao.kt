@@ -186,6 +186,26 @@ interface DriveSummaryDao {
     @Query("SELECT COUNT(DISTINCT DATE(startDate)) FROM drives_summary WHERE carId = :carId")
     suspend fun countDrivingDays(carId: Int): Int
 
+    // Most distance in a single day
+    @Query("""
+        SELECT DATE(startDate) as day, SUM(distance) as totalDistance
+        FROM drives_summary
+        WHERE carId = :carId
+        GROUP BY DATE(startDate)
+        ORDER BY totalDistance DESC LIMIT 1
+    """)
+    suspend fun mostDistanceDay(carId: Int): MostDistanceDayResult?
+
+    @Query("""
+        SELECT DATE(startDate) as day, SUM(distance) as totalDistance
+        FROM drives_summary
+        WHERE carId = :carId
+        AND startDate >= :startDate AND startDate < :endDate
+        GROUP BY DATE(startDate)
+        ORDER BY totalDistance DESC LIMIT 1
+    """)
+    suspend fun mostDistanceDayInRange(carId: Int, startDate: String, endDate: String): MostDistanceDayResult?
+
     // === Queries for Detail Sync ===
 
     // Get drive IDs that need detail processing
@@ -221,4 +241,9 @@ interface DriveSummaryDao {
 data class BusiestDayResult(
     val day: String,
     val count: Int
+)
+
+data class MostDistanceDayResult(
+    val day: String,
+    val totalDistance: Double
 )
