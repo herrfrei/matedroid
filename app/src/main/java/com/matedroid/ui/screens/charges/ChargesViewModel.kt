@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.matedroid.data.api.models.ChargeData
 import com.matedroid.data.local.SettingsDataStore
+import com.matedroid.data.local.dao.AggregateDao
 import com.matedroid.data.model.Currency
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
@@ -37,6 +38,7 @@ data class ChargesUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val charges: List<ChargeData> = emptyList(),
+    val dcChargeIds: Set<Int> = emptySet(),
     val chartData: List<ChargeChartData> = emptyList(),
     val chartGranularity: ChartGranularity = ChartGranularity.MONTHLY,
     val error: String? = null,
@@ -57,7 +59,8 @@ data class ChargesSummary(
 @HiltViewModel
 class ChargesViewModel @Inject constructor(
     private val repository: TeslamateRepository,
-    private val settingsDataStore: SettingsDataStore
+    private val settingsDataStore: SettingsDataStore,
+    private val aggregateDao: AggregateDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChargesUiState())
@@ -124,6 +127,13 @@ class ChargesViewModel @Inject constructor(
             val startDateStr = startDate?.let { "${it}T00:00:00Z" }
             val endDateStr = endDate?.let { "${it}T23:59:59Z" }
 
+            // Fetch DC charge IDs from local database
+            val dcChargeIds = try {
+                aggregateDao.getDcChargeIds(id).toSet()
+            } catch (e: Exception) {
+                emptySet()
+            }
+
             when (val result = repository.getCharges(id, startDateStr, endDateStr)) {
                 is ApiResult.Success -> {
                     val allCharges = result.data
@@ -144,6 +154,7 @@ class ChargesViewModel @Inject constructor(
                             isLoading = false,
                             isRefreshing = false,
                             charges = displayedCharges,
+                            dcChargeIds = dcChargeIds,
                             chartData = chartData,
                             chartGranularity = granularity,
                             summary = summary,

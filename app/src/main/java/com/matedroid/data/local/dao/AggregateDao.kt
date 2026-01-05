@@ -275,6 +275,10 @@ interface AggregateDao {
     """)
     suspend fun countDcChargesInRange(carId: Int, startDate: String, endDate: String): Int
 
+    // Get set of DC charge IDs (for UI badges)
+    @Query("SELECT chargeId FROM charge_detail_aggregates WHERE carId = :carId AND isFastCharger = 1")
+    suspend fun getDcChargeIds(carId: Int): List<Int>
+
     // Total processed aggregates count (for progress)
     @Query("SELECT COUNT(*) FROM drive_detail_aggregates WHERE carId = :carId")
     suspend fun countDriveAggregates(carId: Int): Int

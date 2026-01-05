@@ -1,5 +1,6 @@
 package com.matedroid.ui.screens.charges
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryChargingFull
@@ -52,6 +54,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -150,6 +154,7 @@ fun ChargesScreen(
             } else {
                 ChargesContent(
                     charges = uiState.charges,
+                    dcChargeIds = uiState.dcChargeIds,
                     chartData = uiState.chartData,
                     chartGranularity = uiState.chartGranularity,
                     summary = uiState.summary,
@@ -168,6 +173,7 @@ fun ChargesScreen(
 @Composable
 private fun ChargesContent(
     charges: List<ChargeData>,
+    dcChargeIds: Set<Int>,
     chartData: List<ChargeChartData>,
     chartGranularity: ChartGranularity,
     summary: ChargesSummary,
@@ -236,6 +242,7 @@ private fun ChargesContent(
             items(charges, key = { it.chargeId }) { charge ->
                 ChargeItem(
                     charge = charge,
+                    isDcCharge = charge.chargeId in dcChargeIds,
                     currencySymbol = currencySymbol,
                     onClick = { onChargeClick(charge.chargeId) }
                 )
@@ -369,6 +376,7 @@ private fun SummaryItem(
 @Composable
 private fun ChargeItem(
     charge: ChargeData,
+    isDcCharge: Boolean,
     currencySymbol: String,
     onClick: () -> Unit
 ) {
@@ -384,7 +392,7 @@ private fun ChargeItem(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Header card with location and date
+            // Header card with location, date, and AC/DC badge
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -407,8 +415,9 @@ private fun ChargeItem(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = charge.address ?: "Unknown location",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1
                         )
                         charge.startDate?.let { dateStr ->
                             Text(
@@ -418,6 +427,9 @@ private fun ChargeItem(
                             )
                         }
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // AC/DC Badge
+                    ChargeTypeBadge(isDcCharge = isDcCharge)
                 }
             }
 
@@ -523,6 +535,27 @@ private fun ChargeStatCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun ChargeTypeBadge(isDcCharge: Boolean) {
+    val backgroundColor = if (isDcCharge) Color(0xFFFF9800) else Color(0xFF4CAF50)
+    val text = if (isDcCharge) "DC" else "AC"
+
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(backgroundColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
     }
 }
 
