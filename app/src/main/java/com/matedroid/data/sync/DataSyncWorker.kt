@@ -7,9 +7,13 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
+import androidx.work.BackoffPolicy
 import androidx.work.CoroutineWorker
 import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import java.io.IOException
+import java.net.UnknownHostException
+import java.util.concurrent.TimeUnit
 import com.matedroid.R
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
@@ -54,44 +58,81 @@ class DataSyncWorker @AssistedInject constructor(
     }
 
     override suspend fun doWork(): Result {
-        log("Starting data sync worker")
+        log("Starting data sync worker (attempt ${runAttemptCount})")
 
-        // Get list of cars
-        val carsResult = teslamateRepository.getCars()
-        val cars = when (carsResult) {
-            is ApiResult.Success -> carsResult.data
-            is ApiResult.Error -> {
-                logError("Failed to fetch cars: ${carsResult.message}")
-                return Result.retry()
-            }
-        }
-
-        if (cars.isEmpty()) {
-            log("No cars found, nothing to sync")
-            return Result.success()
-        }
-
-        log("Found ${cars.size} cars to sync")
-
-        // Sync all cars in parallel
-        val results = coroutineScope {
-            cars.map { car ->
-                async {
-                    try {
-                        syncRepository.syncCar(car.carId)
-                    } catch (e: Exception) {
-                        logError("Error syncing car ${car.carId}", e)
-                        syncManager.markSyncError(car.carId, e.message ?: "Unknown error")
-                        false
+        try {
+            // Get list of cars
+            val carsResult = teslamateRepository.getCars()
+            val cars = when (carsResult) {
+                is ApiResult.Success -> carsResult.data
+                is ApiResult.Error -> {
+                    logError("Failed to fetch cars: ${carsResult.message}")
+                    return if (isNetworkError(carsResult.message)) {
+                        log("Network error, will retry...")
+                        Result.retry()
+                    } else {
+                        Result.failure()
                     }
                 }
-            }.awaitAll()
+            }
+
+            if (cars.isEmpty()) {
+                log("No cars found, nothing to sync")
+                return Result.success()
+            }
+
+            log("Found ${cars.size} cars to sync")
+
+            // Sync cars sequentially to better handle network errors
+            var hasNetworkError = false
+            for (car in cars) {
+                try {
+                    val success = syncRepository.syncCar(car.carId)
+                    if (!success) {
+                        log("Sync incomplete for car ${car.carId}, will retry")
+                        hasNetworkError = true
+                    }
+                } catch (e: Exception) {
+                    logError("Error syncing car ${car.carId}", e)
+                    if (isNetworkException(e)) {
+                        log("Network error during sync, will retry...")
+                        hasNetworkError = true
+                    } else {
+                        syncManager.markSyncError(car.carId, e.message ?: "Unknown error")
+                    }
+                }
+            }
+
+            return if (hasNetworkError) {
+                log("Sync incomplete due to network errors, scheduling retry")
+                Result.retry()
+            } else {
+                log("Sync complete for all cars")
+                Result.success()
+            }
+        } catch (e: Exception) {
+            logError("Unexpected error in sync worker", e)
+            return if (isNetworkException(e)) {
+                log("Network error, will retry...")
+                Result.retry()
+            } else {
+                Result.failure()
+            }
         }
+    }
 
-        val allSuccess = results.all { it }
-        log("Sync complete. All success: $allSuccess")
+    private fun isNetworkError(message: String?): Boolean {
+        if (message == null) return false
+        val networkKeywords = listOf("dns", "network", "connect", "timeout", "unreachable", "refused", "reset")
+        return networkKeywords.any { message.lowercase().contains(it) }
+    }
 
-        return if (allSuccess) Result.success() else Result.success() // Still success to not retry indefinitely
+    private fun isNetworkException(e: Throwable): Boolean {
+        return e is IOException ||
+               e is UnknownHostException ||
+               e.cause is IOException ||
+               e.cause is UnknownHostException ||
+               isNetworkError(e.message)
     }
 
     /**
