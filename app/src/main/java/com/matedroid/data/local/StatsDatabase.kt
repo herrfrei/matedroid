@@ -56,14 +56,17 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        /** Migration from V2 to V3: Fix isFastCharger detection using power threshold */
+        /** Migration from V2 to V3: Fix isFastCharger using Teslamate's charger_phases logic */
         val MIGRATION_2_3 = object : Migration(2, 3) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // DC chargers are typically > 22kW, update isFastCharger based on actual power
+                // Teslamate logic: DC charging has charger_phases = 0 or null
+                // AC charging has charger_phases = 1, 2, or 3
                 db.execSQL("""
                     UPDATE charge_detail_aggregates
-                    SET isFastCharger = 1
-                    WHERE maxChargerPower > 22
+                    SET isFastCharger = CASE
+                        WHEN chargerPhases IS NULL OR chargerPhases = 0 THEN 1
+                        ELSE 0
+                    END
                 """)
             }
         }

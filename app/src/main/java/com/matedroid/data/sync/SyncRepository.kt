@@ -261,11 +261,12 @@ class SyncRepository @Inject constructor(
         // Temperature stats
         val temps = points.mapNotNull { it.outsideTemp }
 
-        // Determine if fast charger (DC) - check multiple indicators
-        // Some API versions may use different fields
-        val maxPower = powers.maxOrNull() ?: 0
-        val isFastCharger = chargerDetails?.fastChargerPresent == true ||
-                            maxPower > 22  // DC chargers are typically > 22kW
+        // Determine if DC charger using Teslamate's logic:
+        // DC charging has charger_phases = 0 or null (bypasses onboard charger)
+        // AC charging has charger_phases = 1, 2, or 3
+        val phases = points.mapNotNull { it.chargerDetails?.chargerPhases }
+        val modePhases = phases.filter { it > 0 }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
+        val isFastCharger = modePhases == null  // No non-zero phases means DC
 
         return ChargeDetailAggregate(
             chargeId = detail.chargeId,
