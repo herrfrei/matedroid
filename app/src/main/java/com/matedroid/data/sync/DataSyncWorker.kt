@@ -1,10 +1,17 @@
 package com.matedroid.data.sync
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
+import com.matedroid.R
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
 import dagger.assisted.Assisted
@@ -16,7 +23,7 @@ import kotlinx.coroutines.coroutineScope
 /**
  * Background worker for syncing stats data from TeslamateApi.
  *
- * Runs on app launch and syncs all cars in parallel:
+ * Runs as a foreground service to prevent being killed when app is in background.
  * - Phase 1: Sync summaries (fast, for Quick Stats)
  * - Phase 2: Sync details (slow, for Deep Stats)
  */
@@ -32,10 +39,15 @@ class DataSyncWorker @AssistedInject constructor(
     companion object {
         const val TAG = "DataSyncWorker"
         const val WORK_NAME = "data_sync_work"
+        const val NOTIFICATION_ID = 1001
+        const val CHANNEL_ID = "sync_channel"
     }
 
     override suspend fun doWork(): Result {
         Log.d(TAG, "Starting data sync worker")
+
+        // Run as foreground service to prevent being killed
+        setForeground(createForegroundInfo("Syncing data..."))
 
         // Get list of cars
         val carsResult = teslamateRepository.getCars()
@@ -73,5 +85,47 @@ class DataSyncWorker @AssistedInject constructor(
         Log.d(TAG, "Sync complete. All success: $allSuccess")
 
         return if (allSuccess) Result.success() else Result.success() // Still success to not retry indefinitely
+    }
+
+    /**
+     * Create foreground info for the notification.
+     */
+    private fun createForegroundInfo(progress: String): ForegroundInfo {
+        val context = applicationContext
+
+        // Create notification channel (required for Android 8.0+)
+        createNotificationChannel()
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle("MateDroid Sync")
+            .setContentText(progress)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            ForegroundInfo(NOTIFICATION_ID, notification)
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Data Sync",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Background sync for stats data"
+            }
+            val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 }
