@@ -103,6 +103,14 @@ fun StatsScreen(
         viewModel.setCarId(carId)
     }
 
+    // Periodic sync every 60 seconds while the screen is visible
+    LaunchedEffect(Unit) {
+        while (true) {
+            kotlinx.coroutines.delay(60_000L) // Wait 60 seconds
+            viewModel.triggerSync()
+        }
+    }
+
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
             snackbarHostState.showSnackbar(error)

@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Stats Sync**: Initial sync now starts automatically on first-time setup instead of requiring manual "Force Full Resync"
+### Added
+- **Stats Sync**: Pull-to-refresh in Stats screen now triggers a background sync
+- **Stats Sync**: Automatic sync every 60 seconds while Stats screen is visible
 
 ## [0.8.0] - 2026-01-05
 

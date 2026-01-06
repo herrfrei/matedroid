@@ -1,8 +1,16 @@
 package com.matedroid.ui.screens.stats
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
+import androidx.work.WorkManager
 import com.matedroid.data.repository.StatsRepository
+import com.matedroid.data.sync.DataSyncWorker
 import com.matedroid.data.sync.SyncLogCollector
 import com.matedroid.data.sync.SyncManager
 import com.matedroid.domain.model.CarStats
@@ -10,8 +18,8 @@ import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
 import com.matedroid.domain.model.YearFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,6 +41,7 @@ data class StatsUiState(
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val statsRepository: StatsRepository,
     private val syncManager: SyncManager,
     private val syncLogCollector: SyncLogCollector
@@ -43,6 +52,9 @@ class StatsViewModel @Inject constructor(
 
     /** Sync logs for debug viewing */
     val syncLogs: StateFlow<List<String>> = syncLogCollector.logs
+
+    /** Expose sync status for UI to observe */
+    val syncStatus = syncManager.syncStatus
 
     private var carId: Int? = null
     private var syncObserverJob: Job? = null
@@ -88,9 +100,38 @@ class StatsViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
+            // Trigger sync to fetch new data from server
+            triggerSync()
             loadStatsInternal()
             _uiState.update { it.copy(isRefreshing = false) }
         }
+    }
+
+    /**
+     * Trigger a background sync to fetch new data from the server.
+     * Uses KEEP policy to avoid interrupting a running sync.
+     */
+    fun triggerSync() {
+        // Skip if sync is already running
+        if (syncManager.syncStatus.value.isAnySyncing) {
+            return
+        }
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val syncRequest = OneTimeWorkRequestBuilder<DataSyncWorker>()
+            .setConstraints(constraints)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .addTag(DataSyncWorker.TAG)
+            .build()
+
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            DataSyncWorker.WORK_NAME,
+            ExistingWorkPolicy.KEEP, // Don't interrupt running sync
+            syncRequest
+        )
     }
 
     fun clearError() {
