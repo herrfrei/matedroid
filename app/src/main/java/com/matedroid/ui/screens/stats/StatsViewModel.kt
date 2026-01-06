@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.matedroid.data.repository.StatsRepository
 import com.matedroid.data.sync.SyncLogCollector
+import com.matedroid.data.sync.SyncManager
 import com.matedroid.domain.model.CarStats
 import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
 import com.matedroid.domain.model.YearFilter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +22,7 @@ import javax.inject.Inject
 data class StatsUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
+    val isSyncing: Boolean = false,
     val carStats: CarStats? = null,
     val availableYears: List<Int> = emptyList(),
     val selectedYearFilter: YearFilter = YearFilter.AllTime,
@@ -30,6 +34,7 @@ data class StatsUiState(
 @HiltViewModel
 class StatsViewModel @Inject constructor(
     private val statsRepository: StatsRepository,
+    private val syncManager: SyncManager,
     private val syncLogCollector: SyncLogCollector
 ) : ViewModel() {
 
@@ -40,10 +45,39 @@ class StatsViewModel @Inject constructor(
     val syncLogs: StateFlow<List<String>> = syncLogCollector.logs
 
     private var carId: Int? = null
+    private var syncObserverJob: Job? = null
 
     fun setCarId(id: Int) {
         carId = id
         loadStats()
+        startObservingSyncStatus()
+    }
+
+    /**
+     * Observe sync status changes and reload stats when sync progresses.
+     * This ensures the UI updates as new data is synced.
+     */
+    private fun startObservingSyncStatus() {
+        syncObserverJob?.cancel()
+        syncObserverJob = viewModelScope.launch {
+            syncManager.syncStatus.collect { status ->
+                val id = carId ?: return@collect
+                val carProgress = status.carProgresses[id]
+
+                // Update syncing state
+                val isSyncing = carProgress != null &&
+                    carProgress.phase != SyncPhase.COMPLETE &&
+                    carProgress.phase != SyncPhase.ERROR &&
+                    carProgress.phase != SyncPhase.IDLE
+
+                _uiState.update { it.copy(isSyncing = isSyncing, syncProgress = carProgress) }
+
+                // Reload stats periodically while syncing to show new data
+                if (isSyncing) {
+                    loadStatsInternal()
+                }
+            }
+        }
     }
 
     fun setYearFilter(yearFilter: YearFilter) {
@@ -77,10 +111,17 @@ class StatsViewModel @Inject constructor(
         try {
             // Check if we have any data
             val hasData = statsRepository.hasData(id)
+
+            // Get deep sync progress (even if no data yet)
+            val deepProgress = statsRepository.getDeepSyncProgress(id)
+
             if (!hasData) {
+                // No data yet - show sync progress if available
                 _uiState.update {
                     it.copy(
-                        error = "No data available yet. Sync in progress..."
+                        carStats = null,
+                        deepSyncProgress = deepProgress,
+                        error = null // Don't show error, show empty state with progress
                     )
                 }
                 return
@@ -92,9 +133,6 @@ class StatsViewModel @Inject constructor(
             // Load stats with current filter
             val yearFilter = _uiState.value.selectedYearFilter
             val stats = statsRepository.getStats(id, yearFilter)
-
-            // Get deep sync progress
-            val deepProgress = statsRepository.getDeepSyncProgress(id)
 
             _uiState.update {
                 it.copy(

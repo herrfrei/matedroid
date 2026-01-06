@@ -153,8 +153,10 @@ fun StatsScreen(
                 }
             } else if (uiState.carStats == null) {
                 EmptyState(
-                    message = "No stats available yet.\nSync is in progress...",
-                    syncProgress = uiState.deepSyncProgress
+                    message = if (uiState.isSyncing) "Syncing data..." else "No stats available yet.\nPull down to sync.",
+                    syncProgress = uiState.deepSyncProgress,
+                    syncPhase = uiState.syncProgress?.phase,
+                    isSyncing = uiState.isSyncing
                 )
             } else {
                 StatsContent(
@@ -179,7 +181,9 @@ fun StatsScreen(
 @Composable
 private fun EmptyState(
     message: String,
-    syncProgress: Float
+    syncProgress: Float,
+    syncPhase: SyncPhase? = null,
+    isSyncing: Boolean = false
 ) {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -189,12 +193,18 @@ private fun EmptyState(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(32.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Analytics,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            if (isSyncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(64.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Analytics,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = message,
@@ -202,17 +212,39 @@ private fun EmptyState(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (syncProgress > 0) {
-                Spacer(modifier = Modifier.height(16.dp))
-                LinearProgressIndicator(
-                    progress = { syncProgress },
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                )
+            // Show sync phase info
+            if (isSyncing && syncPhase != null) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "${(syncProgress * 100).toInt()}% synced",
+                    text = when (syncPhase) {
+                        SyncPhase.SYNCING_SUMMARIES -> "Fetching drives and charges..."
+                        SyncPhase.SYNCING_DRIVE_DETAILS -> "Processing drive details..."
+                        SyncPhase.SYNCING_CHARGE_DETAILS -> "Processing charge details..."
+                        else -> ""
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            // Show progress bar if we have progress
+            if (syncProgress > 0 || isSyncing) {
+                Spacer(modifier = Modifier.height(16.dp))
+                if (syncProgress > 0) {
+                    LinearProgressIndicator(
+                        progress = { syncProgress },
+                        modifier = Modifier.fillMaxWidth(0.6f)
+                    )
+                    Text(
+                        text = "${(syncProgress * 100).toInt()}% synced",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    // Indeterminate progress when syncing but no percentage yet
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(0.6f)
+                    )
+                }
             }
         }
     }
