@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Stats Sync**: Pull-to-refresh in Stats screen now triggers a background sync
 - **Stats Sync**: Automatic sync every 60 seconds while Stats screen is visible
 
+### Changed
+- **Dashboard**: Simplified stats button overlay on car image - now shows only arrow indicator
+
 ## [0.8.0] - 2026-01-05
 
 ### Added
