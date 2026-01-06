@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Stats Sync**: Initial sync now starts automatically on first-time setup instead of requiring manual "Force Full Resync"
+
 ## [0.8.0] - 2026-01-05
 
 ### Added

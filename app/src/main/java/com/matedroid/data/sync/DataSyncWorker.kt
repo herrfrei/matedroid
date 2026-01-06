@@ -75,11 +75,18 @@ class DataSyncWorker @AssistedInject constructor(
                 is ApiResult.Success -> carsResult.data
                 is ApiResult.Error -> {
                     logError("Failed to fetch cars: ${carsResult.message}")
-                    return if (isNetworkError(carsResult.message)) {
-                        log("Network error, will retry...")
-                        Result.retry()
-                    } else {
-                        Result.failure()
+                    return when {
+                        // Server not configured yet - this is normal on first run
+                        // Return success (nothing to do) - sync will be triggered after settings are saved
+                        carsResult.message.contains("not configured", ignoreCase = true) -> {
+                            log("Server not configured, skipping sync")
+                            Result.success()
+                        }
+                        isNetworkError(carsResult.message) -> {
+                            log("Network error, will retry...")
+                            Result.retry()
+                        }
+                        else -> Result.failure()
                     }
                 }
             }

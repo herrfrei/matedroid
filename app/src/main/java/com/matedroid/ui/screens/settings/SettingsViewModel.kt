@@ -178,6 +178,9 @@ class SettingsViewModel @Inject constructor(
                     currencyCode = _uiState.value.currencyCode
                 )
 
+                // Trigger sync after settings are saved (handles first-time setup)
+                triggerImmediateSync()
+
                 _uiState.value = _uiState.value.copy(isSaving = false)
                 onSuccess()
             } catch (e: Exception) {
