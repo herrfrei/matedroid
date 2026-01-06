@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.DriveEta
 import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.Timeline
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import com.matedroid.ui.icons.CustomIcons
@@ -476,27 +475,19 @@ private fun CarImage(
             )
             // Stats button on middle-right side
             if (onNavigateToStats != null) {
-                Row(
+                Box(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .padding(end = 4.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f))
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 6.dp, vertical = 6.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Analytics,
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = "View stats",
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
