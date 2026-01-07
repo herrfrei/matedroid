@@ -1,0 +1,6 @@
+• Model Y Juniper Performance: Support for P74D trim with 21" Überturbine wheels
+• Model Y Juniper Premium: Support for Premium trim with 19" Crossflow and 20" Helix 2.0 wheels
+• Stats for Nerds: Tap car image for advanced statistics (records, extremes, AC/DC ratio)
+• Charges: Tap the Cost card to edit charge cost directly in Teslamate
+• Settings: New Teslamate Base URL option for direct integration
+• Fixed: Incorrect Avg/Year calculation in Mileage screen

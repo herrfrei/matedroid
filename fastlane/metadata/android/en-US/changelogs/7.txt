@@ -1,0 +1,1 @@
+• First public release on GitHub with automated APK builds

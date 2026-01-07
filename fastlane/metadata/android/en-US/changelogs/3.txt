@@ -1,0 +1,7 @@
+• Dashboard with dynamic Tesla 3D car images
+• Charges screen with statistics and detailed graphs
+• Drives screen with efficiency metrics and route maps
+• Mileage screen with yearly/monthly/daily breakdown
+• Software Versions screen with update history
+• Battery Health screen for degradation tracking
+• Car color based UI themes

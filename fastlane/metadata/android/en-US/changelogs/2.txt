@@ -1,0 +1,6 @@
+• Drives screen with drive history
+• Charge detail screen with graphs
+• Drive detail screen with route map
+• Mileage tracking screen
+• Software versions screen
+• Battery health screen

@@ -1,0 +1,3 @@
+• Stats Sync: Pull-to-refresh in Stats screen now triggers a background sync
+• Stats Sync: Automatic sync every 60 seconds while Stats screen is visible
+• Dashboard: Simplified stats button overlay on car image

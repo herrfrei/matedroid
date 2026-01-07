@@ -1,0 +1,40 @@
+# F-Droid metadata for MateDroid
+# This is a reference copy. The actual metadata lives in the fdroiddata repository:
+# https://gitlab.com/fdroid/fdroiddata/-/blob/master/metadata/com.matedroid.yml
+#
+# To submit to F-Droid:
+# 1. Fork https://gitlab.com/fdroid/fdroiddata
+# 2. Copy this file to metadata/com.matedroid.yml
+# 3. Submit a Merge Request
+
+Categories:
+  - Connectivity
+License: GPL-3.0-only
+AuthorName: vide
+AuthorWebSite: https://github.com/vide
+SourceCode: https://github.com/vide/matedroid
+IssueTracker: https://github.com/vide/matedroid/issues
+Changelog: https://github.com/vide/matedroid/blob/main/CHANGELOG.md
+
+AutoName: MateDroid
+
+RepoType: git
+Repo: https://github.com/vide/matedroid.git
+
+Builds:
+  - versionName: 0.8.1
+    versionCode: 12
+    commit: v0.8.1
+    subdir: app
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-17-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^v[0-9.]+$
+CurrentVersion: 0.8.1
+CurrentVersionCode: 12

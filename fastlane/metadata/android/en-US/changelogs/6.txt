@@ -1,0 +1,1 @@
+• Version Display: Show app version at bottom of Settings screen

@@ -1,0 +1,7 @@
+• Multi-Car Support: Switch between vehicles via dropdown
+• Interactive Bar Charts: Tap any bar to see exact values
+• Dynamic Chart Granularity: Charts adapt to date range
+• Show Short Drives/Charges Setting: Hide trivial entries
+• Redesigned Tire Pressure Display
+• Fixed: HTTP connections to TeslamateApi server
+• Fixed: Location card shows address when outside geofences

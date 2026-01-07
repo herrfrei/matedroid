@@ -1,0 +1,5 @@
+• New MateDroid app icon
+• GitHub Actions CI for automatic builds
+• Model Y Juniper Support: Crossflow19 wheel detection
+• Highland M3 Support: Nova19/Helix19 wheel detection
+• Fixed: Show "Model Y/3/S/X" when owner hasn't set a custom name

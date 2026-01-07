@@ -1,0 +1,4 @@
+• Initial release
+• Settings screen for server configuration
+• Dashboard with basic vehicle status
+• Charges screen with history list

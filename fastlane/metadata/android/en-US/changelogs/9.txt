@@ -1,0 +1,4 @@
+• Software Versions: Tap external link icon to view release notes on NotATeslaApp
+• Drives: Filter by distance - Commute, Day trip, Road trip
+• Fixed: Race condition where drive/charge counts could fail to display
+• Fixed: Show all software updates instead of only first 100
