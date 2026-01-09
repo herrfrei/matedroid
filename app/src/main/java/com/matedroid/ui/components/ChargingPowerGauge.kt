@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -104,23 +105,23 @@ fun ChargingPowerGauge(
                 }
             }
 
-            // Power value and kW unit in center
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Center
+            // Power value and kW unit stacked in center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "$powerKw",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = gaugeColor
+                    color = gaugeColor,
+                    lineHeight = MaterialTheme.typography.titleSmall.lineHeight * 0.9f
                 )
                 Text(
                     text = "kW",
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Normal,
                     color = gaugeColor,
-                    modifier = Modifier.padding(bottom = 1.dp)
+                    lineHeight = MaterialTheme.typography.labelSmall.lineHeight * 0.8f
                 )
             }
         }
