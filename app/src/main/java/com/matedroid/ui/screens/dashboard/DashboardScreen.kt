@@ -103,6 +103,10 @@ import com.matedroid.data.api.models.CarVersions
 import com.matedroid.data.api.models.ChargingDetails
 import com.matedroid.data.api.models.TpmsDetails
 import com.matedroid.data.api.models.ClimateDetails
+import com.matedroid.domain.model.BatteryTypeHelper
+import com.matedroid.ui.components.ChargingPowerGauge
+import com.matedroid.ui.components.calculateAcGaugeProgress
+import com.matedroid.ui.components.calculateDcGaugeProgress
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
 import com.matedroid.ui.theme.MateDroidTheme
@@ -733,44 +737,18 @@ private fun BatteryCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Charging info row - content visible only when charging, but space always reserved
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (status.isCharging) {
-                    Text(
-                        text = "${status.chargerPower ?: 0} kW",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Medium,
-                        color = StatusSuccess
-                    )
-                    Text(
-                        text = "+${status.chargeEnergyAdded?.let { "%.1f".format(it) } ?: "0"} kWh",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = palette.onSurfaceVariant
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Filled.Timer,
-                            contentDescription = null,
-                            modifier = Modifier.size(12.dp),
-                            tint = palette.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = status.timeToFullCharge?.let { formatHoursMinutes(it) } ?: "--",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = palette.onSurfaceVariant
-                        )
-                    }
-                }
-                // When not charging, row is empty but maintains height
+            // Charging info row - shows gauge when charging, empty otherwise
+            if (status.isCharging) {
+                ChargingInfoRow(
+                    status = status,
+                    carTrimBadging = carTrimBadging,
+                    palette = palette
+                )
+            } else {
+                // Reserve minimal space when not charging
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -839,6 +817,72 @@ private fun ChargingProgressBar(
                 color = palette.accent,
                 size = androidx.compose.ui.geometry.Size(width * currentFraction, height)
             )
+        }
+    }
+}
+
+@Composable
+private fun ChargingInfoRow(
+    status: CarStatus,
+    carTrimBadging: String?,
+    palette: CarColorPalette
+) {
+    val isDcCharging = status.isDcCharging
+    val powerKw = status.chargerPower ?: 0
+
+    // Calculate gauge progress based on charging type
+    val gaugeProgress = if (isDcCharging) {
+        val maxPower = BatteryTypeHelper.getMaxDcPowerKw(carTrimBadging)
+        calculateDcGaugeProgress(powerKw, maxPower)
+    } else {
+        calculateAcGaugeProgress(
+            actualCurrent = status.chargerActualCurrent,
+            maxCurrent = status.chargeCurrentRequestMax
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left: Gauge with AC/DC badge
+        ChargingPowerGauge(
+            powerKw = powerKw,
+            isDcCharging = isDcCharging,
+            gaugeProgress = gaugeProgress,
+            gaugeSize = 48.dp
+        )
+
+        // Right: Energy added and time remaining
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Energy added
+            Text(
+                text = "+${status.chargeEnergyAdded?.let { "%.1f".format(it) } ?: "0"} kWh",
+                style = MaterialTheme.typography.labelMedium,
+                color = palette.onSurfaceVariant
+            )
+
+            // Time remaining
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Timer,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = palette.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = status.timeToFullCharge?.let { formatHoursMinutes(it) } ?: "--",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = palette.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -1428,7 +1472,11 @@ private fun DashboardPreview() {
                 ),
                 chargingDetails = ChargingDetails(
                     pluggedIn = true,
+                    chargingState = "Charging",
                     chargerPower = 11,
+                    chargerPhases = 3,  // AC charging
+                    chargerActualCurrent = 16,
+                    chargeCurrentRequestMax = 32,
                     chargeEnergyAdded = 15.3,
                     timeToFullCharge = 1.5,
                     chargeLimitSoc = 80
