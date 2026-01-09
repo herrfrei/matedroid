@@ -844,7 +844,7 @@ private fun ChargingInfoRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .height(44.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -853,7 +853,7 @@ private fun ChargingInfoRow(
             powerKw = powerKw,
             isDcCharging = isDcCharging,
             gaugeProgress = gaugeProgress,
-            gaugeSize = 48.dp
+            gaugeSize = 41.dp
         )
 
         // Right: Energy added and time remaining

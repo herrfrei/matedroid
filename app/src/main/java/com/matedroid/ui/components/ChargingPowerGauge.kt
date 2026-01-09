@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -47,7 +48,7 @@ fun ChargingPowerGauge(
     isDcCharging: Boolean,
     gaugeProgress: Float,
     modifier: Modifier = Modifier,
-    gaugeSize: Dp = 48.dp
+    gaugeSize: Dp = 41.dp
 ) {
     val gaugeColor = if (isDcCharging) StatusWarning else StatusSuccess
     val trackColor = gaugeColor.copy(alpha = 0.2f)
@@ -133,24 +134,19 @@ private fun ChargeTypeBadge(isDcCharging: Boolean) {
 
     Box(
         modifier = Modifier
+            .width(26.dp)
             .background(
                 color = backgroundColor,
                 shape = RoundedCornerShape(4.dp)
-            ),
+            )
+            .padding(vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier
-                .background(backgroundColor, RoundedCornerShape(4.dp))
-                .then(
-                    Modifier
-                        .width(24.dp)
-                        .background(backgroundColor, RoundedCornerShape(4.dp))
-                )
+            color = Color.White
         )
     }
 }
