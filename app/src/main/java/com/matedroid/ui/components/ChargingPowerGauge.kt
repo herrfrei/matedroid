@@ -104,23 +104,26 @@ fun ChargingPowerGauge(
                 }
             }
 
-            // Power value in center
-            Text(
-                text = "$powerKw",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = gaugeColor
-            )
+            // Power value and kW unit in center
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "$powerKw",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = gaugeColor
+                )
+                Text(
+                    text = "kW",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Normal,
+                    color = gaugeColor,
+                    modifier = Modifier.padding(bottom = 1.dp)
+                )
+            }
         }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // kW unit label
-        Text(
-            text = "kW",
-            style = MaterialTheme.typography.labelSmall,
-            color = gaugeColor
-        )
     }
 }
 
