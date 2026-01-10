@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Charges**: Swipeable charts showing Energy, Cost, and Number of Charges
   - Swipe left/right on the chart to switch between metrics
   - Page indicator dots show current chart position
+- **Drives**: Swipeable charts showing Number of Drives, Time Spent, and Distance
+  - Swipe left/right on the chart to switch between metrics
+  - Distance respects metric/imperial unit setting
+  - Page indicator dots show current chart position
 - **Charges**: AC/DC filter to show only AC or DC charging sessions (fixes #22)
   - Tap AC or DC to filter, tap again to reset to show all
   - Filter chips match the AC (green) and DC (orange) badge colors

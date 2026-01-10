@@ -1,5 +1,6 @@
 package com.matedroid.ui.screens.drives
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryChargingFull
@@ -53,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -209,10 +214,15 @@ private fun DrivesContent(
             SummaryCard(summary = summary, palette = palette)
         }
 
-        // Drives chart (daily/weekly/monthly based on date range)
+        // Drives charts (daily/weekly/monthly based on date range) - swipeable
         if (chartData.isNotEmpty()) {
             item {
-                DrivesChart(chartData = chartData, granularity = chartGranularity, palette = palette)
+                DrivesChartsPager(
+                    chartData = chartData,
+                    granularity = chartGranularity,
+                    units = units,
+                    palette = palette
+                )
             }
         }
 
@@ -600,64 +610,172 @@ private fun formatDuration(minutes: Int): String {
     return if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
 }
 
+/**
+ * Chart type enum for the swipeable pager
+ */
+private enum class DrivesChartType {
+    COUNT, TIME, DISTANCE
+}
+
+/**
+ * Swipeable pager containing Count, Time, and Distance charts with page indicator dots
+ */
 @Composable
-private fun DrivesChart(
+private fun DrivesChartsPager(
     chartData: List<DriveChartData>,
     granularity: DriveChartGranularity,
+    units: Units?,
     palette: CarColorPalette
 ) {
-    val title = when (granularity) {
-        DriveChartGranularity.DAILY -> "Drives per Day"
-        DriveChartGranularity.WEEKLY -> "Drives per Week"
-        DriveChartGranularity.MONTHLY -> "Drives per Month"
-    }
+    val pagerState = rememberPagerState(pageCount = { DrivesChartType.entries.size })
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = palette.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+    Column {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = palette.surface
+            )
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = palette.accent
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = palette.onSurface
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth()
+                ) { page ->
+                    val chartType = DrivesChartType.entries[page]
+                    DrivesChartPage(
+                        chartData = chartData,
+                        granularity = granularity,
+                        chartType = chartType,
+                        units = units,
+                        palette = palette
+                    )
+                }
+            }
+        }
+
+        // Page indicator dots
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(DrivesChartType.entries.size) { index ->
+                val isSelected = pagerState.currentPage == index
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) palette.accent
+                            else palette.onSurfaceVariant.copy(alpha = 0.3f)
+                        )
                 )
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(12.dp))
+/**
+ * Individual chart page showing Count, Time, or Distance data
+ */
+@Composable
+private fun DrivesChartPage(
+    chartData: List<DriveChartData>,
+    granularity: DriveChartGranularity,
+    chartType: DrivesChartType,
+    units: Units?,
+    palette: CarColorPalette
+) {
+    val isImperial = units?.isImperial == true
+    val distanceUnit = if (isImperial) "mi" else "km"
 
-            val barData = chartData.map { data ->
+    val (title, icon) = when (chartType) {
+        DrivesChartType.COUNT -> when (granularity) {
+            DriveChartGranularity.DAILY -> "Drives per Day"
+            DriveChartGranularity.WEEKLY -> "Drives per Week"
+            DriveChartGranularity.MONTHLY -> "Drives per Month"
+        } to Icons.Default.DirectionsCar
+        DrivesChartType.TIME -> when (granularity) {
+            DriveChartGranularity.DAILY -> "Time per Day"
+            DriveChartGranularity.WEEKLY -> "Time per Week"
+            DriveChartGranularity.MONTHLY -> "Time per Month"
+        } to Icons.Default.Timer
+        DrivesChartType.DISTANCE -> when (granularity) {
+            DriveChartGranularity.DAILY -> "Distance per Day"
+            DriveChartGranularity.WEEKLY -> "Distance per Week"
+            DriveChartGranularity.MONTHLY -> "Distance per Month"
+        } to CustomIcons.SteeringWheel
+    }
+
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = palette.accent
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = palette.onSurface
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        val barData = when (chartType) {
+            DrivesChartType.COUNT -> chartData.map { data ->
                 BarChartData(
                     label = data.label,
                     value = data.count.toDouble(),
-                    displayValue = "${data.count} drives"
+                    displayValue = data.count.toString()
                 )
             }
-
-            // Show max ~6 labels to avoid crowding
-            val labelInterval = ((barData.size + 5) / 6).coerceAtLeast(1)
-
-            InteractiveBarChart(
-                data = barData,
-                modifier = Modifier.fillMaxWidth(),
-                barColor = palette.accent,
-                labelColor = palette.onSurfaceVariant,
-                showEveryNthLabel = labelInterval,
-                valueFormatter = { "%.0f drives".format(it) }
-            )
+            DrivesChartType.TIME -> chartData.map { data ->
+                BarChartData(
+                    label = data.label,
+                    value = data.totalDurationMin.toDouble(),
+                    displayValue = formatDurationChart(data.totalDurationMin)
+                )
+            }
+            DrivesChartType.DISTANCE -> chartData.map { data ->
+                val distance = if (isImperial) data.totalDistance * 0.621371 else data.totalDistance
+                BarChartData(
+                    label = data.label,
+                    value = distance,
+                    displayValue = "%.1f $distanceUnit".format(distance)
+                )
+            }
         }
+
+        val valueFormatter: (Double) -> String = when (chartType) {
+            DrivesChartType.COUNT -> { v -> v.toInt().toString() }
+            DrivesChartType.TIME -> { v -> formatDurationChart(v.toInt()) }
+            DrivesChartType.DISTANCE -> { v -> "%.1f $distanceUnit".format(v) }
+        }
+
+        // Show max ~6 labels to avoid crowding
+        val labelInterval = ((barData.size + 5) / 6).coerceAtLeast(1)
+
+        InteractiveBarChart(
+            data = barData,
+            modifier = Modifier.fillMaxWidth(),
+            barColor = palette.accent,
+            labelColor = palette.onSurfaceVariant,
+            showEveryNthLabel = labelInterval,
+            valueFormatter = valueFormatter
+        )
     }
+}
+
+private fun formatDurationChart(minutes: Int): String {
+    val hours = minutes / 60
+    val mins = minutes % 60
+    return if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
 }

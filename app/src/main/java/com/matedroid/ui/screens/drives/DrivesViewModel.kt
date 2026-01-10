@@ -50,6 +50,7 @@ data class DriveChartData(
     val label: String,
     val count: Int,
     val totalDistance: Double,
+    val totalDurationMin: Int,
     val sortKey: Long
 )
 
@@ -264,6 +265,7 @@ class DrivesViewModel @Inject constructor(
                     label = key.first,
                     count = drivesInPeriod.size,
                     totalDistance = drivesInPeriod.sumOf { it.third.distance ?: 0.0 },
+                    totalDurationMin = drivesInPeriod.sumOf { it.third.durationMin ?: 0 },
                     sortKey = key.second
                 )
             }
