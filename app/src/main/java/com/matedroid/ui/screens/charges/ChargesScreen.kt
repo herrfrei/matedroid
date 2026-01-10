@@ -606,9 +606,9 @@ private fun ChargesChart(
     palette: CarColorPalette
 ) {
     val title = when (granularity) {
-        ChartGranularity.DAILY -> "Charges per Day"
-        ChartGranularity.WEEKLY -> "Charges per Week"
-        ChartGranularity.MONTHLY -> "Charges per Month"
+        ChartGranularity.DAILY -> "Energy per Day"
+        ChartGranularity.WEEKLY -> "Energy per Week"
+        ChartGranularity.MONTHLY -> "Energy per Month"
     }
 
     Card(
@@ -641,8 +641,8 @@ private fun ChargesChart(
             val barData = chartData.map { data ->
                 BarChartData(
                     label = data.label,
-                    value = data.count.toDouble(),
-                    displayValue = "${data.count} charges"
+                    value = data.totalEnergy,
+                    displayValue = "%.1f kWh".format(data.totalEnergy)
                 )
             }
 
@@ -655,7 +655,7 @@ private fun ChargesChart(
                 barColor = palette.accent,
                 labelColor = palette.onSurfaceVariant,
                 showEveryNthLabel = labelInterval,
-                valueFormatter = { "%.0f charges".format(it) }
+                valueFormatter = { "%.1f kWh".format(it) }
             )
         }
     }
