@@ -45,6 +45,7 @@ data class ChargeChartData(
     val label: String,
     val count: Int,
     val totalEnergy: Double,
+    val totalCost: Double,
     val sortKey: Long // For sorting (epoch day, week number, or year-month)
 )
 
@@ -299,6 +300,7 @@ class ChargesViewModel @Inject constructor(
                     label = key.first,
                     count = chargesInPeriod.size,
                     totalEnergy = chargesInPeriod.sumOf { it.third.chargeEnergyAdded ?: 0.0 },
+                    totalCost = chargesInPeriod.sumOf { it.third.cost ?: 0.0 },
                     sortKey = key.second
                 )
             }

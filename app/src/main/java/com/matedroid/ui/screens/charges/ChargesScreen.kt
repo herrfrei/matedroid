@@ -20,6 +20,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -206,10 +209,15 @@ private fun ChargesContent(
             SummaryCard(summary = summary, currencySymbol = currencySymbol, palette = palette)
         }
 
-        // Charges chart (daily/weekly/monthly based on date range)
+        // Charges charts (daily/weekly/monthly based on date range) - swipeable
         if (chartData.isNotEmpty()) {
             item {
-                ChargesChart(chartData = chartData, granularity = chartGranularity, palette = palette)
+                ChargesChartsPager(
+                    chartData = chartData,
+                    granularity = chartGranularity,
+                    currencySymbol = currencySymbol,
+                    palette = palette
+                )
             }
         }
 
@@ -647,64 +655,162 @@ private fun formatDate(dateStr: String): String {
     }
 }
 
+/**
+ * Chart type enum for the swipeable pager
+ */
+private enum class ChargesChartType {
+    ENERGY, COST, COUNT
+}
+
+/**
+ * Swipeable pager containing Energy, Cost, and Count charts with page indicator dots
+ */
 @Composable
-private fun ChargesChart(
+private fun ChargesChartsPager(
     chartData: List<ChargeChartData>,
     granularity: ChartGranularity,
+    currencySymbol: String,
     palette: CarColorPalette
 ) {
-    val title = when (granularity) {
-        ChartGranularity.DAILY -> "Energy per Day"
-        ChartGranularity.WEEKLY -> "Energy per Week"
-        ChartGranularity.MONTHLY -> "Energy per Month"
-    }
+    val pagerState = rememberPagerState(pageCount = { ChargesChartType.entries.size })
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = palette.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+    Column {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = palette.surface
+            )
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = palette.accent
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = palette.onSurface
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxWidth()
+                ) { page ->
+                    val chartType = ChargesChartType.entries[page]
+                    ChargesChartPage(
+                        chartData = chartData,
+                        granularity = granularity,
+                        chartType = chartType,
+                        currencySymbol = currencySymbol,
+                        palette = palette
+                    )
+                }
+            }
+        }
+
+        // Page indicator dots
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            repeat(ChargesChartType.entries.size) { index ->
+                val isSelected = pagerState.currentPage == index
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) palette.accent
+                            else palette.onSurfaceVariant.copy(alpha = 0.3f)
+                        )
                 )
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(12.dp))
+/**
+ * Individual chart page showing Energy, Cost, or Count data
+ */
+@Composable
+private fun ChargesChartPage(
+    chartData: List<ChargeChartData>,
+    granularity: ChartGranularity,
+    chartType: ChargesChartType,
+    currencySymbol: String,
+    palette: CarColorPalette
+) {
+    val (title, icon) = when (chartType) {
+        ChargesChartType.ENERGY -> when (granularity) {
+            ChartGranularity.DAILY -> "Energy per Day"
+            ChartGranularity.WEEKLY -> "Energy per Week"
+            ChartGranularity.MONTHLY -> "Energy per Month"
+        } to Icons.Default.BatteryChargingFull
+        ChargesChartType.COST -> when (granularity) {
+            ChartGranularity.DAILY -> "Cost per Day"
+            ChartGranularity.WEEKLY -> "Cost per Week"
+            ChartGranularity.MONTHLY -> "Cost per Month"
+        } to Icons.Default.Paid
+        ChargesChartType.COUNT -> when (granularity) {
+            ChartGranularity.DAILY -> "Charges per Day"
+            ChartGranularity.WEEKLY -> "Charges per Week"
+            ChartGranularity.MONTHLY -> "Charges per Month"
+        } to Icons.Default.ElectricBolt
+    }
 
-            val barData = chartData.map { data ->
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = palette.accent
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = palette.onSurface
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        val barData = when (chartType) {
+            ChargesChartType.ENERGY -> chartData.map { data ->
                 BarChartData(
                     label = data.label,
                     value = data.totalEnergy,
                     displayValue = "%.1f kWh".format(data.totalEnergy)
                 )
             }
-
-            // Show max ~6 labels to avoid crowding
-            val labelInterval = ((barData.size + 5) / 6).coerceAtLeast(1)
-
-            InteractiveBarChart(
-                data = barData,
-                modifier = Modifier.fillMaxWidth(),
-                barColor = palette.accent,
-                labelColor = palette.onSurfaceVariant,
-                showEveryNthLabel = labelInterval,
-                valueFormatter = { "%.1f kWh".format(it) }
-            )
+            ChargesChartType.COST -> chartData.map { data ->
+                BarChartData(
+                    label = data.label,
+                    value = data.totalCost,
+                    displayValue = "$currencySymbol%.2f".format(data.totalCost)
+                )
+            }
+            ChargesChartType.COUNT -> chartData.map { data ->
+                BarChartData(
+                    label = data.label,
+                    value = data.count.toDouble(),
+                    displayValue = data.count.toString()
+                )
+            }
         }
+
+        val valueFormatter: (Double) -> String = when (chartType) {
+            ChargesChartType.ENERGY -> { v -> "%.1f kWh".format(v) }
+            ChargesChartType.COST -> { v -> "$currencySymbol%.2f".format(v) }
+            ChargesChartType.COUNT -> { v -> v.toInt().toString() }
+        }
+
+        // Show max ~6 labels to avoid crowding
+        val labelInterval = ((barData.size + 5) / 6).coerceAtLeast(1)
+
+        InteractiveBarChart(
+            data = barData,
+            modifier = Modifier.fillMaxWidth(),
+            barColor = palette.accent,
+            labelColor = palette.onSurfaceVariant,
+            showEveryNthLabel = labelInterval,
+            valueFormatter = valueFormatter
+        )
     }
 }
