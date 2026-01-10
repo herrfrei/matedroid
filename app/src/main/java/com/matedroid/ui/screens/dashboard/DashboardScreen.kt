@@ -1485,3 +1485,89 @@ private fun DashboardPreview() {
         )
     }
 }
+
+@Preview(showBackground = true, name = "AC Charging - 11kW")
+@Composable
+private fun BatteryCardAcChargingPreview() {
+    MateDroidTheme {
+        BatteryCard(
+            status = CarStatus(
+                displayName = "My Tesla",
+                state = "online",
+                batteryDetails = BatteryDetails(
+                    batteryLevel = 45,
+                    ratedBatteryRange = 180.0
+                ),
+                chargingDetails = ChargingDetails(
+                    pluggedIn = true,
+                    chargingState = "Charging",
+                    chargerPower = 11,
+                    chargerPhases = 3,  // AC = phases 1-3
+                    chargerActualCurrent = 16,
+                    chargeCurrentRequestMax = 32,
+                    chargeEnergyAdded = 8.5,
+                    timeToFullCharge = 2.5,
+                    chargeLimitSoc = 80
+                )
+            ),
+            units = null,
+            carTrimBadging = "74D"
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "DC Charging - 150kW")
+@Composable
+private fun BatteryCardDcChargingPreview() {
+    MateDroidTheme {
+        BatteryCard(
+            status = CarStatus(
+                displayName = "My Tesla",
+                state = "online",
+                batteryDetails = BatteryDetails(
+                    batteryLevel = 25,
+                    ratedBatteryRange = 100.0
+                ),
+                chargingDetails = ChargingDetails(
+                    pluggedIn = true,
+                    chargingState = "Charging",
+                    chargerPower = 150,
+                    chargerPhases = 0,  // DC = phases 0 or null
+                    chargeEnergyAdded = 22.3,
+                    timeToFullCharge = 0.5,
+                    chargeLimitSoc = 80
+                )
+            ),
+            units = null,
+            carTrimBadging = "74D"  // NMC battery, max 250kW
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "DC Charging - LFP Battery")
+@Composable
+private fun BatteryCardDcChargingLfpPreview() {
+    MateDroidTheme {
+        BatteryCard(
+            status = CarStatus(
+                displayName = "My Tesla",
+                state = "online",
+                batteryDetails = BatteryDetails(
+                    batteryLevel = 20,
+                    ratedBatteryRange = 80.0
+                ),
+                chargingDetails = ChargingDetails(
+                    pluggedIn = true,
+                    chargingState = "Charging",
+                    chargerPower = 120,
+                    chargerPhases = 0,  // DC
+                    chargeEnergyAdded = 18.0,
+                    timeToFullCharge = 0.4,
+                    chargeLimitSoc = 100  // LFP can charge to 100%
+                )
+            ),
+            units = null,
+            carTrimBadging = "50"  // LFP battery, max 170kW
+        )
+    }
+}
