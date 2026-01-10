@@ -1636,7 +1636,7 @@ private fun BatteryCardAcChargingPreview() {
                     chargerPhases = 3,  // AC = phases 1-3
                     chargerVoltage = 230,
                     chargerActualCurrent = 16,
-                    chargeCurrentRequestMax = 32,
+                    chargeCurrentRequestMax = 16,  // 16/16 = 100% gauge fill
                     chargeEnergyAdded = 8.5,
                     timeToFullCharge = 2.5,
                     chargeLimitSoc = 80
