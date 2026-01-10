@@ -1648,7 +1648,7 @@ private fun BatteryCardAcChargingPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "DC Charging - 150kW")
+@Preview(showBackground = true, name = "DC Charging - 120kW")
 @Composable
 private fun BatteryCardDcChargingPreview() {
     MateDroidTheme {
@@ -1657,16 +1657,16 @@ private fun BatteryCardDcChargingPreview() {
                 displayName = "My Tesla",
                 state = "online",
                 batteryDetails = BatteryDetails(
-                    batteryLevel = 25,
-                    ratedBatteryRange = 100.0
+                    batteryLevel = 60,
+                    ratedBatteryRange = 240.0
                 ),
                 chargingDetails = ChargingDetails(
                     pluggedIn = true,
                     chargingState = "Charging",
-                    chargerPower = 150,
+                    chargerPower = 120,  // 120/250 = 48% gauge fill
                     chargerPhases = 0,  // DC = phases 0 or null
-                    chargeEnergyAdded = 22.3,
-                    timeToFullCharge = 0.5,
+                    chargeEnergyAdded = 35.5,
+                    timeToFullCharge = 0.3,
                     chargeLimitSoc = 80
                 )
             ),
