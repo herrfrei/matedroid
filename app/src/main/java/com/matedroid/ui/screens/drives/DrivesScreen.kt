@@ -699,9 +699,9 @@ private fun DrivesChartPage(
             DriveChartGranularity.MONTHLY -> "Drives per Month"
         } to Icons.Default.DirectionsCar
         DrivesChartType.TIME -> when (granularity) {
-            DriveChartGranularity.DAILY -> "Time per Day"
-            DriveChartGranularity.WEEKLY -> "Time per Week"
-            DriveChartGranularity.MONTHLY -> "Time per Month"
+            DriveChartGranularity.DAILY -> "Driving time per Day"
+            DriveChartGranularity.WEEKLY -> "Driving time per Week"
+            DriveChartGranularity.MONTHLY -> "Driving time per Month"
         } to Icons.Default.Timer
         DrivesChartType.DISTANCE -> when (granularity) {
             DriveChartGranularity.DAILY -> "Distance per Day"
