@@ -86,6 +86,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.osmdroid.config.Configuration
@@ -882,13 +883,24 @@ private fun ChargingPowerGaugeCompact(
                 }
             }
 
-            // Power value in center
-            Text(
-                text = "$powerKw",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-                color = gaugeColor
-            )
+            // Power value and kW label stacked in center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "$powerKw",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = gaugeColor,
+                    lineHeight = 10.sp
+                )
+                Text(
+                    text = "kW",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp),
+                    color = gaugeColor,
+                    lineHeight = 8.sp
+                )
+            }
         }
 
         // AC/DC badge
