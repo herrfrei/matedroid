@@ -5,7 +5,6 @@ import com.matedroid.data.api.NominatimApi
 import com.matedroid.data.api.TeslamateApi
 import com.matedroid.data.local.SettingsDataStore
 import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +31,6 @@ object NetworkModule {
     @Singleton
     fun provideMoshi(): Moshi {
         return Moshi.Builder()
-            .addLast(KotlinJsonAdapterFactory())
             .build()
     }
 
