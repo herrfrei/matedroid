@@ -78,6 +78,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -104,7 +106,6 @@ import com.matedroid.data.api.models.ChargingDetails
 import com.matedroid.data.api.models.TpmsDetails
 import com.matedroid.data.api.models.ClimateDetails
 import com.matedroid.domain.model.BatteryTypeHelper
-import com.matedroid.ui.components.ChargingPowerGauge
 import com.matedroid.ui.components.calculateAcGaugeProgress
 import com.matedroid.ui.components.calculateDcGaugeProgress
 import com.matedroid.ui.theme.CarColorPalette
@@ -681,15 +682,14 @@ private fun BatteryCard(
                         color = batteryColor
                     )
                     if (status.isCharging) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Filled.ElectricBolt,
-                            contentDescription = "Charging",
-                            modifier = Modifier.size(20.dp),
-                            tint = StatusSuccess
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // Mini charging gauge with AC/DC badge
+                        ChargingPowerGaugeCompact(
+                            status = status,
+                            carTrimBadging = carTrimBadging
                         )
                     }
-                    if (batteryLevel > 90) {
+                    if (batteryLevel > 90 && !status.isCharging) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
                             imageVector = Icons.Filled.Warning,
@@ -737,18 +737,14 @@ private fun BatteryCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Charging info row - shows gauge when charging, empty otherwise
+            // Charging info row - shows details when charging
             if (status.isCharging) {
-                ChargingInfoRow(
+                ChargingDetailsRow(
                     status = status,
-                    carTrimBadging = carTrimBadging,
                     palette = palette
                 )
-            } else {
-                // Reserve minimal space when not charging
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -821,14 +817,17 @@ private fun ChargingProgressBar(
     }
 }
 
+/**
+ * Compact inline gauge with AC/DC badge for the battery info row.
+ */
 @Composable
-private fun ChargingInfoRow(
+private fun ChargingPowerGaugeCompact(
     status: CarStatus,
-    carTrimBadging: String?,
-    palette: CarColorPalette
+    carTrimBadging: String?
 ) {
     val isDcCharging = status.isDcCharging
     val powerKw = status.chargerPower ?: 0
+    val gaugeColor = if (isDcCharging) StatusWarning else StatusSuccess
 
     // Calculate gauge progress based on charging type
     val gaugeProgress = if (isDcCharging) {
@@ -842,19 +841,137 @@ private fun ChargingInfoRow(
     }
 
     Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        // Mini circular gauge with power value
+        Box(
+            modifier = Modifier.size(36.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.size(36.dp)) {
+                val strokeWidth = 3.dp.toPx()
+                val arcSize = size.minDimension - strokeWidth
+                val topLeft = androidx.compose.ui.geometry.Offset(strokeWidth / 2, strokeWidth / 2)
+                val startAngle = 135f
+                val sweepAngle = 270f
+
+                // Track
+                drawArc(
+                    color = gaugeColor.copy(alpha = 0.2f),
+                    startAngle = startAngle,
+                    sweepAngle = sweepAngle,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+
+                // Progress
+                val progressSweep = sweepAngle * gaugeProgress.coerceIn(0f, 1f)
+                if (progressSweep > 0) {
+                    drawArc(
+                        color = gaugeColor,
+                        startAngle = startAngle,
+                        sweepAngle = progressSweep,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                    )
+                }
+            }
+
+            // Power value in center
+            Text(
+                text = "$powerKw",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = gaugeColor
+            )
+        }
+
+        // AC/DC badge
+        Box(
+            modifier = Modifier
+                .background(
+                    color = gaugeColor,
+                    shape = RoundedCornerShape(4.dp)
+                )
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (isDcCharging) "DC" else "AC",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = androidx.compose.ui.graphics.Color.White
+            )
+        }
+    }
+}
+
+/**
+ * Row showing charging details below SoC bar.
+ * AC: Voltage, Current, Phases + Energy added + Time remaining
+ * DC: Energy added + Time remaining only
+ */
+@Composable
+private fun ChargingDetailsRow(
+    status: CarStatus,
+    palette: CarColorPalette
+) {
+    val isDcCharging = status.isDcCharging
+
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp),
+            .height(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Left: Gauge with AC/DC badge
-        ChargingPowerGauge(
-            powerKw = powerKw,
-            isDcCharging = isDcCharging,
-            gaugeProgress = gaugeProgress,
-            gaugeSize = 41.dp
-        )
+        // Left: AC details (Voltage, Current, Phases) or empty for DC
+        if (!isDcCharging) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Voltage
+                Text(
+                    text = "${status.chargingDetails?.chargerVoltage ?: "--"} V",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant
+                )
+                // Current
+                Text(
+                    text = "${status.chargerActualCurrent ?: "--"} A",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant
+                )
+                // Phases badge
+                val phases = status.chargerPhases
+                if (phases != null && phases > 0) {
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = palette.onSurfaceVariant.copy(alpha = 0.2f),
+                                shape = RoundedCornerShape(3.dp)
+                            )
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "${phases}φ",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = palette.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        } else {
+            // Empty spacer for DC
+            Spacer(modifier = Modifier.weight(1f))
+        }
 
         // Right: Energy added and time remaining
         Row(
@@ -864,7 +981,7 @@ private fun ChargingInfoRow(
             // Energy added
             Text(
                 text = "+${status.chargeEnergyAdded?.let { "%.1f".format(it) } ?: "0"} kWh",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = palette.onSurfaceVariant
             )
 
@@ -873,13 +990,13 @@ private fun ChargingInfoRow(
                 Icon(
                     imageVector = Icons.Filled.Timer,
                     contentDescription = null,
-                    modifier = Modifier.size(14.dp),
+                    modifier = Modifier.size(12.dp),
                     tint = palette.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = status.timeToFullCharge?.let { formatHoursMinutes(it) } ?: "--",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = palette.onSurfaceVariant
                 )
             }
@@ -1475,13 +1592,15 @@ private fun DashboardPreview() {
                     chargingState = "Charging",
                     chargerPower = 11,
                     chargerPhases = 3,  // AC charging
+                    chargerVoltage = 230,
                     chargerActualCurrent = 16,
                     chargeCurrentRequestMax = 32,
                     chargeEnergyAdded = 15.3,
                     timeToFullCharge = 1.5,
                     chargeLimitSoc = 80
                 )
-            )
+            ),
+            carTrimBadging = "74D"
         )
     }
 }
@@ -1503,6 +1622,7 @@ private fun BatteryCardAcChargingPreview() {
                     chargingState = "Charging",
                     chargerPower = 11,
                     chargerPhases = 3,  // AC = phases 1-3
+                    chargerVoltage = 230,
                     chargerActualCurrent = 16,
                     chargeCurrentRequestMax = 32,
                     chargeEnergyAdded = 8.5,
