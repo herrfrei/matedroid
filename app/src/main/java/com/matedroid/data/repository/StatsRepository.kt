@@ -12,6 +12,7 @@ import com.matedroid.domain.model.DeepStats
 import com.matedroid.domain.model.DriveElevationRecord
 import com.matedroid.domain.model.DriveTempRecord
 import com.matedroid.domain.model.QuickStats
+import com.matedroid.domain.model.MaxDistanceBetweenChargesRecord
 import com.matedroid.domain.model.YearFilter
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -81,7 +82,17 @@ class StatsRepository @Inject constructor(
             firstDriveDate = driveSummaryDao.firstDriveDate(carId),
             firstChargeDate = chargeSummaryDao.firstChargeDate(carId),
             busiestDay = driveSummaryDao.busiestDay(carId),
-            mostDistanceDay = driveSummaryDao.mostDistanceDay(carId)
+            mostDistanceDay = driveSummaryDao.mostDistanceDay(carId),
+
+            maxDistanceBetweenCharges = chargeSummaryDao.maxDistanceBetweenCharges(carId)?.let {
+                MaxDistanceBetweenChargesRecord(
+                    distance = it.distance,
+                    fromChargeId = it.fromChargeId,
+                    toChargeId = it.toChargeId,
+                    fromDate = it.fromDate,
+                    toDate = it.toDate
+                )
+            }
         )
     }
 
@@ -115,7 +126,17 @@ class StatsRepository @Inject constructor(
             firstDriveDate = driveSummaryDao.firstDriveDate(carId), // Always show first ever
             firstChargeDate = chargeSummaryDao.firstChargeDate(carId), // Always show first ever
             busiestDay = driveSummaryDao.busiestDayInRange(carId, startDate, endDate),
-            mostDistanceDay = driveSummaryDao.mostDistanceDayInRange(carId, startDate, endDate)
+            mostDistanceDay = driveSummaryDao.mostDistanceDayInRange(carId, startDate, endDate),
+
+            maxDistanceBetweenCharges = chargeSummaryDao.maxDistanceBetweenChargesInRange(carId, startDate, endDate)?.let {
+                MaxDistanceBetweenChargesRecord(
+                    distance = it.distance,
+                    fromChargeId = it.fromChargeId,
+                    toChargeId = it.toChargeId,
+                    fromDate = it.fromDate,
+                    toDate = it.toDate
+                )
+            }
         )
     }
 
