@@ -33,7 +33,7 @@ A native Android application for viewing Tesla vehicle data from your self-hoste
 
 ## Requirements
 
-- Android 8.0 (API 26) or higher
+- Android 10 (API 29) or higher
 - A running [Teslamate](https://github.com/adriankumpf/teslamate) instance
 - [TeslamateApi](https://github.com/tobiasehlert/teslamateapi) deployed and accessible
 

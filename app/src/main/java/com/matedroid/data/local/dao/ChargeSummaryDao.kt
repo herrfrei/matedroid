@@ -158,32 +158,27 @@ interface ChargeSummaryDao {
     """)
     suspend fun getYears(carId: Int): List<Int>
 
-    // === Window Function Queries (requires API 29+) ===
+    // === Range Records Queries ===
 
     /**
      * Find the maximum distance traveled between two consecutive charges.
-     * Uses LAG window function to get the previous charge's odometer.
+     * Uses a self-join to find each charge's immediate predecessor.
      */
     @Query("""
-        WITH consecutive_charges AS (
-            SELECT
-                chargeId,
-                startDate,
-                odometer,
-                LAG(chargeId) OVER (ORDER BY startDate) as prevChargeId,
-                LAG(startDate) OVER (ORDER BY startDate) as prevDate,
-                LAG(odometer) OVER (ORDER BY startDate) as prevOdometer
-            FROM charges_summary
-            WHERE carId = :carId
-        )
         SELECT
-            prevChargeId as fromChargeId,
-            chargeId as toChargeId,
-            odometer - prevOdometer as distance,
-            prevDate as fromDate,
-            startDate as toDate
-        FROM consecutive_charges
-        WHERE prevOdometer IS NOT NULL
+            prev.chargeId as fromChargeId,
+            curr.chargeId as toChargeId,
+            curr.odometer - prev.odometer as distance,
+            prev.startDate as fromDate,
+            curr.startDate as toDate
+        FROM charges_summary curr
+        INNER JOIN charges_summary prev ON prev.carId = curr.carId
+            AND prev.startDate = (
+                SELECT MAX(p.startDate)
+                FROM charges_summary p
+                WHERE p.carId = curr.carId AND p.startDate < curr.startDate
+            )
+        WHERE curr.carId = :carId
         ORDER BY distance DESC
         LIMIT 1
     """)
@@ -194,26 +189,22 @@ interface ChargeSummaryDao {
      * Both charges must be within the range.
      */
     @Query("""
-        WITH consecutive_charges AS (
-            SELECT
-                chargeId,
-                startDate,
-                odometer,
-                LAG(chargeId) OVER (ORDER BY startDate) as prevChargeId,
-                LAG(startDate) OVER (ORDER BY startDate) as prevDate,
-                LAG(odometer) OVER (ORDER BY startDate) as prevOdometer
-            FROM charges_summary
-            WHERE carId = :carId
-        )
         SELECT
-            prevChargeId as fromChargeId,
-            chargeId as toChargeId,
-            odometer - prevOdometer as distance,
-            prevDate as fromDate,
-            startDate as toDate
-        FROM consecutive_charges
-        WHERE prevOdometer IS NOT NULL
-        AND prevDate >= :startDate AND startDate < :endDate
+            prev.chargeId as fromChargeId,
+            curr.chargeId as toChargeId,
+            curr.odometer - prev.odometer as distance,
+            prev.startDate as fromDate,
+            curr.startDate as toDate
+        FROM charges_summary curr
+        INNER JOIN charges_summary prev ON prev.carId = curr.carId
+            AND prev.startDate = (
+                SELECT MAX(p.startDate)
+                FROM charges_summary p
+                WHERE p.carId = curr.carId AND p.startDate < curr.startDate
+            )
+        WHERE curr.carId = :carId
+            AND prev.startDate >= :startDate
+            AND curr.startDate < :endDate
         ORDER BY distance DESC
         LIMIT 1
     """)
