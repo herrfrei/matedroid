@@ -162,13 +162,19 @@ interface ChargeSummaryDao {
 
     /**
      * Find the maximum distance traveled between two consecutive charges.
-     * Uses a self-join to find each charge's immediate predecessor.
+     * Sums actual logged drives between charges (not odometer diff, which can include unlogged drives).
      */
     @Query("""
         SELECT
             prev.chargeId as fromChargeId,
             curr.chargeId as toChargeId,
-            curr.odometer - prev.odometer as distance,
+            COALESCE((
+                SELECT SUM(d.distance)
+                FROM drives_summary d
+                WHERE d.carId = curr.carId
+                  AND d.startDate > prev.startDate
+                  AND d.startDate < curr.startDate
+            ), 0) as distance,
             prev.startDate as fromDate,
             curr.startDate as toDate
         FROM charges_summary curr
@@ -187,12 +193,19 @@ interface ChargeSummaryDao {
     /**
      * Find the maximum distance traveled between two consecutive charges within a date range.
      * Both charges must be within the range.
+     * Sums actual logged drives between charges (not odometer diff, which can include unlogged drives).
      */
     @Query("""
         SELECT
             prev.chargeId as fromChargeId,
             curr.chargeId as toChargeId,
-            curr.odometer - prev.odometer as distance,
+            COALESCE((
+                SELECT SUM(d.distance)
+                FROM drives_summary d
+                WHERE d.carId = curr.carId
+                  AND d.startDate > prev.startDate
+                  AND d.startDate < curr.startDate
+            ), 0) as distance,
             prev.startDate as fromDate,
             curr.startDate as toDate
         FROM charges_summary curr
