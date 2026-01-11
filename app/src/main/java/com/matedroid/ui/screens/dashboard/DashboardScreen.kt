@@ -68,6 +68,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -77,6 +83,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
@@ -434,8 +442,11 @@ private fun createGlowBitmap(source: Bitmap, glowColor: Color, glowRadius: Float
 
     val canvas = AndroidCanvas(glowBitmap)
 
-    // Create paint with blur effect
-    val paint = Paint().apply {
+    // Extract alpha from source first
+    val alphaBitmap = source.extractAlpha()
+
+    // Create paint with blur effect - use OUTER blur for glow effect
+    val glowPaint = Paint().apply {
         isAntiAlias = true
         color = android.graphics.Color.argb(
             (glowColor.alpha * 255).toInt(),
@@ -443,12 +454,14 @@ private fun createGlowBitmap(source: Bitmap, glowColor: Color, glowRadius: Float
             (glowColor.green * 255).toInt(),
             (glowColor.blue * 255).toInt()
         )
-        maskFilter = BlurMaskFilter(glowRadius, BlurMaskFilter.Blur.NORMAL)
+        maskFilter = BlurMaskFilter(glowRadius, BlurMaskFilter.Blur.OUTER)
     }
 
-    // Extract alpha from source and draw it with the glow paint
-    val alphaBitmap = source.extractAlpha()
-    canvas.drawBitmap(alphaBitmap, padding.toFloat(), padding.toFloat(), paint)
+    // Draw the blurred alpha multiple times for a stronger glow effect
+    repeat(3) {
+        canvas.drawBitmap(alphaBitmap, padding.toFloat(), padding.toFloat(), glowPaint)
+    }
+
     alphaBitmap.recycle()
 
     return glowBitmap
@@ -461,7 +474,9 @@ private fun CarImage(
     carExterior: CarExterior?,
     modifier: Modifier = Modifier,
     isCharging: Boolean = false,
-    glowColor: Color = Color.Transparent,
+    isDcCharging: Boolean = false,
+    accentColor: Color = Color.Transparent,
+    carSurfaceColor: Color = Color.Transparent,
     onNavigateToStats: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -501,16 +516,48 @@ private fun CarImage(
         }
     }
 
-    // Create glow bitmap when charging
-    val glowBitmap = remember(bitmap, isCharging, glowColor) {
-        if (isCharging && bitmap != null && glowColor != Color.Transparent) {
+    // Glow radius in pixels
+    val glowRadius = 70f
+
+    // AC/DC color tint
+    val chargeTypeColor = if (isDcCharging) StatusWarning else StatusSuccess
+
+    // Breathing animation - smooth in/out
+    val infiniteTransition = rememberInfiniteTransition(label = "chargingBreath")
+    val breathProgress by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2000, easing = androidx.compose.animation.core.EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathProgress"
+    )
+
+    // Breathing glow: alpha pulses between 0.3 and 0.9
+    val glowAlpha = 0.3f + (breathProgress * 0.6f)
+    // Color subtly shifts between accent and a blend with AC/DC color
+    val glowColor = androidx.compose.ui.graphics.lerp(accentColor, chargeTypeColor, breathProgress * 0.4f)
+
+    // Create single glow bitmap
+    val glowBitmap = remember(bitmap, isCharging) {
+        if (isCharging && bitmap != null) {
             createGlowBitmap(
                 source = bitmap,
-                glowColor = glowColor.copy(alpha = 0.7f),
-                glowRadius = 70f
+                glowColor = Color.White,
+                glowRadius = glowRadius
             )
         } else {
             null
+        }
+    }
+
+    // Calculate scale compensation for glow (glow bitmap is larger due to padding)
+    val glowScaleCompensation = remember(bitmap, glowBitmap) {
+        if (bitmap != null && glowBitmap != null) {
+            glowBitmap.width.toFloat() / bitmap.width.toFloat()
+        } else {
+            1f
         }
     }
 
@@ -527,18 +574,20 @@ private fun CarImage(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Draw glow behind the car when charging
-            if (glowBitmap != null) {
+            // Draw breathing glow behind the car when charging
+            if (glowBitmap != null && isCharging) {
                 Image(
                     bitmap = glowBitmap.asImageBitmap(),
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            scaleX = scaleFactor
-                            scaleY = scaleFactor
+                            scaleX = scaleFactor * glowScaleCompensation
+                            scaleY = scaleFactor * glowScaleCompensation
+                            alpha = glowAlpha
                         },
-                    contentScale = ContentScale.Fit
+                    contentScale = ContentScale.Fit,
+                    colorFilter = ColorFilter.tint(glowColor, BlendMode.SrcIn)
                 )
             }
             Image(
@@ -718,14 +767,16 @@ private fun BatteryCard(
                 modifier = Modifier.padding(top = 4.dp, bottom = 0.dp)
             )
 
-            // Car image with glow effect when charging
+            // Car image with pulsing glow effect when charging
             CarImage(
                 carModel = carModel,
                 carTrimBadging = carTrimBadging,
                 carExterior = carExterior,
                 modifier = Modifier.fillMaxWidth(),
                 isCharging = status.isCharging,
-                glowColor = palette.accent,
+                isDcCharging = status.isDcCharging,
+                accentColor = palette.accent,
+                carSurfaceColor = palette.surface,
                 onNavigateToStats = onNavigateToStats
             )
 
