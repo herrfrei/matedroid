@@ -157,4 +157,80 @@ interface ChargeSummaryDao {
         ORDER BY year DESC
     """)
     suspend fun getYears(carId: Int): List<Int>
+
+    // === Window Function Queries (requires API 29+) ===
+
+    /**
+     * Find the maximum distance traveled between two consecutive charges.
+     * Uses LAG window function to get the previous charge's odometer.
+     */
+    @Query("""
+        WITH consecutive_charges AS (
+            SELECT
+                chargeId,
+                startDate,
+                odometer,
+                LAG(chargeId) OVER (ORDER BY startDate) as prevChargeId,
+                LAG(startDate) OVER (ORDER BY startDate) as prevDate,
+                LAG(odometer) OVER (ORDER BY startDate) as prevOdometer
+            FROM charges_summary
+            WHERE carId = :carId
+        )
+        SELECT
+            prevChargeId as fromChargeId,
+            chargeId as toChargeId,
+            odometer - prevOdometer as distance,
+            prevDate as fromDate,
+            startDate as toDate
+        FROM consecutive_charges
+        WHERE prevOdometer IS NOT NULL
+        ORDER BY distance DESC
+        LIMIT 1
+    """)
+    suspend fun maxDistanceBetweenCharges(carId: Int): MaxDistanceBetweenChargesResult?
+
+    /**
+     * Find the maximum distance traveled between two consecutive charges within a date range.
+     * Both charges must be within the range.
+     */
+    @Query("""
+        WITH consecutive_charges AS (
+            SELECT
+                chargeId,
+                startDate,
+                odometer,
+                LAG(chargeId) OVER (ORDER BY startDate) as prevChargeId,
+                LAG(startDate) OVER (ORDER BY startDate) as prevDate,
+                LAG(odometer) OVER (ORDER BY startDate) as prevOdometer
+            FROM charges_summary
+            WHERE carId = :carId
+        )
+        SELECT
+            prevChargeId as fromChargeId,
+            chargeId as toChargeId,
+            odometer - prevOdometer as distance,
+            prevDate as fromDate,
+            startDate as toDate
+        FROM consecutive_charges
+        WHERE prevOdometer IS NOT NULL
+        AND prevDate >= :startDate AND startDate < :endDate
+        ORDER BY distance DESC
+        LIMIT 1
+    """)
+    suspend fun maxDistanceBetweenChargesInRange(
+        carId: Int,
+        startDate: String,
+        endDate: String
+    ): MaxDistanceBetweenChargesResult?
 }
+
+/**
+ * Result of max distance between charges query.
+ */
+data class MaxDistanceBetweenChargesResult(
+    val fromChargeId: Int,
+    val toChargeId: Int,
+    val distance: Double,
+    val fromDate: String,
+    val toDate: String
+)
