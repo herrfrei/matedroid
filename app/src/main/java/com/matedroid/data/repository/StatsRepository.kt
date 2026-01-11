@@ -397,6 +397,12 @@ class StatsRepository @Inject constructor(
     }
 
     /**
+     * Get drives between two dates (for range record details).
+     */
+    suspend fun getDrivesBetweenDates(carId: Int, afterDate: String, beforeDate: String) =
+        driveSummaryDao.getDrivesBetweenDates(carId, afterDate, beforeDate)
+
+    /**
      * Get the sync completion percentage for deep stats.
      * Returns 1.0 if sync is marked complete, regardless of actual count
      * (some items may have failed but sync is done).

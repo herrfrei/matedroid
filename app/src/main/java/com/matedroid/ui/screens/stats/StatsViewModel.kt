@@ -15,6 +15,7 @@ import com.matedroid.data.repository.StatsRepository
 import com.matedroid.data.sync.DataSyncWorker
 import com.matedroid.data.sync.SyncLogCollector
 import com.matedroid.data.sync.SyncManager
+import com.matedroid.data.local.entity.DriveSummary
 import com.matedroid.domain.model.CarStats
 import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
@@ -161,6 +162,14 @@ class StatsViewModel @Inject constructor(
             loadStatsInternal()
             _uiState.update { it.copy(isLoading = false) }
         }
+    }
+
+    /**
+     * Fetch drives between two dates for displaying range record details.
+     */
+    suspend fun getDrivesForRangeRecord(fromDate: String, toDate: String): List<DriveSummary> {
+        val id = carId ?: return emptyList()
+        return statsRepository.getDrivesBetweenDates(id, fromDate, toDate)
     }
 
     private suspend fun loadStatsInternal() {

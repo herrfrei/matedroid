@@ -72,8 +72,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.matedroid.data.local.entity.DriveSummary
 import com.matedroid.domain.model.CarStats
 import com.matedroid.domain.model.DeepStats
+import com.matedroid.domain.model.MaxDistanceBetweenChargesRecord
 import com.matedroid.domain.model.QuickStats
 import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.YearFilter
@@ -99,6 +101,20 @@ fun StatsScreen(
     val palette = CarColorPalettes.forExteriorColor(exteriorColor, isDarkTheme)
     var showSyncLogsDialog by remember { mutableStateOf(false) }
 
+    // State for range record dialog
+    var rangeRecordToShow by remember { mutableStateOf<MaxDistanceBetweenChargesRecord?>(null) }
+    var rangeRecordDrives by remember { mutableStateOf<List<DriveSummary>>(emptyList()) }
+    var isLoadingRangeRecordDrives by remember { mutableStateOf(false) }
+
+    // Load drives when range record dialog is opened
+    LaunchedEffect(rangeRecordToShow) {
+        rangeRecordToShow?.let { record ->
+            isLoadingRangeRecordDrives = true
+            rangeRecordDrives = viewModel.getDrivesForRangeRecord(record.fromDate, record.toDate)
+            isLoadingRangeRecordDrives = false
+        }
+    }
+
     LaunchedEffect(carId) {
         viewModel.setCarId(carId)
     }
@@ -123,6 +139,21 @@ fun StatsScreen(
         SyncLogsDialog(
             logs = syncLogs,
             onDismiss = { showSyncLogsDialog = false }
+        )
+    }
+
+    // Range record details dialog
+    rangeRecordToShow?.let { record ->
+        RangeRecordDialog(
+            record = record,
+            drives = rangeRecordDrives,
+            isLoading = isLoadingRangeRecordDrives,
+            palette = palette,
+            onDriveClick = { driveId ->
+                rangeRecordToShow = null
+                onNavigateToDriveDetail(driveId)
+            },
+            onDismiss = { rangeRecordToShow = null }
         )
     }
 
@@ -178,6 +209,7 @@ fun StatsScreen(
                     onNavigateToDriveDetail = onNavigateToDriveDetail,
                     onNavigateToChargeDetail = onNavigateToChargeDetail,
                     onNavigateToDayDetail = onNavigateToDayDetail,
+                    onRangeRecordClick = { rangeRecordToShow = it },
                     onSyncProgressClick = if (BuildConfig.DEBUG) {
                         { showSyncLogsDialog = true }
                     } else null
@@ -272,6 +304,7 @@ private fun StatsContent(
     onNavigateToDriveDetail: (Int) -> Unit,
     onNavigateToChargeDetail: (Int) -> Unit,
     onNavigateToDayDetail: (String) -> Unit,
+    onRangeRecordClick: (MaxDistanceBetweenChargesRecord) -> Unit,
     onSyncProgressClick: (() -> Unit)? = null
 ) {
     LazyColumn(
@@ -309,7 +342,8 @@ private fun StatsContent(
                 currencySymbol = currencySymbol,
                 onDriveClick = onNavigateToDriveDetail,
                 onChargeClick = onNavigateToChargeDetail,
-                onDayClick = onNavigateToDayDetail
+                onDayClick = onNavigateToDayDetail,
+                onRangeRecordClick = onRangeRecordClick
             )
         }
 
@@ -542,7 +576,8 @@ private fun RecordsCard(
     currencySymbol: String,
     onDriveClick: (Int) -> Unit,
     onChargeClick: (Int) -> Unit,
-    onDayClick: (String) -> Unit
+    onDayClick: (String) -> Unit,
+    onRangeRecordClick: (MaxDistanceBetweenChargesRecord) -> Unit
 ) {
     // Build list of record groups - each group starts on left column
     val groups = mutableListOf<RecordGroup>()
@@ -553,7 +588,7 @@ private fun RecordsCard(
         driveRecords.add(RecordData("📏", "Longest Drive", "%.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
     quickStats.maxDistanceBetweenCharges?.let { record ->
-        driveRecords.add(RecordData("🔋", "Longest Range", "%.1f km".format(record.distance), "${record.fromDate.take(10)} → ${record.toDate.take(10)}") { onChargeClick(record.toChargeId) })
+        driveRecords.add(RecordData("🔋", "Longest Range", "%.1f km".format(record.distance), "${record.fromDate.take(10)} → ${record.toDate.take(10)}") { onRangeRecordClick(record) })
     }
     quickStats.fastestDrive?.let { drive ->
         driveRecords.add(RecordData("🏎️", "Top Speed", "${drive.speedMax} km/h", drive.startDate.take(10)) { onDriveClick(drive.driveId) })
@@ -1038,4 +1073,214 @@ private fun SyncLogsDialog(
             }
         }
     )
+}
+
+/**
+ * Dialog showing details of a "longest range" record with scrollable list of drives.
+ */
+@Composable
+private fun RangeRecordDialog(
+    record: MaxDistanceBetweenChargesRecord,
+    drives: List<DriveSummary>,
+    isLoading: Boolean,
+    palette: CarColorPalette,
+    onDriveClick: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🔋", style = MaterialTheme.typography.titleLarge)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Longest Range")
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Summary info
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = palette.surface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Total Distance",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = palette.onSurfaceVariant
+                            )
+                            Text(
+                                text = "%.1f km".format(record.distance),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = palette.onSurface
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "From",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = palette.onSurfaceVariant
+                                )
+                                Text(
+                                    text = record.fromDate.take(10),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = palette.onSurface
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "To",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = palette.onSurfaceVariant
+                                )
+                                Text(
+                                    text = record.toDate.take(10),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = palette.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Drives header
+                Text(
+                    text = "Drives (${drives.size})",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = palette.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Scrollable list of drives
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp)
+                ) {
+                    if (isLoading) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                        }
+                    } else if (drives.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No drives found",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = palette.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(drives) { drive ->
+                                DriveListItem(
+                                    drive = drive,
+                                    palette = palette,
+                                    onClick = { onDriveClick(drive.driveId) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
+/**
+ * Single drive item in the range record dialog.
+ */
+@Composable
+private fun DriveListItem(
+    drive: DriveSummary,
+    palette: CarColorPalette,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = palette.surface.copy(alpha = 0.7f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = drive.startDate.take(10),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant
+                )
+                Text(
+                    text = "${drive.startAddress.take(25)}${if (drive.startAddress.length > 25) "..." else ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.onSurface,
+                    maxLines = 1
+                )
+                Text(
+                    text = "→ ${drive.endAddress.take(25)}${if (drive.endAddress.length > 25) "..." else ""}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "%.1f km".format(drive.distance),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = palette.onSurface
+                )
+                Text(
+                    text = "${drive.durationMin} min",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = palette.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "View drive",
+                modifier = Modifier.size(18.dp),
+                tint = palette.onSurfaceVariant
+            )
+        }
+    }
 }

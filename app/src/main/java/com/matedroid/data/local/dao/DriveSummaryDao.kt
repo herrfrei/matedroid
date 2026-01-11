@@ -236,6 +236,21 @@ interface DriveSummaryDao {
         ORDER BY year DESC
     """)
     suspend fun getYears(carId: Int): List<Int>
+
+    // === Range Record Queries ===
+
+    /**
+     * Get all drives between two dates (exclusive), ordered by start date.
+     * Used for showing drives in a "longest range" record.
+     */
+    @Query("""
+        SELECT * FROM drives_summary
+        WHERE carId = :carId
+          AND startDate > :afterDate
+          AND startDate < :beforeDate
+        ORDER BY startDate ASC
+    """)
+    suspend fun getDrivesBetweenDates(carId: Int, afterDate: String, beforeDate: String): List<DriveSummary>
 }
 
 data class BusiestDayResult(
