@@ -614,7 +614,7 @@ private fun formatDuration(minutes: Int): String {
  * Chart type enum for the swipeable pager
  */
 private enum class DrivesChartType {
-    COUNT, TIME, DISTANCE
+    COUNT, TIME, DISTANCE, TOP_SPEED
 }
 
 /**
@@ -691,6 +691,7 @@ private fun DrivesChartPage(
 ) {
     val isImperial = units?.isImperial == true
     val distanceUnit = if (isImperial) "mi" else "km"
+    val speedUnit = if (isImperial) "mph" else "km/h"
 
     val (title, icon) = when (chartType) {
         DrivesChartType.COUNT -> when (granularity) {
@@ -708,6 +709,11 @@ private fun DrivesChartPage(
             DriveChartGranularity.WEEKLY -> "Distance per Week"
             DriveChartGranularity.MONTHLY -> "Distance per Month"
         } to CustomIcons.SteeringWheel
+        DrivesChartType.TOP_SPEED -> when (granularity) {
+            DriveChartGranularity.DAILY -> "Top speed per Day"
+            DriveChartGranularity.WEEKLY -> "Top speed per Week"
+            DriveChartGranularity.MONTHLY -> "Top speed per Month"
+        } to Icons.Default.Speed
     }
 
     Column {
@@ -752,12 +758,21 @@ private fun DrivesChartPage(
                     displayValue = "%.1f $distanceUnit".format(distance)
                 )
             }
+            DrivesChartType.TOP_SPEED -> chartData.map { data ->
+                val speed = if (isImperial) (data.maxSpeed * 0.621371).toInt() else data.maxSpeed
+                BarChartData(
+                    label = data.label,
+                    value = speed.toDouble(),
+                    displayValue = "$speed $speedUnit"
+                )
+            }
         }
 
         val valueFormatter: (Double) -> String = when (chartType) {
             DrivesChartType.COUNT -> { v -> v.toInt().toString() }
             DrivesChartType.TIME -> { v -> formatDurationChart(v.toInt()) }
             DrivesChartType.DISTANCE -> { v -> "%.1f $distanceUnit".format(v) }
+            DrivesChartType.TOP_SPEED -> { v -> "${v.toInt()} $speedUnit" }
         }
 
         // Show max ~6 labels to avoid crowding
