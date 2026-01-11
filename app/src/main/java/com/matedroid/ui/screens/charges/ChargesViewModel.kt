@@ -191,18 +191,13 @@ class ChargesViewModel @Inject constructor(
             when (val result = repository.getCharges(id, startDateStr, endDateStr)) {
                 is ApiResult.Success -> {
                     allCharges = result.data
-                    // Calculate summary and chart from ALL charges (including minimal ones)
-                    val summary = calculateSummary(allCharges)
                     val granularity = determineGranularity(startDate, endDate)
-                    val chartData = calculateChartData(allCharges, granularity)
 
                     _uiState.update {
                         it.copy(
                             dcChargeIds = dcChargeIds,
                             processedChargeIds = processedChargeIds,
-                            chartData = chartData,
                             chartGranularity = granularity,
-                            summary = summary,
                             error = null
                         )
                     }
@@ -226,6 +221,7 @@ class ChargesViewModel @Inject constructor(
         val state = _uiState.value
         val chargeTypeFilter = state.chargeTypeFilter
         val dcChargeIds = state.dcChargeIds
+        val granularity = state.chartGranularity
 
         // First apply short charges filter
         var filteredCharges = if (showShortDrivesCharges) {
@@ -236,18 +232,31 @@ class ChargesViewModel @Inject constructor(
             }
         }
 
-        // Then apply charge type filter (AC/DC)
-        filteredCharges = when (chargeTypeFilter) {
+        // Apply charge type filter (AC/DC) for list display
+        val displayCharges = when (chargeTypeFilter) {
             ChargeTypeFilter.ALL -> filteredCharges
             ChargeTypeFilter.DC -> filteredCharges.filter { it.chargeId in dcChargeIds }
             ChargeTypeFilter.AC -> filteredCharges.filter { it.chargeId !in dcChargeIds }
         }
 
+        // Apply charge type filter to all charges for summary/charts (include short charges)
+        val chargesForStats = when (chargeTypeFilter) {
+            ChargeTypeFilter.ALL -> allCharges
+            ChargeTypeFilter.DC -> allCharges.filter { it.chargeId in dcChargeIds }
+            ChargeTypeFilter.AC -> allCharges.filter { it.chargeId !in dcChargeIds }
+        }
+
+        // Calculate summary and chart data from filtered charges
+        val summary = calculateSummary(chargesForStats)
+        val chartData = calculateChartData(chargesForStats, granularity)
+
         _uiState.update {
             it.copy(
                 isLoading = false,
                 isRefreshing = false,
-                charges = filteredCharges
+                charges = displayCharges,
+                summary = summary,
+                chartData = chartData
             )
         }
     }
