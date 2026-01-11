@@ -62,7 +62,10 @@ data class QuickStats(
     val firstDriveDate: String?,
     val firstChargeDate: String?,
     val busiestDay: BusiestDayResult?,
-    val mostDistanceDay: MostDistanceDayResult?
+    val mostDistanceDay: MostDistanceDayResult?,
+
+    // === Range Records ===
+    val maxDistanceBetweenCharges: MaxDistanceBetweenChargesRecord?
 )
 
 /**
@@ -153,4 +156,15 @@ data class ChargePowerRecord(
     val chargeId: Int,
     val powerKw: Int,
     val date: String?
+)
+
+/**
+ * Record for maximum distance traveled between two consecutive charges.
+ */
+data class MaxDistanceBetweenChargesRecord(
+    val distance: Double,           // km
+    val fromChargeId: Int,
+    val toChargeId: Int,
+    val fromDate: String,
+    val toDate: String
 )
