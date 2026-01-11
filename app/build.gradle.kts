@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId = "com.matedroid"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 35
         versionCode = 13
         versionName = "0.8.2"
