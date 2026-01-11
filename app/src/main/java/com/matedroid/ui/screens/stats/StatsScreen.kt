@@ -552,6 +552,9 @@ private fun RecordsCard(
     quickStats.longestDrive?.let { drive ->
         driveRecords.add(RecordData("📏", "Longest Drive", "%.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
+    quickStats.maxDistanceBetweenCharges?.let { record ->
+        driveRecords.add(RecordData("🔋", "Longest Range", "%.1f km".format(record.distance), "${record.fromDate.take(10)} → ${record.toDate.take(10)}") { onChargeClick(record.toChargeId) })
+    }
     quickStats.fastestDrive?.let { drive ->
         driveRecords.add(RecordData("🏎️", "Top Speed", "${drive.speedMax} km/h", drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
