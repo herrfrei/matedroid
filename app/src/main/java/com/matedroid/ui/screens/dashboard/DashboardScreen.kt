@@ -1,9 +1,13 @@
 package com.matedroid.ui.screens.dashboard
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BlurMaskFilter
+import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Paint
 import android.net.Uri
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -410,12 +414,54 @@ private fun DashboardContent(
     }
 }
 
+/**
+ * Creates a glow bitmap from the alpha channel of the source bitmap.
+ * The glow follows the shape of the non-transparent pixels.
+ *
+ * @param source The source bitmap with transparency
+ * @param glowColor The color for the glow effect
+ * @param glowRadius The radius of the blur effect in pixels
+ * @return A new bitmap containing only the glow effect
+ */
+private fun createGlowBitmap(source: Bitmap, glowColor: Color, glowRadius: Float): Bitmap {
+    // Create a larger bitmap to accommodate the glow extending beyond the original bounds
+    val padding = (glowRadius * 2).toInt()
+    val glowBitmap = Bitmap.createBitmap(
+        source.width + padding * 2,
+        source.height + padding * 2,
+        Bitmap.Config.ARGB_8888
+    )
+
+    val canvas = AndroidCanvas(glowBitmap)
+
+    // Create paint with blur effect
+    val paint = Paint().apply {
+        isAntiAlias = true
+        color = android.graphics.Color.argb(
+            (glowColor.alpha * 255).toInt(),
+            (glowColor.red * 255).toInt(),
+            (glowColor.green * 255).toInt(),
+            (glowColor.blue * 255).toInt()
+        )
+        maskFilter = BlurMaskFilter(glowRadius, BlurMaskFilter.Blur.NORMAL)
+    }
+
+    // Extract alpha from source and draw it with the glow paint
+    val alphaBitmap = source.extractAlpha()
+    canvas.drawBitmap(alphaBitmap, padding.toFloat(), padding.toFloat(), paint)
+    alphaBitmap.recycle()
+
+    return glowBitmap
+}
+
 @Composable
 private fun CarImage(
     carModel: String?,
     carTrimBadging: String?,
     carExterior: CarExterior?,
     modifier: Modifier = Modifier,
+    isCharging: Boolean = false,
+    glowColor: Color = Color.Transparent,
     onNavigateToStats: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -455,6 +501,19 @@ private fun CarImage(
         }
     }
 
+    // Create glow bitmap when charging
+    val glowBitmap = remember(bitmap, isCharging, glowColor) {
+        if (isCharging && bitmap != null && glowColor != Color.Transparent) {
+            createGlowBitmap(
+                source = bitmap,
+                glowColor = glowColor.copy(alpha = 0.7f),
+                glowRadius = 70f
+            )
+        } else {
+            null
+        }
+    }
+
     if (bitmap != null) {
         Box(
             modifier = modifier
@@ -468,6 +527,20 @@ private fun CarImage(
                 ),
             contentAlignment = Alignment.Center
         ) {
+            // Draw glow behind the car when charging
+            if (glowBitmap != null) {
+                Image(
+                    bitmap = glowBitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = scaleFactor
+                            scaleY = scaleFactor
+                        },
+                    contentScale = ContentScale.Fit
+                )
+            }
             Image(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "Car image - tap for stats",
@@ -645,12 +718,14 @@ private fun BatteryCard(
                 modifier = Modifier.padding(top = 4.dp, bottom = 0.dp)
             )
 
-            // Car image
+            // Car image with glow effect when charging
             CarImage(
                 carModel = carModel,
                 carTrimBadging = carTrimBadging,
                 carExterior = carExterior,
                 modifier = Modifier.fillMaxWidth(),
+                isCharging = status.isCharging,
+                glowColor = palette.accent,
                 onNavigateToStats = onNavigateToStats
             )
 
