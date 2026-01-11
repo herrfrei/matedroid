@@ -1,9 +1,11 @@
 package com.matedroid.ui.screens.settings
 
+import android.content.Context
 import com.matedroid.data.local.AppSettings
 import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
+import com.matedroid.data.sync.SyncManager
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -27,15 +29,19 @@ import org.junit.Test
 class SettingsViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private lateinit var context: Context
     private lateinit var settingsDataStore: SettingsDataStore
     private lateinit var repository: TeslamateRepository
+    private lateinit var syncManager: SyncManager
     private lateinit var viewModel: SettingsViewModel
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        context = mockk(relaxed = true)
         settingsDataStore = mockk()
         repository = mockk()
+        syncManager = mockk(relaxed = true)
 
         every { settingsDataStore.settings } returns flowOf(AppSettings())
     }
@@ -46,7 +52,7 @@ class SettingsViewModelTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(settingsDataStore, repository)
+        return SettingsViewModel(context, settingsDataStore, repository, syncManager)
     }
 
     @Test
@@ -117,7 +123,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `testConnection succeeds with valid url`() = runTest {
-        coEvery { repository.testConnection(any()) } returns ApiResult.Success(Unit)
+        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Success(Unit)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -132,7 +138,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `testConnection shows failure when api returns error`() = runTest {
-        coEvery { repository.testConnection(any()) } returns ApiResult.Error("Connection refused")
+        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Error("Connection refused")
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -194,7 +200,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `clearTestResult clears test result`() = runTest {
-        coEvery { repository.testConnection(any()) } returns ApiResult.Success(Unit)
+        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Success(Unit)
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
