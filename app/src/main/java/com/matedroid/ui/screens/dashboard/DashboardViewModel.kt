@@ -209,6 +209,14 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Stop auto-refresh. Useful for testing.
+     */
+    fun stopAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = null
+    }
+
     private fun startAutoRefresh(carId: Int) {
         autoRefreshJob?.cancel()
         autoRefreshJob = viewModelScope.launch {

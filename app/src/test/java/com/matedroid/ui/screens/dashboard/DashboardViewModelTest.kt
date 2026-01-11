@@ -68,6 +68,10 @@ class DashboardViewModelTest {
 
     @After
     fun tearDown() {
+        // Stop auto-refresh to prevent UncompletedCoroutinesError
+        if (::viewModel.isInitialized) {
+            viewModel.stopAutoRefresh()
+        }
         Dispatchers.resetMain()
     }
 
@@ -83,7 +87,9 @@ class DashboardViewModelTest {
         coEvery { repository.getDrives(1, null, null) } returns ApiResult.Success(emptyList())
 
         viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(100)
+        testDispatcher.scheduler.runCurrent()
+        viewModel.stopAutoRefresh()
 
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(1, viewModel.uiState.value.cars.size)
@@ -129,12 +135,15 @@ class DashboardViewModelTest {
         coEvery { repository.getDrives(any(), null, null) } returns ApiResult.Success(emptyList())
 
         viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(100)
+        testDispatcher.scheduler.runCurrent()
+        viewModel.stopAutoRefresh()
 
         assertEquals(1, viewModel.uiState.value.selectedCarId)
 
         viewModel.selectCar(2)
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(100)
+        testDispatcher.scheduler.runCurrent()
 
         assertEquals(2, viewModel.uiState.value.selectedCarId)
         assertEquals("Car 2", viewModel.uiState.value.carStatus?.displayName)
@@ -148,7 +157,11 @@ class DashboardViewModelTest {
         coEvery { repository.getDrives(1, null, null) } returns ApiResult.Success(emptyList())
 
         viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        // Process immediate work without advancing through the 5s auto-refresh delay
+        testDispatcher.scheduler.advanceTimeBy(100)
+        testDispatcher.scheduler.runCurrent()
+        // Stop auto-refresh to prevent infinite loop
+        viewModel.stopAutoRefresh()
 
         val updatedStatus = testStatus.copy(
             batteryDetails = BatteryDetails(batteryLevel = 80, ratedBatteryRange = 300.0)
@@ -157,7 +170,8 @@ class DashboardViewModelTest {
         coEvery { repository.getCarStatus(1) } returns ApiResult.Success(updatedStatusWithUnits)
 
         viewModel.refresh()
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(100)
+        testDispatcher.scheduler.runCurrent()
 
         assertFalse(viewModel.uiState.value.isRefreshing)
         assertEquals(80, viewModel.uiState.value.carStatus?.batteryLevel)
@@ -200,7 +214,9 @@ class DashboardViewModelTest {
         coEvery { repository.getDrives(1, null, null) } returns ApiResult.Success(emptyList())
 
         viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        testDispatcher.scheduler.advanceTimeBy(100)
+        testDispatcher.scheduler.runCurrent()
+        viewModel.stopAutoRefresh()
 
         assertEquals("Status error", viewModel.uiState.value.error)
         assertNull(viewModel.uiState.value.carStatus)
