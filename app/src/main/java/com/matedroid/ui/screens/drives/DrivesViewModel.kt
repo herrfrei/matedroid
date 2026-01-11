@@ -157,16 +157,11 @@ class DrivesViewModel @Inject constructor(
             when (val result = repository.getDrives(id, startDateStr, endDateStr)) {
                 is ApiResult.Success -> {
                     allDrives = result.data
-                    // Calculate summary and chart from ALL drives (including short ones)
-                    val summary = calculateSummary(allDrives)
                     val granularity = determineGranularity(startDate, endDate)
-                    val chartData = calculateChartData(allDrives, granularity)
 
                     _uiState.update {
                         it.copy(
-                            chartData = chartData,
                             chartGranularity = granularity,
-                            summary = summary,
                             error = null
                         )
                     }
@@ -189,6 +184,7 @@ class DrivesViewModel @Inject constructor(
     private fun applyFiltersAndUpdateState() {
         val state = _uiState.value
         val distanceFilter = state.distanceFilter
+        val granularity = state.chartGranularity
 
         // First apply short drives filter
         var filteredDrives = if (showShortDrivesCharges) {
@@ -200,19 +196,33 @@ class DrivesViewModel @Inject constructor(
             }
         }
 
-        // Then apply distance filter
-        filteredDrives = filteredDrives.filter { drive ->
+        // Apply distance filter for list display
+        val displayDrives = filteredDrives.filter { drive ->
             val distance = drive.distance ?: 0.0
             val minOk = distanceFilter.minDistanceKm?.let { distance >= it } ?: true
             val maxOk = distanceFilter.maxDistanceKm?.let { distance < it } ?: true
             minOk && maxOk
         }
 
+        // Apply distance filter to all drives for summary/charts (include short drives)
+        val drivesForStats = allDrives.filter { drive ->
+            val distance = drive.distance ?: 0.0
+            val minOk = distanceFilter.minDistanceKm?.let { distance >= it } ?: true
+            val maxOk = distanceFilter.maxDistanceKm?.let { distance < it } ?: true
+            minOk && maxOk
+        }
+
+        // Calculate summary and chart data from filtered drives
+        val summary = calculateSummary(drivesForStats)
+        val chartData = calculateChartData(drivesForStats, granularity)
+
         _uiState.update {
             it.copy(
                 isLoading = false,
                 isRefreshing = false,
-                drives = filteredDrives
+                drives = displayDrives,
+                summary = summary,
+                chartData = chartData
             )
         }
     }
