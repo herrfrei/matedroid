@@ -9,8 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Stats for Nerds**: New "Longest Range" record showing maximum distance traveled between charges (fixes #24)
-  - Computed instantly from existing data using SQL window functions - no sync required
-  - Shows distance and date range, tap to view the ending charge
+  - Tap to see all drives that made up the record
 - **Dashboard**: Breathing glow effect around car image when charging
   - Glow pulses smoothly in opacity with 2-second cycle
   - Color shifts from palette accent toward AC (green) or DC (orange) charging color
@@ -35,9 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Domain**: Battery chemistry detection (LFP vs NMC) based on trim_badging
 
 ### Changed
-- **Requirements**: Minimum Android version raised from 8.0 (API 26) to 10 (API 29)
-  - Enables SQLite window functions for efficient record calculations
-  - Android 10 was released in 2019 and covers 95%+ of active devices
+- **Requirements**: Minimum Android version raised from 8.0 to 10 (released 2019)
 
 ## [0.8.3] - 2026-01-11
 
