@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -68,17 +69,8 @@ import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.InteractiveBarChart
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-enum class DriveDateFilter(val label: String, val days: Long?) {
-    LAST_7_DAYS("Last 7 days", 7),
-    LAST_30_DAYS("Last 30 days", 30),
-    LAST_90_DAYS("Last 90 days", 90),
-    LAST_YEAR("Last year", 365),
-    ALL_TIME("All time", null)
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,33 +83,32 @@ fun DrivesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var selectedFilter by remember { mutableStateOf(DriveDateFilter.LAST_7_DAYS) }
     val isDarkTheme = isSystemInDarkTheme()
     val palette = CarColorPalettes.forExteriorColor(exteriorColor, isDarkTheme)
 
+    // Remember scroll state and restore from ViewModel
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = uiState.scrollPosition,
+        initialFirstVisibleItemScrollOffset = uiState.scrollOffset
+    )
+
+    // Initialize ViewModel with carId (only loads data on first call)
     LaunchedEffect(carId) {
         viewModel.setCarId(carId)
-        // Apply default 7-day filter on initial load
-        val endDate = LocalDate.now()
-        val startDate = endDate.minusDays(7)
-        viewModel.setDateFilter(startDate, endDate)
+    }
+
+    // Save scroll position when it changes
+    LaunchedEffect(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset) {
+        viewModel.saveScrollPosition(
+            listState.firstVisibleItemIndex,
+            listState.firstVisibleItemScrollOffset
+        )
     }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
             snackbarHostState.showSnackbar(error)
             viewModel.clearError()
-        }
-    }
-
-    fun applyDateFilter(filter: DriveDateFilter) {
-        selectedFilter = filter
-        if (filter.days != null) {
-            val endDate = LocalDate.now()
-            val startDate = endDate.minusDays(filter.days)
-            viewModel.setDateFilter(startDate, endDate)
-        } else {
-            viewModel.clearDateFilter()
         }
     }
 
@@ -160,11 +151,12 @@ fun DrivesScreen(
                     chartData = uiState.chartData,
                     chartGranularity = uiState.chartGranularity,
                     summary = uiState.summary,
-                    selectedDateFilter = selectedFilter,
+                    selectedDateFilter = uiState.dateFilter,
                     selectedDistanceFilter = uiState.distanceFilter,
                     units = uiState.units,
                     palette = palette,
-                    onDateFilterSelected = { applyDateFilter(it) },
+                    listState = listState,
+                    onDateFilterSelected = { viewModel.setDateFilter(it) },
                     onDistanceFilterSelected = { viewModel.setDistanceFilter(it) },
                     onDriveClick = onNavigateToDriveDetail
                 )
@@ -184,11 +176,13 @@ private fun DrivesContent(
     selectedDistanceFilter: DriveDistanceFilter,
     units: Units?,
     palette: CarColorPalette,
+    listState: androidx.compose.foundation.lazy.LazyListState,
     onDateFilterSelected: (DriveDateFilter) -> Unit,
     onDistanceFilterSelected: (DriveDistanceFilter) -> Unit,
     onDriveClick: (driveId: Int) -> Unit
 ) {
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)

@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Over 150 km: shows weather every 35 km
   - Weather icons for: Clear, Partly Cloudy, Fog, Drizzle, Rain, Snow, Thunderstorm
 
+### Fixed
+- **Drives**: Date and distance filters now persist when navigating to drive details and back
+- **Drives**: Scroll position is now preserved when returning from drive details
+
 ## [0.9.4] - 2026-01-14
 
 ### Fixed

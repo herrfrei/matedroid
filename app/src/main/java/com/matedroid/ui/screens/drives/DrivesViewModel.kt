@@ -55,6 +55,14 @@ data class DriveChartData(
     val sortKey: Long
 )
 
+enum class DriveDateFilter(val label: String, val days: Long?) {
+    LAST_7_DAYS("Last 7 days", 7),
+    LAST_30_DAYS("Last 30 days", 30),
+    LAST_90_DAYS("Last 90 days", 90),
+    LAST_YEAR("Last year", 365),
+    ALL_TIME("All time", null)
+}
+
 data class DrivesUiState(
     val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
@@ -66,7 +74,10 @@ data class DrivesUiState(
     val endDate: LocalDate? = null,
     val summary: DrivesSummary = DrivesSummary(),
     val units: Units? = null,
-    val distanceFilter: DriveDistanceFilter = DriveDistanceFilter.ALL
+    val distanceFilter: DriveDistanceFilter = DriveDistanceFilter.ALL,
+    val dateFilter: DriveDateFilter = DriveDateFilter.LAST_7_DAYS,
+    val scrollPosition: Int = 0,
+    val scrollOffset: Int = 0
 )
 
 data class DrivesSummary(
@@ -90,6 +101,7 @@ class DrivesViewModel @Inject constructor(
     private var carId: Int? = null
     private var showShortDrivesCharges: Boolean = false
     private var allDrives: List<DriveData> = emptyList()
+    private var isInitialized: Boolean = false
 
     companion object {
         private const val MIN_DURATION_MINUTES = 1
@@ -97,18 +109,39 @@ class DrivesViewModel @Inject constructor(
     }
 
     fun setCarId(id: Int) {
+        if (carId == id && isInitialized) {
+            // Already initialized with this car, don't reload
+            return
+        }
         carId = id
         loadUnits(id)
+
+        // Only apply default filter on first initialization
+        if (!isInitialized) {
+            isInitialized = true
+            applyDateFilterEnum(_uiState.value.dateFilter)
+        }
     }
 
-    fun setDateFilter(startDate: LocalDate?, endDate: LocalDate?) {
-        _uiState.update { it.copy(startDate = startDate, endDate = endDate) }
-        loadDrives(startDate, endDate)
+    fun setDateFilter(filter: DriveDateFilter) {
+        _uiState.update { it.copy(dateFilter = filter) }
+        applyDateFilterEnum(filter)
     }
 
-    fun clearDateFilter() {
-        _uiState.update { it.copy(startDate = null, endDate = null) }
-        loadDrives(null, null)
+    private fun applyDateFilterEnum(filter: DriveDateFilter) {
+        if (filter.days != null) {
+            val endDate = LocalDate.now()
+            val startDate = endDate.minusDays(filter.days)
+            _uiState.update { it.copy(startDate = startDate, endDate = endDate) }
+            loadDrives(startDate, endDate)
+        } else {
+            _uiState.update { it.copy(startDate = null, endDate = null) }
+            loadDrives(null, null)
+        }
+    }
+
+    fun saveScrollPosition(index: Int, offset: Int) {
+        _uiState.update { it.copy(scrollPosition = index, scrollOffset = offset) }
     }
 
     fun setDistanceFilter(filter: DriveDistanceFilter) {
