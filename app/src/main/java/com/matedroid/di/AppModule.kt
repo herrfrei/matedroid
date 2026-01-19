@@ -2,6 +2,7 @@ package com.matedroid.di
 
 import android.content.Context
 import com.matedroid.data.local.SettingsDataStore
+import com.matedroid.data.repository.ServerHealthMonitor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,5 +20,14 @@ object AppModule {
         @ApplicationContext context: Context
     ): SettingsDataStore {
         return SettingsDataStore(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideServerHealthMonitor(
+        apiFactory: TeslamateApiFactory,
+        settingsDataStore: SettingsDataStore
+    ): ServerHealthMonitor {
+        return ServerHealthMonitor(apiFactory, settingsDataStore)
     }
 }

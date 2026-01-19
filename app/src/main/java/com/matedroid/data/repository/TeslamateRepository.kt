@@ -47,7 +47,8 @@ private fun Throwable.isNetworkError(): Boolean {
 @Singleton
 class TeslamateRepository @Inject constructor(
     private val apiFactory: TeslamateApiFactory,
-    private val settingsDataStore: SettingsDataStore
+    private val settingsDataStore: SettingsDataStore,
+    private val serverHealthMonitor: ServerHealthMonitor
 ) {
     companion object {
         private const val TAG = "TeslamateRepository"
@@ -61,7 +62,12 @@ class TeslamateRepository @Inject constructor(
     }
 
     /**
-     * Executes an API call with automatic fallback to the secondary server if configured.
+     * Executes an API call with automatic fallback between primary and secondary servers.
+     *
+     * Uses the ServerHealthMonitor to determine which server to try first:
+     * - If primary is known to be available, try it first
+     * - If only secondary is available, try it first
+     * - Falls back to the other server on network errors
      *
      * The fallback is triggered only for network-level errors (timeout, connection refused,
      * DNS failure, SSL errors). HTTP errors (4xx, 5xx) do NOT trigger fallback because
@@ -79,16 +85,29 @@ class TeslamateRepository @Inject constructor(
             return ApiResult.Error("Server not configured")
         }
 
-        // Try primary server first
-        val primaryApi = getApiForUrl(settings.serverUrl)
+        // Determine server order based on health monitor
+        val preference = serverHealthMonitor.serverPreference.value
+        val (firstUrl, secondUrl) = when (preference) {
+            ServerPreference.SECONDARY_ONLY -> {
+                Log.d(TAG, "Using secondary server first (primary known unavailable)")
+                settings.secondaryServerUrl to settings.serverUrl
+            }
+            else -> {
+                // PRIMARY, UNKNOWN, or NONE - try primary first
+                settings.serverUrl to settings.secondaryServerUrl
+            }
+        }
+
+        // Try first server
+        val firstApi = getApiForUrl(firstUrl)
             ?: return ApiResult.Error("Server not configured")
 
-        val primaryResult = try {
-            apiCall(primaryApi)
+        val firstResult = try {
+            apiCall(firstApi)
         } catch (e: Exception) {
             if (e.isNetworkError() && settings.hasSecondaryServer) {
-                Log.d(TAG, "Primary server failed with network error, trying secondary: ${e.message}")
-                null // Will try secondary
+                Log.d(TAG, "First server ($firstUrl) failed with network error, trying fallback: ${e.message}")
+                null // Will try fallback
             } else {
                 // Not a network error or no secondary server, return the error
                 return when (e) {
@@ -99,39 +118,39 @@ class TeslamateRepository @Inject constructor(
             }
         }
 
-        // If primary succeeded or returned an HTTP error, return it
-        if (primaryResult != null) {
+        // If first server succeeded or returned an HTTP error, return it
+        if (firstResult != null) {
             // Only fallback on network errors, not on HTTP errors
-            if (primaryResult is ApiResult.Success) {
-                return primaryResult
+            if (firstResult is ApiResult.Success) {
+                return firstResult
             }
             // For HTTP errors, don't fallback - the server is reachable
-            if (primaryResult is ApiResult.Error && primaryResult.code != null) {
-                return primaryResult
+            if (firstResult is ApiResult.Error && firstResult.code != null) {
+                return firstResult
             }
         }
 
-        // Try secondary server if available
-        if (settings.hasSecondaryServer) {
-            Log.d(TAG, "Trying secondary server: ${settings.secondaryServerUrl}")
-            val secondaryApi = getApiForUrl(settings.secondaryServerUrl)
-                ?: return primaryResult ?: ApiResult.Error("Secondary server not configured")
+        // Try fallback server if available
+        if (settings.hasSecondaryServer && secondUrl.isNotBlank()) {
+            Log.d(TAG, "Trying fallback server: $secondUrl")
+            val secondApi = getApiForUrl(secondUrl)
+                ?: return firstResult ?: ApiResult.Error("Fallback server not configured")
 
             return try {
-                apiCall(secondaryApi)
+                apiCall(secondApi)
             } catch (e: Exception) {
-                Log.d(TAG, "Secondary server also failed: ${e.message}")
+                Log.d(TAG, "Fallback server also failed: ${e.message}")
                 // Both servers failed, return a combined error message
                 when (e) {
                     is javax.net.ssl.SSLHandshakeException ->
-                        ApiResult.Error("Both servers failed. SSL certificate error on secondary server.")
+                        ApiResult.Error("Both servers failed. SSL certificate error on fallback server.")
                     else -> ApiResult.Error("Both servers unreachable: ${e.message}")
                 }
             }
         }
 
-        // No secondary server, return the primary error
-        return primaryResult ?: ApiResult.Error("Connection failed")
+        // No fallback server, return the first server's error
+        return firstResult ?: ApiResult.Error("Connection failed")
     }
 
     suspend fun testConnection(serverUrl: String, acceptInvalidCerts: Boolean = false): ApiResult<Unit> {

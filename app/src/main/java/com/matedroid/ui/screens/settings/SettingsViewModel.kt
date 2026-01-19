@@ -11,9 +11,11 @@ import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
+import com.matedroid.data.repository.ServerHealthMonitor
 import com.matedroid.data.repository.TeslamateRepository
 import com.matedroid.data.sync.DataSyncWorker
 import com.matedroid.data.sync.SyncManager
+import com.matedroid.di.TeslamateApiFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,7 +71,9 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsDataStore: SettingsDataStore,
     private val repository: TeslamateRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val serverHealthMonitor: ServerHealthMonitor,
+    private val apiFactory: TeslamateApiFactory
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -238,6 +242,10 @@ class SettingsViewModel @Inject constructor(
                     acceptInvalidCerts = _uiState.value.acceptInvalidCerts,
                     currencyCode = _uiState.value.currencyCode
                 )
+
+                // Invalidate API cache and refresh server health status
+                apiFactory.invalidateCache()
+                serverHealthMonitor.checkNow()
 
                 // Trigger sync after settings are saved (handles first-time setup)
                 triggerImmediateSync()
