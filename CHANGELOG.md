@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Charge Details**: Hide charger voltage/current section and charts for DC charging sessions (contributed by [@MARMdeveloper](https://github.com/MARMdeveloper)) (fixes #65)
+
 ## [0.10.0] - 2026-01-17
 
 ### Changed
