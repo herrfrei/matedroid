@@ -32,7 +32,8 @@ data class DashboardUiState(
     val resolvedAddress: String? = null,
     val totalCharges: Int? = null,
     val totalDrives: Int? = null,
-    val error: String? = null
+    val error: String? = null,
+    val errorDetails: String? = null
 ) {
     private val selectedCar: CarData?
         get() = cars.find { it.carId == selectedCarId }
@@ -79,7 +80,7 @@ class DashboardViewModel @Inject constructor(
 
     fun loadCars() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _uiState.update { it.copy(isLoading = true, error = null, errorDetails = null) }
 
             when (val result = repository.getCars()) {
                 is ApiResult.Success -> {
@@ -104,7 +105,8 @@ class DashboardViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            error = result.message
+                            error = result.message,
+                            errorDetails = result.details
                         )
                     }
                 }
@@ -248,6 +250,6 @@ class DashboardViewModel @Inject constructor(
     }
 
     fun clearError() {
-        _uiState.update { it.copy(error = null) }
+        _uiState.update { it.copy(error = null, errorDetails = null) }
     }
 }

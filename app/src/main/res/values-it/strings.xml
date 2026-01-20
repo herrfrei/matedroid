@@ -39,6 +39,12 @@
     <!-- Error state: title when data loading fails -->
     <string name="error_loading_data">Errore nel caricamento dati</string>
 
+    <!-- Error details: button to show technical error details -->
+    <string name="error_show_details">Mostra dettagli</string>
+
+    <!-- Error details: dialog title -->
+    <string name="error_details_title">Dettagli Errore</string>
+
     <!-- Vehicle state shown when locked -->
     <string name="locked">Chiusa</string>
 
