@@ -225,6 +225,9 @@
     <string name="settings_secondary_server">Servidor secundario</string>
     <string name="settings_connected">Conectado</string>
 
+    <!-- Link to GitHub issues page shown below version number -->
+    <string name="settings_report_issue">Reportar un problema</string>
+
     <!-- ==================== Drives Screen ==================== -->
     <!-- Top bar title -->
     <string name="drives_title">Viajes</string>

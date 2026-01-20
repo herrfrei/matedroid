@@ -7,13 +7,17 @@ import com.matedroid.data.api.models.CarStatus
 import com.matedroid.data.api.models.CarStatusDetails
 import com.matedroid.data.api.models.ChargingDetails
 import com.matedroid.data.api.models.Units
+import com.matedroid.data.local.AppSettings
+import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.CarStatusWithUnits
 import com.matedroid.data.repository.GeocodingRepository
 import com.matedroid.data.repository.TeslamateRepository
+import kotlinx.coroutines.flow.flowOf
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,6 +41,7 @@ class DashboardViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var repository: TeslamateRepository
     private lateinit var geocodingRepository: GeocodingRepository
+    private lateinit var settingsDataStore: SettingsDataStore
     private var viewModel: DashboardViewModel? = null
 
     private val testCar = CarData(
@@ -68,6 +73,10 @@ class DashboardViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repository = mockk()
         geocodingRepository = mockk()
+        settingsDataStore = mockk()
+        // Default: no previously selected car
+        every { settingsDataStore.settings } returns flowOf(AppSettings())
+        coEvery { settingsDataStore.saveLastSelectedCarId(any()) } returns Unit
     }
 
     @After
@@ -79,7 +88,7 @@ class DashboardViewModelTest {
     }
 
     private fun createViewModel(): DashboardViewModel {
-        return DashboardViewModel(repository, geocodingRepository)
+        return DashboardViewModel(repository, geocodingRepository, settingsDataStore)
     }
 
     /**

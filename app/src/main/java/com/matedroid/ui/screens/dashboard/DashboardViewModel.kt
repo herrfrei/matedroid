@@ -6,9 +6,11 @@ import com.matedroid.data.api.models.CarData
 import com.matedroid.data.api.models.CarExterior
 import com.matedroid.data.api.models.CarStatus
 import com.matedroid.data.api.models.Units
+import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.GeocodingRepository
 import com.matedroid.data.repository.TeslamateRepository
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -57,7 +59,8 @@ data class DashboardUiState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val repository: TeslamateRepository,
-    private val geocodingRepository: GeocodingRepository
+    private val geocodingRepository: GeocodingRepository,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -81,7 +84,13 @@ class DashboardViewModel @Inject constructor(
             when (val result = repository.getCars()) {
                 is ApiResult.Success -> {
                     val cars = result.data
-                    val selectedCarId = cars.firstOrNull()?.carId
+                    // Try to restore last selected car, fall back to first car
+                    val lastCarId = settingsDataStore.settings.first().lastSelectedCarId
+                    val selectedCarId = if (lastCarId != null && cars.any { it.carId == lastCarId }) {
+                        lastCarId
+                    } else {
+                        cars.firstOrNull()?.carId
+                    }
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -114,6 +123,10 @@ class DashboardViewModel @Inject constructor(
                 totalCharges = null,
                 totalDrives = null
             )
+        }
+        // Save the selected car for next app launch
+        viewModelScope.launch {
+            settingsDataStore.saveLastSelectedCarId(carId)
         }
         loadCarStatus(carId)
     }
