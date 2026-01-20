@@ -239,6 +239,7 @@ fun StatsScreen(
                     availableYears = uiState.availableYears,
                     selectedYearFilter = uiState.selectedYearFilter,
                     deepSyncProgress = effectiveSyncProgress,
+                    isSyncing = uiState.isSyncing,
                     palette = palette,
                     currencySymbol = uiState.currencySymbol,
                     onYearFilterSelected = { viewModel.setYearFilter(it) },
@@ -341,6 +342,7 @@ private fun StatsContent(
     availableYears: List<Int>,
     selectedYearFilter: YearFilter,
     deepSyncProgress: Float,
+    isSyncing: Boolean,
     palette: CarColorPalette,
     currencySymbol: String,
     onYearFilterSelected: (YearFilter) -> Unit,
@@ -368,7 +370,7 @@ private fun StatsContent(
         }
 
         // Sync progress indicator if deep sync is ongoing
-        if (deepSyncProgress < 1f && deepSyncProgress > 0f) {
+        if ((deepSyncProgress < 1f && deepSyncProgress > 0f) || isSyncing) {
             item {
                 SyncProgressCard(
                     progress = deepSyncProgress,
