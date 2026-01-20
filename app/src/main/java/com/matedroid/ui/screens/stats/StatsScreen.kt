@@ -207,6 +207,13 @@ fun StatsScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Use real-time progress from StateFlow when syncing, DB count otherwise
+            val effectiveSyncProgress = if (uiState.isSyncing && uiState.syncProgress != null) {
+                uiState.syncProgress!!.percentage
+            } else {
+                uiState.deepSyncProgress
+            }
+
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -222,7 +229,7 @@ fun StatsScreen(
                 }
                 EmptyState(
                     message = emptyMessage,
-                    syncProgress = uiState.deepSyncProgress,
+                    syncProgress = effectiveSyncProgress,
                     syncPhase = uiState.syncProgress?.phase,
                     isSyncing = uiState.isSyncing
                 )
@@ -231,7 +238,7 @@ fun StatsScreen(
                     stats = uiState.carStats!!,
                     availableYears = uiState.availableYears,
                     selectedYearFilter = uiState.selectedYearFilter,
-                    deepSyncProgress = uiState.deepSyncProgress,
+                    deepSyncProgress = effectiveSyncProgress,
                     palette = palette,
                     currencySymbol = uiState.currencySymbol,
                     onYearFilterSelected = { viewModel.setYearFilter(it) },
