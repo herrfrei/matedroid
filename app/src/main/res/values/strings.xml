@@ -87,6 +87,9 @@
     <!-- Tooltip shown when car is asleep, %s is the time when it went to sleep -->
     <string name="asleep_since">Asleep since %s</string>
 
+    <!-- Tooltip shown when car is offline, %s is the time when it went offline -->
+    <string name="offline_since">Offline since %s</string>
+
     <!-- Word for yesterday used in timestamps -->
     <string name="yesterday">yesterday</string>
 

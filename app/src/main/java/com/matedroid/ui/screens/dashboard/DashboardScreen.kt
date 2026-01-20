@@ -769,6 +769,7 @@ private fun StatusIndicatorsRow(
     val isDriving = status.state?.lowercase() == "driving"
     val isAwake = isOnline || isCharging || isDriving
     val isAsleep = status.state?.lowercase() in listOf("asleep", "suspended")
+    val isOffline = status.state?.lowercase() == "offline"
     val isLocked = status.locked == true
 
     Column(modifier = modifier) {
@@ -792,6 +793,14 @@ private fun StatusIndicatorsRow(
                         val sleepTime = formatTimeFromTimestamp(status.stateSince, yesterdayStr)
                         if (sleepTime != null) {
                             stringResource(R.string.asleep_since, sleepTime)
+                        } else {
+                            status.state?.replaceFirstChar { it.uppercase() } ?: stringResource(R.string.unknown)
+                        }
+                    }
+                    isOffline -> {
+                        val offlineTime = formatTimeFromTimestamp(status.stateSince, yesterdayStr)
+                        if (offlineTime != null) {
+                            stringResource(R.string.offline_since, offlineTime)
                         } else {
                             status.state?.replaceFirstChar { it.uppercase() } ?: stringResource(R.string.unknown)
                         }
@@ -927,8 +936,8 @@ private fun StatusIndicatorsRow(
             }
         }
 
-        // Show sleep duration when asleep
-        if (isAsleep) {
+        // Show duration when asleep or offline
+        if (isAsleep || isOffline) {
             val sleepDuration = formatDurationSince(status.stateSince)
             if (sleepDuration != null) {
                 Spacer(modifier = Modifier.height(4.dp))
