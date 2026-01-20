@@ -115,6 +115,9 @@ data class DeepStats(
     val acChargeEnergyKwh: Double,
     val dcChargeEnergyKwh: Double,
 
+    // === Countries Visited ===
+    val countriesVisitedCount: Int?,
+
     // === Sync Progress ===
     val driveDetailsProcessed: Int,
     val chargeDetailsProcessed: Int
@@ -208,4 +211,16 @@ data class BatteryChangeRecord(
     val recordId: Int,              // chargeId or driveId
     val date: String,
     val isCharge: Boolean           // true for charge, false for drive
+)
+
+/**
+ * Record for a country visited.
+ */
+data class CountryRecord(
+    val countryCode: String,        // ISO 3166-1 alpha-2 (e.g., "IT", "US")
+    val countryName: String,        // Full name (e.g., "Italy", "United States")
+    val flagEmoji: String,          // Flag emoji (e.g., "🇮🇹", "🇺🇸")
+    val firstVisitDate: String,     // ISO date of first drive
+    val lastVisitDate: String,      // ISO date of most recent drive
+    val driveCount: Int             // Number of drives in this country
 )

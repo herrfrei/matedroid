@@ -99,6 +99,7 @@ fun StatsScreen(
     onNavigateToDriveDetail: (Int) -> Unit = {},
     onNavigateToChargeDetail: (Int) -> Unit = {},
     onNavigateToDayDetail: (String) -> Unit = {},
+    onNavigateToCountriesVisited: (Int?) -> Unit = {}, // year (null for all time)
     viewModel: StatsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -237,6 +238,7 @@ fun StatsScreen(
                     onNavigateToDriveDetail = onNavigateToDriveDetail,
                     onNavigateToChargeDetail = onNavigateToChargeDetail,
                     onNavigateToDayDetail = onNavigateToDayDetail,
+                    onNavigateToCountriesVisited = onNavigateToCountriesVisited,
                     onRangeRecordClick = { rangeRecordToShow = it },
                     onGapRecordClick = { gapDays, fromDate, toDate, title ->
                         gapRecordToShow = GapRecordInfo(gapDays, fromDate, toDate, title)
@@ -338,6 +340,7 @@ private fun StatsContent(
     onNavigateToDriveDetail: (Int) -> Unit,
     onNavigateToChargeDetail: (Int) -> Unit,
     onNavigateToDayDetail: (String) -> Unit,
+    onNavigateToCountriesVisited: (Int?) -> Unit, // year (null for all time)
     onRangeRecordClick: (MaxDistanceBetweenChargesRecord) -> Unit,
     onGapRecordClick: (Double, String, String, String) -> Unit,
     onSyncProgressClick: (() -> Unit)? = null
@@ -378,6 +381,10 @@ private fun StatsContent(
                 onDriveClick = onNavigateToDriveDetail,
                 onChargeClick = onNavigateToChargeDetail,
                 onDayClick = onNavigateToDayDetail,
+                onCountriesVisitedClick = {
+                    val year = (selectedYearFilter as? YearFilter.Year)?.year
+                    onNavigateToCountriesVisited(year)
+                },
                 onRangeRecordClick = onRangeRecordClick,
                 onGapRecordClick = onGapRecordClick
             )
@@ -624,6 +631,7 @@ private fun RecordsCard(
     onDriveClick: (Int) -> Unit,
     onChargeClick: (Int) -> Unit,
     onDayClick: (String) -> Unit,
+    onCountriesVisitedClick: () -> Unit,
     onRangeRecordClick: (MaxDistanceBetweenChargesRecord) -> Unit,
     onGapRecordClick: (Double, String, String, String) -> Unit // gapDays, fromDate, toDate, title
 ) {
@@ -633,6 +641,7 @@ private fun RecordsCard(
     val labelMostEfficient = stringResource(R.string.record_most_efficient)
     val labelLongestStreak = stringResource(R.string.record_longest_streak)
     val labelBusiestDay = stringResource(R.string.record_busiest_day)
+    val labelCountriesVisited = stringResource(R.string.record_countries_visited)
     val labelBiggestGain = stringResource(R.string.record_biggest_gain)
     val labelBiggestDrain = stringResource(R.string.record_biggest_drain)
     val labelBiggestCharge = stringResource(R.string.record_biggest_charge)
@@ -672,6 +681,9 @@ private fun RecordsCard(
     }
     quickStats.busiestDay?.let { day ->
         driveRecords.add(RecordData("📅", labelBusiestDay, stringResource(R.string.format_drives_count, day.count), day.day) { onDayClick(day.day) })
+    }
+    deepStats?.countriesVisitedCount?.let { count ->
+        driveRecords.add(RecordData("🌍", labelCountriesVisited, stringResource(R.string.format_countries_count, count), "") { onCountriesVisitedClick() })
     }
 
     // Category 2: Battery

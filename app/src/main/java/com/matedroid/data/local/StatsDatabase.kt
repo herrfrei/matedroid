@@ -34,7 +34,7 @@ import com.matedroid.data.local.entity.SyncState
         DriveDetailAggregate::class,
         ChargeDetailAggregate::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -71,6 +71,14 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+        /** Migration from V3 to V4: Add country fields to drive aggregates */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE drive_detail_aggregates ADD COLUMN startCountryCode TEXT")
+                db.execSQL("ALTER TABLE drive_detail_aggregates ADD COLUMN startCountryName TEXT")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
     }
 }

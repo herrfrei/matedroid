@@ -321,4 +321,58 @@ interface AggregateDao {
 
     @Query("SELECT COUNT(*) FROM charge_detail_aggregates WHERE carId = :carId")
     suspend fun countChargeAggregates(carId: Int): Int
+
+    // === Deep Stats: Countries Visited ===
+
+    // Count unique countries visited
+    @Query("""
+        SELECT COUNT(DISTINCT startCountryCode) FROM drive_detail_aggregates
+        WHERE carId = :carId AND startCountryCode IS NOT NULL
+    """)
+    suspend fun countUniqueCountries(carId: Int): Int
+
+    @Query("""
+        SELECT COUNT(DISTINCT a.startCountryCode) FROM drive_detail_aggregates a
+        JOIN drives_summary d ON a.driveId = d.driveId
+        WHERE a.carId = :carId AND a.startCountryCode IS NOT NULL
+        AND d.startDate >= :startDate AND d.startDate < :endDate
+    """)
+    suspend fun countUniqueCountriesInRange(carId: Int, startDate: String, endDate: String): Int
+
+    // Get countries visited with aggregated data
+    @Query("""
+        SELECT a.startCountryCode as countryCode, a.startCountryName as countryName,
+               MIN(d.startDate) as firstVisitDate, MAX(d.startDate) as lastVisitDate,
+               COUNT(*) as driveCount
+        FROM drive_detail_aggregates a
+        JOIN drives_summary d ON a.driveId = d.driveId
+        WHERE a.carId = :carId AND a.startCountryCode IS NOT NULL
+        GROUP BY a.startCountryCode
+        ORDER BY firstVisitDate ASC
+    """)
+    suspend fun getCountriesVisited(carId: Int): List<CountryVisitResult>
+
+    @Query("""
+        SELECT a.startCountryCode as countryCode, a.startCountryName as countryName,
+               MIN(d.startDate) as firstVisitDate, MAX(d.startDate) as lastVisitDate,
+               COUNT(*) as driveCount
+        FROM drive_detail_aggregates a
+        JOIN drives_summary d ON a.driveId = d.driveId
+        WHERE a.carId = :carId AND a.startCountryCode IS NOT NULL
+        AND d.startDate >= :startDate AND d.startDate < :endDate
+        GROUP BY a.startCountryCode
+        ORDER BY firstVisitDate ASC
+    """)
+    suspend fun getCountriesVisitedInRange(carId: Int, startDate: String, endDate: String): List<CountryVisitResult>
 }
+
+/**
+ * Result of a country visit aggregation query.
+ */
+data class CountryVisitResult(
+    val countryCode: String,
+    val countryName: String,
+    val firstVisitDate: String,
+    val lastVisitDate: String,
+    val driveCount: Int
+)

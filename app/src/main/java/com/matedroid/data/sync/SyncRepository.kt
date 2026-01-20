@@ -13,6 +13,7 @@ import com.matedroid.data.local.entity.DriveDetailAggregate
 import com.matedroid.data.local.entity.DriveSummary
 import com.matedroid.data.local.entity.SchemaVersion
 import com.matedroid.data.repository.ApiResult
+import com.matedroid.data.repository.GeocodingRepository
 import com.matedroid.data.repository.TeslamateRepository
 import kotlinx.coroutines.delay
 import javax.inject.Inject
@@ -28,7 +29,8 @@ class SyncRepository @Inject constructor(
     private val chargeSummaryDao: ChargeSummaryDao,
     private val aggregateDao: AggregateDao,
     private val syncManager: SyncManager,
-    private val logCollector: SyncLogCollector
+    private val logCollector: SyncLogCollector,
+    private val geocodingRepository: GeocodingRepository
 ) {
     companion object {
         private const val TAG = "SyncRepository"
@@ -133,7 +135,24 @@ class SyncRepository @Inject constructor(
             val remaining = total - index - 1
             when (val result = teslamateRepository.getDriveDetail(carId, driveId)) {
                 is ApiResult.Success -> {
-                    val aggregate = computeDriveAggregate(carId, result.data)
+                    // Extract country from first position via reverse geocoding
+                    val firstPosition = result.data.positions?.firstOrNull()
+                    var countryCode: String? = null
+                    var countryName: String? = null
+                    if (firstPosition?.latitude != null && firstPosition.longitude != null) {
+                        try {
+                            val location = geocodingRepository.reverseGeocodeWithCountry(
+                                firstPosition.latitude,
+                                firstPosition.longitude
+                            )
+                            countryCode = location?.countryCode
+                            countryName = location?.countryName
+                        } catch (e: Exception) {
+                            logError("Failed to geocode drive $driveId: ${e.message}")
+                        }
+                    }
+
+                    val aggregate = computeDriveAggregate(carId, result.data, countryCode, countryName)
                     aggregateDao.upsertDriveAggregate(aggregate)
                     syncManager.updateDriveDetailProgress(carId, driveId)
                     log("Drive $driveId synced ($remaining remaining)")
@@ -185,7 +204,12 @@ class SyncRepository @Inject constructor(
     /**
      * Compute aggregates from drive detail positions.
      */
-    private fun computeDriveAggregate(carId: Int, detail: DriveDetail): DriveDetailAggregate {
+    private fun computeDriveAggregate(
+        carId: Int,
+        detail: DriveDetail,
+        countryCode: String? = null,
+        countryName: String? = null
+    ): DriveDetailAggregate {
         val positions = detail.positions ?: emptyList()
 
         // Elevation stats
@@ -239,7 +263,10 @@ class SyncRepository @Inject constructor(
             minPower = powers.minOrNull(),
 
             climateOnPositions = climateOnCount,
-            positionCount = positions.size
+            positionCount = positions.size,
+
+            startCountryCode = countryCode,
+            startCountryName = countryName
         )
     }
 

@@ -62,6 +62,11 @@ data class DriveDetailAggregate(
     // === Metadata ===
     val positionCount: Int,         // Total positions in this drive
 
+    // === Country (V3) ===
+    // Extracted from reverse geocoding the first position
+    val startCountryCode: String? = null,   // ISO 3166-1 alpha-2 (e.g., "IT", "US")
+    val startCountryName: String? = null,   // Full name (e.g., "Italy", "United States")
+
     // === Future extensibility ===
     // Store experimental data without schema changes
     val extraJson: String? = null
