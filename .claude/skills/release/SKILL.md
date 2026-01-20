@@ -59,12 +59,14 @@ Fixed:
 
 Keep it concise - this appears in Play Store and F-Droid. Make the opening text engaging without it being too verbose or showy.
 
-### 5. Translate Changelogs
+### 5. Translate Changelogs (Automatic)
 
-Translate the English changelog to all supported locales and save them:
+Automatically translate the English changelog and write the translations to:
 - `fastlane/metadata/android/it-IT/changelogs/{versionCode}.txt` (Italian)
 - `fastlane/metadata/android/es-ES/changelogs/{versionCode}.txt` (Spanish)
 - `fastlane/metadata/android/ca-ES/changelogs/{versionCode}.txt` (Catalan)
+
+Do this immediately after creating the English changelog - no user interaction needed.
 
 Translation guidelines:
 - Keep the same structure and format as the English version
