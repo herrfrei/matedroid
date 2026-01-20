@@ -19,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -73,7 +72,7 @@ class DashboardViewModelTest {
 
     @After
     fun tearDown() {
-        viewModel?.viewModelScope?.coroutineContext?.cancelChildren()
+        cancelViewModelCoroutines()
         viewModel = null
         Dispatchers.resetMain()
         clearAllMocks()
@@ -184,6 +183,8 @@ class DashboardViewModelTest {
         assertFalse(viewModel!!.uiState.value.isRefreshing)
         assertEquals(80, viewModel!!.uiState.value.carStatus?.batteryLevel)
 
+        // Using atLeast = 2 because the auto-refresh mechanism may trigger
+        // additional getCarStatus calls before cancelViewModelCoroutines() runs.
         coVerify(atLeast = 2) { repository.getCarStatus(1) }
     }
 
