@@ -149,37 +149,18 @@ class SyncRepository @Inject constructor(
                 }.awaitAll()
             }
 
-            // Process results: extract country data concurrently, then compute aggregates
-            val aggregates = coroutineScope {
-                apiResults.mapNotNull { (driveId, result) ->
-                    when (result) {
-                        is ApiResult.Success -> {
-                            async {
-                                // Extract country from first position via reverse geocoding
-                                val firstPosition = result.data.positions?.firstOrNull()
-                                var countryCode: String? = null
-                                var countryName: String? = null
-                                if (firstPosition?.latitude != null && firstPosition.longitude != null) {
-                                    try {
-                                        val location = geocodingRepository.reverseGeocodeWithCountry(
-                                            firstPosition.latitude,
-                                            firstPosition.longitude
-                                        )
-                                        countryCode = location?.countryCode
-                                        countryName = location?.countryName
-                                    } catch (e: Exception) {
-                                        logError("Failed to geocode drive $driveId: ${e.message}")
-                                    }
-                                }
-                                computeDriveAggregate(carId, result.data, countryCode, countryName)
-                            }
-                        }
-                        is ApiResult.Error -> {
-                            logError("Drive $driveId failed: ${result.message}")
-                            null
-                        }
+            // Process results and compute aggregates
+            // TODO: Re-enable country geocoding after sync optimization
+            val aggregates = apiResults.mapNotNull { (driveId, result) ->
+                when (result) {
+                    is ApiResult.Success -> {
+                        computeDriveAggregate(carId, result.data, null, null)
                     }
-                }.awaitAll()
+                    is ApiResult.Error -> {
+                        logError("Drive $driveId failed: ${result.message}")
+                        null
+                    }
+                }
             }
 
             // Batch write all successful aggregates
@@ -187,10 +168,10 @@ class SyncRepository @Inject constructor(
                 aggregateDao.upsertDriveAggregates(aggregates)
             }
 
-            // Update progress once per batch (last drive ID in batch)
+            // Update progress once per batch with correct count
             val lastDriveId = batch.lastOrNull()
             if (lastDriveId != null) {
-                syncManager.updateDriveDetailProgress(carId, lastDriveId)
+                syncManager.updateDriveDetailProgressBatch(carId, lastDriveId, aggregates.size)
             }
 
             log("Batch ${batchIndex + 1}: ${aggregates.size}/${batch.size} drives synced ($remaining remaining)")
@@ -247,10 +228,10 @@ class SyncRepository @Inject constructor(
                 aggregateDao.upsertChargeAggregates(aggregates)
             }
 
-            // Update progress once per batch (last charge ID in batch)
+            // Update progress once per batch with correct count
             val lastChargeId = batch.lastOrNull()
             if (lastChargeId != null) {
-                syncManager.updateChargeDetailProgress(carId, lastChargeId)
+                syncManager.updateChargeDetailProgressBatch(carId, lastChargeId, aggregates.size)
             }
 
             log("Batch ${batchIndex + 1}: ${aggregates.size}/${batch.size} charges synced ($remaining remaining)")
