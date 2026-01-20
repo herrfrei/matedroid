@@ -55,7 +55,7 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl("https://nominatim.openstreetmap.org/")
             .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
             .create(NominatimApi::class.java)
     }
@@ -71,7 +71,7 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl("https://archive-api.open-meteo.com/")
             .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
             .create(OpenMeteoApi::class.java)
     }
@@ -123,7 +123,7 @@ class TeslamateApiFactory(
         val api = Retrofit.Builder()
             .baseUrl(normalizedUrl)
             .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
             .build()
             .create(TeslamateApi::class.java)
 
