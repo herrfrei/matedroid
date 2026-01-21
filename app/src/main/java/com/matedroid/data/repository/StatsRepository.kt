@@ -14,6 +14,7 @@ import com.matedroid.domain.model.DriveTempRecord
 import com.matedroid.domain.model.QuickStats
 import com.matedroid.domain.model.BatteryChangeRecord
 import com.matedroid.domain.model.CountryRecord
+import com.matedroid.domain.model.RegionRecord
 import com.matedroid.domain.model.GapRecord
 import com.matedroid.domain.model.MaxDistanceBetweenChargesRecord
 import com.matedroid.domain.model.StreakRecord
@@ -533,6 +534,21 @@ class StatsRepository @Inject constructor(
     }
 
     /**
+     * Get regions visited within a specific country with aggregated data.
+     */
+    suspend fun getRegionsVisited(carId: Int, countryCode: String, yearFilter: YearFilter): List<RegionRecord> {
+        val results = when (yearFilter) {
+            is YearFilter.AllTime -> aggregateDao.getRegionsVisited(carId, countryCode)
+            is YearFilter.Year -> {
+                val startDate = "${yearFilter.year}-01-01T00:00:00"
+                val endDate = "${yearFilter.year + 1}-01-01T00:00:00"
+                aggregateDao.getRegionsVisitedInRange(carId, countryCode, startDate, endDate)
+            }
+        }
+        return results.map { it.toRegionRecord() }
+    }
+
+    /**
      * Observe geocoding progress for a car.
      * Returns null when geocoding is complete or hasn't started.
      */
@@ -560,6 +576,17 @@ private fun com.matedroid.data.local.dao.CountryVisitResult.toCountryRecord() = 
     countryCode = countryCode,
     countryName = countryName,
     flagEmoji = countryCodeToFlag(countryCode),
+    firstVisitDate = firstVisitDate,
+    lastVisitDate = lastVisitDate,
+    driveCount = driveCount,
+    totalDistanceKm = totalDistanceKm,
+    totalChargeEnergyKwh = totalChargeEnergyKwh,
+    chargeCount = chargeCount
+)
+
+private fun com.matedroid.data.local.dao.RegionVisitResult.toRegionRecord() = RegionRecord(
+    regionName = regionName,
+    countryCode = countryCode,
     firstVisitDate = firstVisitDate,
     lastVisitDate = lastVisitDate,
     driveCount = driveCount,

@@ -415,6 +415,78 @@ interface AggregateDao {
     """)
     suspend fun getCountriesVisitedInRange(carId: Int, startDate: String, endDate: String): List<CountryVisitResult>
 
+    // === Deep Stats: Regions Visited (within a country) ===
+
+    // Get regions visited within a specific country with aggregated data
+    @Query("""
+        SELECT
+            drive_stats.regionName,
+            drive_stats.countryCode,
+            drive_stats.firstVisitDate,
+            drive_stats.lastVisitDate,
+            drive_stats.driveCount,
+            drive_stats.totalDistanceKm,
+            COALESCE(charge_stats.totalChargeEnergyKwh, 0.0) as totalChargeEnergyKwh,
+            COALESCE(charge_stats.chargeCount, 0) as chargeCount
+        FROM (
+            SELECT a.startRegionName as regionName, a.startCountryCode as countryCode,
+                   MIN(d.startDate) as firstVisitDate, MAX(d.startDate) as lastVisitDate,
+                   COUNT(*) as driveCount, SUM(d.distance) as totalDistanceKm
+            FROM drive_detail_aggregates a
+            JOIN drives_summary d ON a.driveId = d.driveId
+            WHERE a.carId = :carId AND a.startCountryCode = :countryCode AND a.startRegionName IS NOT NULL
+            GROUP BY a.startRegionName
+        ) drive_stats
+        LEFT JOIN (
+            SELECT ca.regionName, SUM(cs.energyAdded) as totalChargeEnergyKwh, COUNT(*) as chargeCount
+            FROM charge_detail_aggregates ca
+            JOIN charges_summary cs ON ca.chargeId = cs.chargeId
+            WHERE ca.carId = :carId AND ca.countryCode = :countryCode AND ca.regionName IS NOT NULL
+            GROUP BY ca.regionName
+        ) charge_stats ON drive_stats.regionName = charge_stats.regionName
+        ORDER BY drive_stats.firstVisitDate ASC
+    """)
+    suspend fun getRegionsVisited(carId: Int, countryCode: String): List<RegionVisitResult>
+
+    @Query("""
+        SELECT
+            drive_stats.regionName,
+            drive_stats.countryCode,
+            drive_stats.firstVisitDate,
+            drive_stats.lastVisitDate,
+            drive_stats.driveCount,
+            drive_stats.totalDistanceKm,
+            COALESCE(charge_stats.totalChargeEnergyKwh, 0.0) as totalChargeEnergyKwh,
+            COALESCE(charge_stats.chargeCount, 0) as chargeCount
+        FROM (
+            SELECT a.startRegionName as regionName, a.startCountryCode as countryCode,
+                   MIN(d.startDate) as firstVisitDate, MAX(d.startDate) as lastVisitDate,
+                   COUNT(*) as driveCount, SUM(d.distance) as totalDistanceKm
+            FROM drive_detail_aggregates a
+            JOIN drives_summary d ON a.driveId = d.driveId
+            WHERE a.carId = :carId AND a.startCountryCode = :countryCode AND a.startRegionName IS NOT NULL
+            AND d.startDate >= :startDate AND d.startDate < :endDate
+            GROUP BY a.startRegionName
+        ) drive_stats
+        LEFT JOIN (
+            SELECT ca.regionName, SUM(cs.energyAdded) as totalChargeEnergyKwh, COUNT(*) as chargeCount
+            FROM charge_detail_aggregates ca
+            JOIN charges_summary cs ON ca.chargeId = cs.chargeId
+            WHERE ca.carId = :carId AND ca.countryCode = :countryCode AND ca.regionName IS NOT NULL
+            AND cs.startDate >= :startDate AND cs.startDate < :endDate
+            GROUP BY ca.regionName
+        ) charge_stats ON drive_stats.regionName = charge_stats.regionName
+        ORDER BY drive_stats.firstVisitDate ASC
+    """)
+    suspend fun getRegionsVisitedInRange(carId: Int, countryCode: String, startDate: String, endDate: String): List<RegionVisitResult>
+
+    // Count unique regions in a country
+    @Query("""
+        SELECT COUNT(DISTINCT startRegionName) FROM drive_detail_aggregates
+        WHERE carId = :carId AND startCountryCode = :countryCode AND startRegionName IS NOT NULL
+    """)
+    suspend fun countUniqueRegions(carId: Int, countryCode: String): Int
+
     // === Deep Stats: Cities Visited (Drives) ===
 
     @Query("""
@@ -658,4 +730,18 @@ data class CountryChargeStats(
     val chargeCount: Int,
     val dcCount: Int,
     val acCount: Int
+)
+
+/**
+ * Result of a region visit aggregation query.
+ */
+data class RegionVisitResult(
+    val regionName: String,
+    val countryCode: String,
+    val firstVisitDate: String,
+    val lastVisitDate: String,
+    val driveCount: Int,
+    val totalDistanceKm: Double,
+    val totalChargeEnergyKwh: Double,
+    val chargeCount: Int
 )

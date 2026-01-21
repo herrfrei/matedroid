@@ -738,6 +738,22 @@
     <!-- Content description for sort button -->
     <string name="sort">Ordina</string>
 
+    <!-- ==================== Regions Visited Screen ==================== -->
+    <!-- Top bar title for regions visited screen. %s is the country name -->
+    <string name="regions_visited_title">Regioni in %s</string>
+
+    <!-- Plural for number of regions. %d is the count -->
+    <plurals name="format_regions_count">
+        <item quantity="one">%d regione</item>
+        <item quantity="other">%d regioni</item>
+    </plurals>
+
+    <!-- Empty state when no regions have been recorded -->
+    <string name="no_regions_found">Nessuna regione registrata.</string>
+
+    <!-- Header card title showing country totals -->
+    <string name="regions_country_summary">Riepilogo Paese</string>
+
     <!-- ==================== Mileage Screen ==================== -->
     <!-- Top bar title for mileage screen -->
     <string name="mileage_title">Chilometraggio</string>

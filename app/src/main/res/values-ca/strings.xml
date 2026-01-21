@@ -738,6 +738,22 @@
     <!-- Label for sort dropdown/menu -->
     <string name="sort">Ordena</string>
 
+    <!-- ==================== Regions Visited Screen ==================== -->
+    <!-- Top bar title for regions visited screen. %s is the country name -->
+    <string name="regions_visited_title">Regions a %s</string>
+
+    <!-- Plural for number of regions. %d is the count -->
+    <plurals name="format_regions_count">
+        <item quantity="one">%d regió</item>
+        <item quantity="other">%d regions</item>
+    </plurals>
+
+    <!-- Empty state when no regions have been recorded -->
+    <string name="no_regions_found">No hi ha regions registrades.</string>
+
+    <!-- Header card title showing country totals -->
+    <string name="regions_country_summary">Resum del País</string>
+
     <!-- ==================== Mileage Screen ==================== -->
     <!-- Top bar title for mileage screen -->
     <string name="mileage_title">Quilometratge</string>
