@@ -24,8 +24,6 @@ import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.EvStation
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -200,36 +199,35 @@ private fun CountrySummaryCard(
     country: CountryRecord,
     palette: CarColorPalette
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = palette.accentDim.copy(alpha = 0.3f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    val cardShape = RoundedCornerShape(20.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 6.dp,
+                shape = cardShape,
+                spotColor = palette.accent.copy(alpha = 0.15f)
+            )
+            .clip(cardShape)
+            .background(palette.accent.copy(alpha = 0.08f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(20.dp)
         ) {
             // Header row with flag and country name
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Flag emoji
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(palette.accentDim, RoundedCornerShape(16.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = country.flagEmoji,
-                        fontSize = 32.sp
-                    )
-                }
+                // Large flag emoji
+                Text(
+                    text = country.flagEmoji,
+                    fontSize = 56.sp,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
 
                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -237,7 +235,7 @@ private fun CountrySummaryCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = country.countryName,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = palette.onSurface
                     )
@@ -248,31 +246,36 @@ private fun CountrySummaryCard(
                     )
                 }
 
-                // Drive count
-                Column(
-                    horizontalAlignment = Alignment.End
+                // Drive count in pill
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(palette.accent.copy(alpha = 0.2f))
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
-                    Text(
-                        text = country.driveCount.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = palette.accent
-                    )
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.drives_count,
-                            country.driveCount,
-                            country.driveCount
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = country.driveCount.toString(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = palette.accent
+                        )
+                        Text(
+                            text = pluralStringResource(
+                                R.plurals.drives_count,
+                                country.driveCount,
+                                country.driveCount
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.accent.copy(alpha = 0.8f)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = palette.onSurfaceVariant.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = palette.onSurfaceVariant.copy(alpha = 0.15f))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // First and last visit dates
             Row(
@@ -281,57 +284,51 @@ private fun CountrySummaryCard(
             ) {
                 Column {
                     Text(
-                        text = stringResource(
-                            R.string.country_first_visit,
-                            formatDate(country.firstVisitDate)
-                        ),
+                        text = stringResource(R.string.country_first_visit, formatDate(country.firstVisitDate)),
                         style = MaterialTheme.typography.bodySmall,
                         color = palette.onSurfaceVariant
                     )
                     Text(
-                        text = stringResource(
-                            R.string.country_last_visit,
-                            formatDate(country.lastVisitDate)
-                        ),
+                        text = stringResource(R.string.country_last_visit, formatDate(country.lastVisitDate)),
                         style = MaterialTheme.typography.bodySmall,
                         color = palette.onSurfaceVariant
                     )
                 }
             }
 
-            // Stats row
-            Spacer(modifier = Modifier.height(12.dp))
+            // Stats row in chips
+            Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Distance
-                StatItem(
+                StatChip(
                     icon = Icons.Default.Route,
                     value = "%.0f km".format(country.totalDistanceKm),
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Charge energy
-                StatItem(
+                StatChip(
                     icon = Icons.Default.ElectricBolt,
                     value = if (country.totalChargeEnergyKwh > 999) {
                         "%.1f MWh".format(country.totalChargeEnergyKwh / 1000)
                     } else {
                         "%.0f kWh".format(country.totalChargeEnergyKwh)
                     },
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Charge count
-                StatItem(
+                StatChip(
                     icon = Icons.Default.EvStation,
                     value = pluralStringResource(
                         R.plurals.charges_count,
                         country.chargeCount,
                         country.chargeCount
                     ),
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -343,13 +340,18 @@ private fun RegionCard(
     region: RegionRecord,
     palette: CarColorPalette
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = palette.surface.copy(alpha = 0.7f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    val cardShape = RoundedCornerShape(16.dp)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 2.dp,
+                shape = cardShape,
+                spotColor = palette.onSurface.copy(alpha = 0.08f)
+            )
+            .clip(cardShape)
+            .background(palette.surface)
     ) {
         Column(
             modifier = Modifier
@@ -365,30 +367,36 @@ private fun RegionCard(
                     Text(
                         text = region.regionName,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = palette.onSurface
                     )
                 }
 
-                // Drive count
-                Column(
-                    horizontalAlignment = Alignment.End
+                // Drive count in pill
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(palette.accent.copy(alpha = 0.12f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
-                    Text(
-                        text = region.driveCount.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = palette.accent
-                    )
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.drives_count,
-                            region.driveCount,
-                            region.driveCount
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = region.driveCount.toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = palette.accent
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = pluralStringResource(
+                                R.plurals.drives_count,
+                                region.driveCount,
+                                region.driveCount
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.accent.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
 
@@ -396,35 +404,35 @@ private fun RegionCard(
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Distance
-                StatItem(
+                StatChip(
                     icon = Icons.Default.Route,
                     value = "%.0f km".format(region.totalDistanceKm),
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Charge energy
-                StatItem(
+                StatChip(
                     icon = Icons.Default.ElectricBolt,
                     value = if (region.totalChargeEnergyKwh > 999) {
                         "%.1f MWh".format(region.totalChargeEnergyKwh / 1000)
                     } else {
                         "%.0f kWh".format(region.totalChargeEnergyKwh)
                     },
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Charge count
-                StatItem(
+                StatChip(
                     icon = Icons.Default.EvStation,
                     value = pluralStringResource(
                         R.plurals.charges_count,
                         region.chargeCount,
                         region.chargeCount
                     ),
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -432,25 +440,31 @@ private fun RegionCard(
 }
 
 @Composable
-private fun StatItem(
+private fun StatChip(
     icon: ImageVector,
     value: String,
-    tint: androidx.compose.ui.graphics.Color
+    palette: CarColorPalette,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(palette.onSurface.copy(alpha = 0.05f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = tint
+            modifier = Modifier.size(14.dp),
+            tint = palette.onSurfaceVariant
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = tint
+            style = MaterialTheme.typography.labelMedium,
+            color = palette.onSurfaceVariant
         )
     }
 }

@@ -26,8 +26,6 @@ import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.EvStation
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -194,15 +193,19 @@ private fun CountryCard(
     palette: CarColorPalette,
     onClick: () -> Unit
 ) {
-    Card(
+    val cardShape = RoundedCornerShape(20.dp)
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = palette.surface.copy(alpha = 0.7f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .shadow(
+                elevation = 4.dp,
+                shape = cardShape,
+                spotColor = palette.onSurface.copy(alpha = 0.1f)
+            )
+            .clip(cardShape)
+            .background(palette.surface)
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier
@@ -213,50 +216,53 @@ private fun CountryCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Flag emoji
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .background(palette.accentDim, RoundedCornerShape(16.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = country.flagEmoji,
-                        fontSize = 32.sp
-                    )
-                }
+                // Large flag emoji without background box
+                Text(
+                    text = country.flagEmoji,
+                    fontSize = 48.sp,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-                // Country info
+                // Country name - larger and more prominent
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = country.countryName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
                         color = palette.onSurface
                     )
                 }
 
-                // Drive count
+                // Drive count in accent-colored pill
                 Column(
                     horizontalAlignment = Alignment.End
                 ) {
-                    Text(
-                        text = country.driveCount.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = palette.accent
-                    )
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.drives_count,
-                            country.driveCount,
-                            country.driveCount
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(palette.accent.copy(alpha = 0.15f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = country.driveCount.toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = palette.accent
+                            )
+                            Text(
+                                text = pluralStringResource(
+                                    R.plurals.drives_count,
+                                    country.driveCount,
+                                    country.driveCount
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = palette.accent.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 }
 
                 // Chevron arrow
@@ -264,43 +270,47 @@ private fun CountryCard(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = stringResource(R.string.view_details),
-                    tint = palette.onSurfaceVariant
+                    tint = palette.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
-            // Stats row with colorful icons
-            Spacer(modifier = Modifier.height(12.dp))
+            // Stats row in subtle chips
+            Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Distance
-                StatItem(
+                // Distance chip
+                StatChip(
                     icon = Icons.Default.Route,
                     value = "%.0f km".format(country.totalDistanceKm),
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Charge energy (MWh if > 999 kWh, otherwise kWh)
-                StatItem(
+                // Energy chip
+                StatChip(
                     icon = Icons.Default.ElectricBolt,
                     value = if (country.totalChargeEnergyKwh > 999) {
                         "%.1f MWh".format(country.totalChargeEnergyKwh / 1000)
                     } else {
                         "%.0f kWh".format(country.totalChargeEnergyKwh)
                     },
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
 
-                // Charge count
-                StatItem(
+                // Charges chip
+                StatChip(
                     icon = Icons.Default.EvStation,
                     value = pluralStringResource(
                         R.plurals.charges_count,
                         country.chargeCount,
                         country.chargeCount
                     ),
-                    tint = palette.onSurfaceVariant
+                    palette = palette,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -308,25 +318,31 @@ private fun CountryCard(
 }
 
 @Composable
-private fun StatItem(
+private fun StatChip(
     icon: ImageVector,
     value: String,
-    tint: androidx.compose.ui.graphics.Color
+    palette: CarColorPalette,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        verticalAlignment = Alignment.CenterVertically
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(palette.onSurface.copy(alpha = 0.05f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = tint
+            modifier = Modifier.size(14.dp),
+            tint = palette.onSurfaceVariant
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = tint
+            style = MaterialTheme.typography.labelMedium,
+            color = palette.onSurfaceVariant
         )
     }
 }
@@ -350,4 +366,3 @@ private fun EmptyState(palette: CarColorPalette) {
         }
     }
 }
-
