@@ -216,8 +216,7 @@ private fun CountryCard(
                 Box(
                     modifier = Modifier
                         .size(56.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(palette.accentDim),
+                        .background(palette.accentDim, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
