@@ -198,7 +198,6 @@ private fun CountryCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = palette.surface.copy(alpha = 0.7f)
         ),

@@ -202,7 +202,6 @@ private fun CountrySummaryCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = palette.accentDim.copy(alpha = 0.3f)
         ),
@@ -345,7 +344,6 @@ private fun RegionCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = palette.surface.copy(alpha = 0.7f)
         ),
