@@ -61,6 +61,7 @@ import com.matedroid.domain.model.CountryRecord
 import com.matedroid.domain.model.YearFilter
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,10 +178,12 @@ private fun CountriesList(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(countries, key = { it.countryCode }) { country ->
+            val localizedName = getLocalizedCountryName(country.countryCode)
             CountryCard(
                 country = country,
+                localizedName = localizedName,
                 palette = palette,
-                onClick = { onCountryClick(country.countryCode, country.countryName) }
+                onClick = { onCountryClick(country.countryCode, localizedName) }
             )
         }
     }
@@ -189,6 +192,7 @@ private fun CountriesList(
 @Composable
 private fun CountryCard(
     country: CountryRecord,
+    localizedName: String,
     palette: CarColorPalette,
     onClick: () -> Unit
 ) {
@@ -226,7 +230,7 @@ private fun CountryCard(
                 // Country name - larger and more prominent
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = country.countryName,
+                        text = localizedName,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = palette.onSurface
@@ -355,5 +359,18 @@ private fun EmptyState(palette: CarColorPalette) {
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+/**
+ * Get the localized country name for a given ISO country code.
+ * Falls back to the country code if localization fails.
+ */
+private fun getLocalizedCountryName(countryCode: String): String {
+    return try {
+        Locale("", countryCode).getDisplayCountry(Locale.getDefault())
+            .takeIf { it.isNotBlank() && it != countryCode } ?: countryCode
+    } catch (e: Exception) {
+        countryCode
     }
 }

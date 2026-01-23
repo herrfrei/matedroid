@@ -62,6 +62,7 @@ import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -181,7 +182,11 @@ private fun RegionsContent(
         // Header card with country summary
         countryRecord?.let { country ->
             item(key = "header") {
-                CountrySummaryCard(country = country, palette = palette)
+                CountrySummaryCard(
+                    country = country,
+                    localizedName = getLocalizedCountryName(country.countryCode),
+                    palette = palette
+                )
             }
         }
 
@@ -195,6 +200,7 @@ private fun RegionsContent(
 @Composable
 private fun CountrySummaryCard(
     country: CountryRecord,
+    localizedName: String,
     palette: CarColorPalette
 ) {
     val cardShape = RoundedCornerShape(20.dp)
@@ -231,7 +237,7 @@ private fun CountrySummaryCard(
                 // Country name
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = country.countryName,
+                        text = localizedName,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = palette.onSurface
@@ -477,5 +483,18 @@ private fun formatDate(dateStr: String): String {
         } catch (e2: Exception) {
             dateStr
         }
+    }
+}
+
+/**
+ * Get the localized country name for a given ISO country code.
+ * Falls back to the country code if localization fails.
+ */
+private fun getLocalizedCountryName(countryCode: String): String {
+    return try {
+        Locale("", countryCode).getDisplayCountry(Locale.getDefault())
+            .takeIf { it.isNotBlank() && it != countryCode } ?: countryCode
+    } catch (e: Exception) {
+        countryCode
     }
 }
