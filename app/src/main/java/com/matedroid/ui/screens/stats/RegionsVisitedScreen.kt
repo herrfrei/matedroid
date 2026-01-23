@@ -28,7 +28,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -205,58 +204,52 @@ private fun CountrySummaryCard(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 6.dp,
+                elevation = 4.dp,
                 shape = cardShape,
-                spotColor = palette.accent.copy(alpha = 0.15f)
+                spotColor = palette.onSurface.copy(alpha = 0.1f)
             )
             .clip(cardShape)
-            .background(palette.accent.copy(alpha = 0.08f))
+            .background(palette.surface)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(16.dp)
         ) {
             // Header row with flag and country name
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Large flag emoji
+                // Flag emoji
                 Text(
                     text = country.flagEmoji,
-                    fontSize = 56.sp,
-                    modifier = Modifier.padding(end = 4.dp)
+                    fontSize = 40.sp
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-                // Country name and summary label
+                // Country name
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = country.countryName,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
                         color = palette.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.regions_country_summary),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
                     )
                 }
 
                 // Drive count in pill
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(palette.accent.copy(alpha = 0.2f))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(palette.accent.copy(alpha = 0.15f))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = country.driveCount.toString(),
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = palette.accent
                         )
@@ -273,31 +266,26 @@ private fun CountrySummaryCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = palette.onSurfaceVariant.copy(alpha = 0.15f))
-            Spacer(modifier = Modifier.height(16.dp))
-
             // First and last visit dates
+            Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column {
-                    Text(
-                        text = stringResource(R.string.country_first_visit, formatDate(country.firstVisitDate)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
-                    )
-                    Text(
-                        text = stringResource(R.string.country_last_visit, formatDate(country.lastVisitDate)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = stringResource(R.string.country_first_visit, formatDate(country.firstVisitDate)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.onSurfaceVariant
+                )
+                Text(
+                    text = stringResource(R.string.country_last_visit, formatDate(country.lastVisitDate)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.onSurfaceVariant
+                )
             }
 
             // Stats row in chips
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)

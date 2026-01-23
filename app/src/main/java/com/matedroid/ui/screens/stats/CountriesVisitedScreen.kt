@@ -216,11 +216,10 @@ private fun CountryCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Large flag emoji without background box
+                // Flag emoji
                 Text(
                     text = country.flagEmoji,
-                    fontSize = 48.sp,
-                    modifier = Modifier.padding(end = 4.dp)
+                    fontSize = 40.sp
                 )
 
                 Spacer(modifier = Modifier.width(12.dp))
