@@ -131,6 +131,27 @@ fun RegionsVisitedScreen(
                                     showSortMenu = false
                                 }
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_by_distance)) },
+                                onClick = {
+                                    viewModel.setSortOrder(RegionSortOrder.DISTANCE)
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_by_energy)) },
+                                onClick = {
+                                    viewModel.setSortOrder(RegionSortOrder.ENERGY)
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_by_charges)) },
+                                onClick = {
+                                    viewModel.setSortOrder(RegionSortOrder.CHARGES)
+                                    showSortMenu = false
+                                }
+                            )
                         }
                     }
                 },

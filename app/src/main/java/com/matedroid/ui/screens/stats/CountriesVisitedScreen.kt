@@ -129,6 +129,27 @@ fun CountriesVisitedScreen(
                                     showSortMenu = false
                                 }
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_by_distance)) },
+                                onClick = {
+                                    viewModel.setSortOrder(CountrySortOrder.DISTANCE)
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_by_energy)) },
+                                onClick = {
+                                    viewModel.setSortOrder(CountrySortOrder.ENERGY)
+                                    showSortMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.sort_by_charges)) },
+                                onClick = {
+                                    viewModel.setSortOrder(CountrySortOrder.CHARGES)
+                                    showSortMenu = false
+                                }
+                            )
                         }
                     }
                 },

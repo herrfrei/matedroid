@@ -732,6 +732,15 @@
     <!-- Sort option: by number of drives -->
     <string name="sort_by_drive_count">Per viatges</string>
 
+    <!-- Sort option: sort by total distance -->
+    <string name="sort_by_distance">Per distància</string>
+
+    <!-- Sort option: sort by total energy charged -->
+    <string name="sort_by_energy">Per energia</string>
+
+    <!-- Sort option: sort by number of charges -->
+    <string name="sort_by_charges">Per càrregues</string>
+
     <!-- Empty state when no countries have been recorded yet -->
     <string name="no_countries_found">No hi ha països registrats encara…</string>
 

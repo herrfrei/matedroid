@@ -20,7 +20,10 @@ import javax.inject.Inject
 enum class RegionSortOrder {
     FIRST_VISIT,    // Chronological by first visit date (default)
     ALPHABETICAL,   // A-Z by region name
-    DRIVE_COUNT     // Most drives first
+    DRIVE_COUNT,    // Most drives first
+    DISTANCE,       // Most distance first
+    ENERGY,         // Most energy charged first
+    CHARGES         // Most charges first
 }
 
 data class RegionsVisitedUiState(
@@ -91,6 +94,9 @@ class RegionsVisitedViewModel @Inject constructor(
             RegionSortOrder.FIRST_VISIT -> regions.sortedBy { it.firstVisitDate }
             RegionSortOrder.ALPHABETICAL -> regions.sortedBy { it.regionName }
             RegionSortOrder.DRIVE_COUNT -> regions.sortedByDescending { it.driveCount }
+            RegionSortOrder.DISTANCE -> regions.sortedByDescending { it.totalDistanceKm }
+            RegionSortOrder.ENERGY -> regions.sortedByDescending { it.totalChargeEnergyKwh }
+            RegionSortOrder.CHARGES -> regions.sortedByDescending { it.chargeCount }
         }
     }
 }
