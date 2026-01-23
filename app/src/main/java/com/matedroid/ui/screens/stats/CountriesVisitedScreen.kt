@@ -52,6 +52,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -132,6 +133,7 @@ fun CountriesVisitedScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = palette.surface,
+                    scrolledContainerColor = palette.surface,
                     titleContentColor = palette.onSurface,
                     navigationIconContentColor = palette.onSurface,
                     actionIconContentColor = palette.onSurface
@@ -234,34 +236,25 @@ private fun CountryCard(
                     )
                 }
 
-                // Drive count in accent-colored pill
+                // Drive count
                 Column(
                     horizontalAlignment = Alignment.End
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(palette.accent.copy(alpha = 0.15f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = country.driveCount.toString(),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = palette.accent
-                            )
-                            Text(
-                                text = pluralStringResource(
-                                    R.plurals.drives_count,
-                                    country.driveCount,
-                                    country.driveCount
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = palette.accent.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
+                    Text(
+                        text = country.driveCount.toString(),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = palette.accent
+                    )
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.drives_count,
+                            country.driveCount,
+                            country.driveCount
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.onSurfaceVariant
+                    )
                 }
 
                 // Chevron arrow
@@ -341,7 +334,9 @@ private fun StatChip(
         Text(
             text = value,
             style = MaterialTheme.typography.labelMedium,
-            color = palette.onSurfaceVariant
+            color = palette.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
