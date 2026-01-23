@@ -482,6 +482,8 @@ class StatsRepository @Inject constructor(
      * Get the sync completion percentage for deep stats.
      * Returns 1.0 if sync is marked complete, regardless of actual count
      * (some items may have failed but sync is done).
+     * Only counts aggregates with current schema version to accurately reflect
+     * progress when schema changes require reprocessing.
      */
     suspend fun getDeepSyncProgress(carId: Int): Float {
         // If sync is marked complete, return 1.0
@@ -492,8 +494,9 @@ class StatsRepository @Inject constructor(
 
         val totalDrives = driveSummaryDao.count(carId)
         val totalCharges = chargeSummaryDao.count(carId)
-        val processedDrives = aggregateDao.countDriveAggregates(carId)
-        val processedCharges = aggregateDao.countChargeAggregates(carId)
+        // Only count aggregates with current schema version
+        val processedDrives = aggregateDao.countDriveAggregatesWithSchema(carId, SchemaVersion.CURRENT)
+        val processedCharges = aggregateDao.countChargeAggregatesWithSchema(carId, SchemaVersion.CURRENT)
 
         val total = totalDrives + totalCharges
         val processed = processedDrives + processedCharges
@@ -504,13 +507,15 @@ class StatsRepository @Inject constructor(
     /**
      * Observe sync progress as a Flow. Room automatically emits when tables change.
      * This provides real-time progress updates without relying on StateFlow propagation.
+     * Only counts aggregates with current schema version to accurately reflect
+     * progress when schema changes require reprocessing.
      */
     fun observeDeepSyncProgress(carId: Int): kotlinx.coroutines.flow.Flow<Float> {
         return kotlinx.coroutines.flow.combine(
             driveSummaryDao.observeCount(carId),
             chargeSummaryDao.observeCount(carId),
-            aggregateDao.observeDriveAggregateCount(carId),
-            aggregateDao.observeChargeAggregateCount(carId)
+            aggregateDao.observeDriveAggregateCountWithSchema(carId, SchemaVersion.CURRENT),
+            aggregateDao.observeChargeAggregateCountWithSchema(carId, SchemaVersion.CURRENT)
         ) { totalDrives, totalCharges, processedDrives, processedCharges ->
             val total = totalDrives + totalCharges
             val processed = processedDrives + processedCharges

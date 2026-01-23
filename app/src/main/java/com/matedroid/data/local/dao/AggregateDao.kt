@@ -328,12 +328,26 @@ interface AggregateDao {
     @Query("SELECT COUNT(*) FROM charge_detail_aggregates WHERE carId = :carId")
     suspend fun countChargeAggregates(carId: Int): Int
 
+    // Schema-version-aware counts (only count aggregates with current schema)
+    @Query("SELECT COUNT(*) FROM drive_detail_aggregates WHERE carId = :carId AND schemaVersion >= :minVersion")
+    suspend fun countDriveAggregatesWithSchema(carId: Int, minVersion: Int): Int
+
+    @Query("SELECT COUNT(*) FROM charge_detail_aggregates WHERE carId = :carId AND schemaVersion >= :minVersion")
+    suspend fun countChargeAggregatesWithSchema(carId: Int, minVersion: Int): Int
+
     // Flow-based counts for real-time progress updates (Room emits on table changes)
     @Query("SELECT COUNT(*) FROM drive_detail_aggregates WHERE carId = :carId")
     fun observeDriveAggregateCount(carId: Int): kotlinx.coroutines.flow.Flow<Int>
 
     @Query("SELECT COUNT(*) FROM charge_detail_aggregates WHERE carId = :carId")
     fun observeChargeAggregateCount(carId: Int): kotlinx.coroutines.flow.Flow<Int>
+
+    // Schema-version-aware Flow counts (for accurate progress during schema migrations)
+    @Query("SELECT COUNT(*) FROM drive_detail_aggregates WHERE carId = :carId AND schemaVersion >= :minVersion")
+    fun observeDriveAggregateCountWithSchema(carId: Int, minVersion: Int): kotlinx.coroutines.flow.Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM charge_detail_aggregates WHERE carId = :carId AND schemaVersion >= :minVersion")
+    fun observeChargeAggregateCountWithSchema(carId: Int, minVersion: Int): kotlinx.coroutines.flow.Flow<Int>
 
     // === Deep Stats: Countries Visited ===
 
