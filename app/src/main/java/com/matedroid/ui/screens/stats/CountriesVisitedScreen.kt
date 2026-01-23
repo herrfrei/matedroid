@@ -132,11 +132,8 @@ fun CountriesVisitedScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = palette.surface,
-                    scrolledContainerColor = palette.surface,
-                    titleContentColor = palette.onSurface,
-                    navigationIconContentColor = palette.onSurface,
-                    actionIconContentColor = palette.onSurface
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
@@ -144,7 +141,7 @@ fun CountriesVisitedScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(palette.surface)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
         ) {
             when {
