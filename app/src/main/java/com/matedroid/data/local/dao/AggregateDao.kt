@@ -657,7 +657,7 @@ interface AggregateDao {
 
     // Get coordinates of drives that need geocoding (have coordinates but no country)
     @Query("""
-        SELECT startLatitude, startLongitude FROM drive_detail_aggregates
+        SELECT startLatitude AS latitude, startLongitude AS longitude FROM drive_detail_aggregates
         WHERE carId = :carId
         AND startLatitude IS NOT NULL
         AND startLongitude IS NOT NULL
@@ -681,16 +681,10 @@ interface AggregateDao {
  * Simple lat/lon result for geocoding queries.
  */
 data class LatLonResult(
-    val startLatitude: Double?,
-    val startLongitude: Double?,
-    val latitude: Double? = null,
-    val longitude: Double? = null
+    val latitude: Double,
+    val longitude: Double
 ) {
-    fun toLatLon(): Pair<Double, Double>? {
-        val lat = startLatitude ?: latitude
-        val lon = startLongitude ?: longitude
-        return if (lat != null && lon != null) lat to lon else null
-    }
+    fun toLatLon(): Pair<Double, Double> = latitude to longitude
 }
 
 /**
