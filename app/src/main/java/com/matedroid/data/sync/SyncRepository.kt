@@ -49,20 +49,15 @@ class SyncRepository @Inject constructor(
         private const val BATCH_SIZE = 10  // Number of concurrent API calls
     }
 
-    // Track whether we've already started the geocoding worker for this sync session
-    private var geocodingStarted = false
-
     private fun log(message: String) = logCollector.log(TAG, message)
     private fun logError(message: String, error: Throwable? = null) = logCollector.logError(TAG, message, error)
 
     /**
-     * Schedule the geocoding worker if not already started.
-     * Uses KEEP policy to avoid replacing a running worker.
+     * Ensure geocoding worker is running or scheduled.
+     * Called whenever new locations are enqueued.
+     * Uses KEEP policy: if worker is running, do nothing; if finished, start new one.
      */
-    private fun scheduleGeocodingIfNeeded() {
-        if (geocodingStarted) return
-        geocodingStarted = true
-
+    private fun ensureGeocodingRunning() {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
@@ -75,7 +70,7 @@ class SyncRepository @Inject constructor(
         WorkManager.getInstance(context)
             .enqueueUniqueWork(
                 GeocodeWorker.WORK_NAME,
-                ExistingWorkPolicy.KEEP,  // Don't replace if already running
+                ExistingWorkPolicy.KEEP,  // Don't interrupt running worker; start new if finished
                 request
             )
 
@@ -89,7 +84,6 @@ class SyncRepository @Inject constructor(
      */
     suspend fun syncCar(carId: Int): Boolean {
         log("Starting sync for car $carId")
-        geocodingStarted = false  // Reset for new sync session
 
         // Phase 1: Sync summaries
         syncManager.updateSummaryProgress(carId, "Fetching drives and charges...")
@@ -225,7 +219,7 @@ class SyncRepository @Inject constructor(
                 if (enqueued > 0) {
                     log("Enqueued $enqueued drive locations from batch ${batchIndex + 1}")
                     // Start geocoding worker on first batch with locations (runs in parallel)
-                    scheduleGeocodingIfNeeded()
+                    ensureGeocodingRunning()
                 }
             }
 
@@ -306,7 +300,7 @@ class SyncRepository @Inject constructor(
                 if (enqueued > 0) {
                     log("Enqueued $enqueued charge locations from batch ${batchIndex + 1}")
                     // Start geocoding worker if not already running
-                    scheduleGeocodingIfNeeded()
+                    ensureGeocodingRunning()
                 }
             }
 
