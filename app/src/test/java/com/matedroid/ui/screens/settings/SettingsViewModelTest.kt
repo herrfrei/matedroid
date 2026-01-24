@@ -6,6 +6,7 @@ import com.matedroid.data.local.AppSettings
 import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
+import com.matedroid.data.repository.TpmsStateRepository
 import com.matedroid.data.sync.SyncManager
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -37,6 +38,7 @@ class SettingsViewModelTest {
     private lateinit var settingsDataStore: SettingsDataStore
     private lateinit var repository: TeslamateRepository
     private lateinit var syncManager: SyncManager
+    private lateinit var tpmsStateRepository: TpmsStateRepository
     private lateinit var workManager: WorkManager
     private lateinit var viewModel: SettingsViewModel
 
@@ -47,6 +49,7 @@ class SettingsViewModelTest {
         settingsDataStore = mockk()
         repository = mockk()
         syncManager = mockk()
+        tpmsStateRepository = mockk(relaxed = true)
         workManager = mockk(relaxed = true)
 
         every { settingsDataStore.settings } returns flowOf(AppSettings())
@@ -63,7 +66,7 @@ class SettingsViewModelTest {
     }
 
     private fun createViewModel(): SettingsViewModel {
-        return SettingsViewModel(context, settingsDataStore, repository, syncManager)
+        return SettingsViewModel(context, settingsDataStore, repository, syncManager, tpmsStateRepository)
     }
 
     @Test
