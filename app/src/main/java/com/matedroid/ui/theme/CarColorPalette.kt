@@ -218,7 +218,7 @@ object CarColorPalettes {
             colorKey.contains("black") || colorKey == "pbsb" || colorKey == "pmbl" ->
                 if (darkTheme) blackDarkPalette else blackLightPalette
 
-            colorKey.contains("midnightsilver") || colorKey == "pmng" ->
+            colorKey.contains("midnightsilver") || colorKey.contains("steelgrey") || colorKey == "pmng" ->
                 if (darkTheme) midnightSilverDarkPalette else midnightSilverLightPalette
 
             colorKey.contains("silver") || colorKey == "pmss" ->
