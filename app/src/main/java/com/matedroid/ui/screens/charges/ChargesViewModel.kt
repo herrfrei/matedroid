@@ -1,5 +1,6 @@
 package com.matedroid.ui.screens.charges
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.matedroid.data.api.models.ChargeData
@@ -8,6 +9,7 @@ import com.matedroid.data.local.dao.AggregateDao
 import com.matedroid.data.model.Currency
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
+import com.matedroid.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,12 +29,13 @@ enum class ChartGranularity {
     DAILY, WEEKLY, MONTHLY
 }
 
-enum class DateFilter(val label: String, val days: Long?) {
-    LAST_7_DAYS("Last 7 days", 7),
-    LAST_30_DAYS("Last 30 days", 30),
-    LAST_90_DAYS("Last 90 days", 90),
-    LAST_YEAR("Last year", 365),
-    ALL_TIME("All time", null)
+enum class DateFilter(@get:StringRes val labelRes: Int, val days: Long?) {
+    TODAY(R.string.filter_today, 0),
+    LAST_7_DAYS(R.string.filter_last_7_days, 7),
+    LAST_30_DAYS(R.string.filter_last_30_days, 30),
+    LAST_90_DAYS(R.string.filter_last_90_days, 90),
+    LAST_YEAR(R.string.filter_last_year, 365),
+    ALL_TIME(R.string.filter_all_time, null)
 }
 
 enum class ChargeTypeFilter(val label: String) {

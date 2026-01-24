@@ -264,17 +264,6 @@ private fun DrivesContent(
     }
 }
 
-@Composable
-private fun getDateFilterLabel(filter: DriveDateFilter): String {
-    return when (filter) {
-        DriveDateFilter.LAST_7_DAYS -> stringResource(R.string.filter_last_7_days)
-        DriveDateFilter.LAST_30_DAYS -> stringResource(R.string.filter_last_30_days)
-        DriveDateFilter.LAST_90_DAYS -> stringResource(R.string.filter_last_90_days)
-        DriveDateFilter.LAST_YEAR -> stringResource(R.string.filter_last_year)
-        DriveDateFilter.ALL_TIME -> stringResource(R.string.filter_all_time)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateFilterChips(
@@ -289,7 +278,7 @@ private fun DateFilterChips(
             FilterChip(
                 selected = filter == selectedFilter,
                 onClick = { onFilterSelected(filter) },
-                label = { Text(getDateFilterLabel(filter)) },
+                label = { Text(stringResource(filter.labelRes)) },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = palette.surface,
                     selectedLabelColor = palette.onSurface
