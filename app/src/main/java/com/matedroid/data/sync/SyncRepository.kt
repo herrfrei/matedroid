@@ -1,5 +1,11 @@
 package com.matedroid.data.sync
 
+import android.content.Context
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.matedroid.data.api.models.ChargeData
 import com.matedroid.data.api.models.ChargeDetail
 import com.matedroid.data.api.models.DriveData
@@ -15,6 +21,7 @@ import com.matedroid.data.local.entity.SchemaVersion
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.GeocodingRepository
 import com.matedroid.data.repository.TeslamateRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -27,6 +34,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class SyncRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val teslamateRepository: TeslamateRepository,
     private val driveSummaryDao: DriveSummaryDao,
     private val chargeSummaryDao: ChargeSummaryDao,
@@ -41,8 +49,38 @@ class SyncRepository @Inject constructor(
         private const val BATCH_SIZE = 10  // Number of concurrent API calls
     }
 
+    // Track whether we've already started the geocoding worker for this sync session
+    private var geocodingStarted = false
+
     private fun log(message: String) = logCollector.log(TAG, message)
     private fun logError(message: String, error: Throwable? = null) = logCollector.logError(TAG, message, error)
+
+    /**
+     * Schedule the geocoding worker if not already started.
+     * Uses KEEP policy to avoid replacing a running worker.
+     */
+    private fun scheduleGeocodingIfNeeded() {
+        if (geocodingStarted) return
+        geocodingStarted = true
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val request = OneTimeWorkRequestBuilder<GeocodeWorker>()
+            .setConstraints(constraints)
+            .addTag(GeocodeWorker.TAG)
+            .build()
+
+        WorkManager.getInstance(context)
+            .enqueueUniqueWork(
+                GeocodeWorker.WORK_NAME,
+                ExistingWorkPolicy.KEEP,  // Don't replace if already running
+                request
+            )
+
+        log("Started geocoding worker (parallel with sync)")
+    }
 
     /**
      * Sync all data for a car.
@@ -51,6 +89,7 @@ class SyncRepository @Inject constructor(
      */
     suspend fun syncCar(carId: Int): Boolean {
         log("Starting sync for car $carId")
+        geocodingStarted = false  // Reset for new sync session
 
         // Phase 1: Sync summaries
         syncManager.updateSummaryProgress(carId, "Fetching drives and charges...")
@@ -132,14 +171,13 @@ class SyncRepository @Inject constructor(
     /**
      * Sync drive details (Deep Stats - elevation, temperature extremes, country).
      * Processes drives in parallel batches for improved performance.
+     * Locations are enqueued for geocoding incrementally (per batch) and geocoding
+     * starts in parallel without blocking drive retrieval.
      */
     suspend fun syncDriveDetails(carId: Int): Boolean {
         val unprocessedIds = driveSummaryDao.getUnprocessedDriveIds(carId, SchemaVersion.CURRENT)
         val total = unprocessedIds.size
         log("Processing $total drive details for car $carId (batch size: $BATCH_SIZE)")
-
-        // Collect locations for background geocoding
-        val locationsToGeocode = mutableListOf<Pair<Double, Double>>()
 
         // Process in batches
         unprocessedIds.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
@@ -155,14 +193,17 @@ class SyncRepository @Inject constructor(
                 }.awaitAll()
             }
 
-            // Process results and compute aggregates (coordinates are stored, geocoding is deferred)
+            // Collect locations from this batch for geocoding
+            val batchLocations = mutableListOf<Pair<Double, Double>>()
+
+            // Process results and compute aggregates
             val aggregates = apiResults.mapNotNull { (driveId, result) ->
                 when (result) {
                     is ApiResult.Success -> {
                         val aggregate = computeDriveAggregate(carId, result.data)
-                        // Collect location for background geocoding
+                        // Collect location for geocoding
                         if (aggregate.startLatitude != null && aggregate.startLongitude != null) {
-                            locationsToGeocode.add(aggregate.startLatitude to aggregate.startLongitude)
+                            batchLocations.add(aggregate.startLatitude to aggregate.startLongitude)
                         }
                         aggregate
                     }
@@ -176,6 +217,16 @@ class SyncRepository @Inject constructor(
             // Batch write all successful aggregates
             if (aggregates.isNotEmpty()) {
                 aggregateDao.upsertDriveAggregates(aggregates)
+            }
+
+            // Enqueue this batch's locations immediately (survives interruption)
+            if (batchLocations.isNotEmpty()) {
+                val enqueued = geocodingRepository.enqueueLocationsForCar(carId, batchLocations)
+                if (enqueued > 0) {
+                    log("Enqueued $enqueued drive locations from batch ${batchIndex + 1}")
+                    // Start geocoding worker on first batch with locations (runs in parallel)
+                    scheduleGeocodingIfNeeded()
+                }
             }
 
             // Update progress once per batch (last drive ID in batch)
@@ -192,26 +243,19 @@ class SyncRepository @Inject constructor(
             }
         }
 
-        // Enqueue drive locations for background geocoding
-        if (locationsToGeocode.isNotEmpty()) {
-            val enqueued = geocodingRepository.enqueueLocationsForCar(carId, locationsToGeocode)
-            log("Enqueued $enqueued drive locations for geocoding")
-        }
-
         return true
     }
 
     /**
      * Sync charge details (Deep Stats - AC/DC ratio, max power).
      * Processes charges in parallel batches for improved performance.
+     * Locations are enqueued for geocoding incrementally (per batch) and geocoding
+     * starts in parallel without blocking charge retrieval.
      */
     suspend fun syncChargeDetails(carId: Int): Boolean {
         val unprocessedIds = chargeSummaryDao.getUnprocessedChargeIds(carId, SchemaVersion.CURRENT)
         val total = unprocessedIds.size
         log("Processing $total charge details for car $carId (batch size: $BATCH_SIZE)")
-
-        // Collect locations for background geocoding
-        val locationsToGeocode = mutableListOf<Pair<Double, Double>>()
 
         // Process in batches
         unprocessedIds.chunked(BATCH_SIZE).forEachIndexed { batchIndex, batch ->
@@ -227,6 +271,9 @@ class SyncRepository @Inject constructor(
                 }.awaitAll()
             }
 
+            // Collect locations from this batch for geocoding
+            val batchLocations = mutableListOf<Pair<Double, Double>>()
+
             // Process results and collect successful aggregates
             val aggregates = mutableListOf<ChargeDetailAggregate>()
             for ((chargeId, result) in results) {
@@ -238,7 +285,7 @@ class SyncRepository @Inject constructor(
                         // Get location from charge summary for geocoding
                         val summary = chargeSummaryDao.get(chargeId)
                         if (summary != null && summary.latitude != 0.0 && summary.longitude != 0.0) {
-                            locationsToGeocode.add(summary.latitude to summary.longitude)
+                            batchLocations.add(summary.latitude to summary.longitude)
                         }
                     }
                     is ApiResult.Error -> {
@@ -253,6 +300,16 @@ class SyncRepository @Inject constructor(
                 aggregateDao.upsertChargeAggregates(aggregates)
             }
 
+            // Enqueue this batch's locations immediately (survives interruption)
+            if (batchLocations.isNotEmpty()) {
+                val enqueued = geocodingRepository.enqueueLocationsForCar(carId, batchLocations)
+                if (enqueued > 0) {
+                    log("Enqueued $enqueued charge locations from batch ${batchIndex + 1}")
+                    // Start geocoding worker if not already running
+                    scheduleGeocodingIfNeeded()
+                }
+            }
+
             // Update progress once per batch (last charge ID in batch)
             val lastChargeId = batch.lastOrNull()
             if (lastChargeId != null) {
@@ -265,12 +322,6 @@ class SyncRepository @Inject constructor(
             if (remaining > 0) {
                 delay(THROTTLE_DELAY_MS)
             }
-        }
-
-        // Enqueue charge locations for background geocoding
-        if (locationsToGeocode.isNotEmpty()) {
-            val enqueued = geocodingRepository.enqueueLocationsForCar(carId, locationsToGeocode)
-            log("Enqueued $enqueued charge locations for geocoding")
         }
 
         return true

@@ -147,8 +147,9 @@ class DataSyncWorker @AssistedInject constructor(
     }
 
     /**
-     * Schedule background geocoding worker.
-     * Uses KEEP policy to avoid interrupting running geocoding.
+     * Schedule background geocoding worker as a safety net.
+     * Uses KEEP policy to avoid interrupting running geocoding (which may have
+     * been started earlier by SyncRepository during drive/charge processing).
      */
     private fun scheduleGeocoding() {
         val constraints = Constraints.Builder()
@@ -164,11 +165,11 @@ class DataSyncWorker @AssistedInject constructor(
         WorkManager.getInstance(applicationContext)
             .enqueueUniqueWork(
                 GeocodeWorker.WORK_NAME,
-                ExistingWorkPolicy.REPLACE,  // Restart geocoding on each sync
+                ExistingWorkPolicy.KEEP,  // Don't replace if already running
                 request
             )
 
-        log("Scheduled geocoding worker")
+        log("Ensured geocoding worker is scheduled")
     }
 
     private fun isNetworkError(message: String?): Boolean {
