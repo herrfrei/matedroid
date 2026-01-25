@@ -357,7 +357,7 @@ private fun SummaryCard(summary: DrivesSummary, palette: CarColorPalette) {
                 SummaryItem(
                     icon = CustomIcons.SteeringWheel,
                     label = stringResource(R.string.total_distance),
-                    value = "%.1f km".format(summary.totalDistanceKm),
+                    value = "%,.1f km".format(summary.totalDistanceKm),
                     palette = palette,
                     modifier = Modifier.weight(0.8f)
                 )

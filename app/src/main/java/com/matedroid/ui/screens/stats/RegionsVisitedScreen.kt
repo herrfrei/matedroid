@@ -392,7 +392,7 @@ private fun CountrySummaryCard(
             ) {
                 StatChip(
                     icon = Icons.Default.Route,
-                    value = "%.0f km".format(country.totalDistanceKm),
+                    value = "%,.0f km".format(country.totalDistanceKm),
                     palette = palette,
                     modifier = Modifier.weight(1f)
                 )
@@ -624,7 +624,7 @@ private fun CountryMapCard(
                                         position = geoPoint
                                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                                         title = drive.address
-                                        snippet = "%.1f km".format(drive.distanceKm)
+                                        snippet = "%,.1f km".format(drive.distanceKm)
 
                                         val dotDrawable = GradientDrawable().apply {
                                             shape = GradientDrawable.OVAL
@@ -1017,7 +1017,7 @@ private fun RegionCard(
             ) {
                 StatChip(
                     icon = Icons.Default.Route,
-                    value = "%.0f km".format(region.totalDistanceKm),
+                    value = "%,.0f km".format(region.totalDistanceKm),
                     palette = palette,
                     modifier = Modifier.weight(1f)
                 )

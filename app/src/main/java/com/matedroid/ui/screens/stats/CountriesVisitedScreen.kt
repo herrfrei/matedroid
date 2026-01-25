@@ -297,7 +297,7 @@ private fun CountryCard(
                 // Distance chip
                 StatChip(
                     icon = Icons.Default.Route,
-                    value = "%.0f km".format(country.totalDistanceKm),
+                    value = "%,.0f km".format(country.totalDistanceKm),
                     palette = palette,
                     modifier = Modifier.weight(1f)
                 )

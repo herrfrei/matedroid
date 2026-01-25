@@ -19,9 +19,9 @@ object UnitFormatter {
     fun formatDistance(value: Double, units: Units?, decimals: Int = 1): String {
         return if (units?.isImperial == true) {
             val miles = value * KM_TO_MI
-            "%.${decimals}f mi".format(miles)
+            "%,.${decimals}f mi".format(miles)
         } else {
-            "%.${decimals}f km".format(value)
+            "%,.${decimals}f km".format(value)
         }
     }
 
