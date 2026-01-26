@@ -1456,10 +1456,13 @@ private fun LocationCard(status: CarStatus, units: Units?, resolvedAddress: Stri
                 }
             }
 
-            // Elevation row - aligned to the left
+            // Elevation row - aligned with location text
             if (elevationText != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(start = 36.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = Icons.Filled.Terrain,
                         contentDescription = null,
