@@ -293,8 +293,8 @@ private fun formatWeatherDistance(distanceKm: Double, units: Units?, isLastPoint
     val isImperial = units?.isImperial == true
     return if (isImperial) {
         val miles = distanceKm * 0.621371
-        "%.1f mi".format(miles)
+        "%,.1f mi".format(miles)
     } else {
-        "%.1f km".format(distanceKm)
+        "%,.1f km".format(distanceKm)
     }
 }

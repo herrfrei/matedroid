@@ -550,13 +550,13 @@ private fun RangeCard(stats: BatteryStats, palette: CarColorPalette, onClick: ()
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 RangeValueCard(
-                    value = "%.1f km".format(stats.maxRangeNew),
+                    value = "%,.1f km".format(stats.maxRangeNew),
                     label = maxRangeNewLabel,
                     iconColor = CapacityGreen,
                     modifier = Modifier.weight(1f)
                 )
                 RangeValueCard(
-                    value = "%.1f km".format(stats.maxRangeNow),
+                    value = "%,.1f km".format(stats.maxRangeNow),
                     label = maxRangeNowLabel,
                     iconColor = CapacityYellow,
                     modifier = Modifier.weight(1f)
@@ -580,7 +580,7 @@ private fun RangeCard(stats: BatteryStats, palette: CarColorPalette, onClick: ()
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "%.1f km".format(stats.rangeLoss),
+                        text = "%,.1f km".format(stats.rangeLoss),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = palette.onSurface
@@ -841,7 +841,7 @@ private fun RangeInformationCard(stats: BatteryStats) {
             RangeInfoRow(
                 title = estimatedRangeLabel,
                 subtitle = estimatedRangeSubtitle,
-                value = "%.1f km".format(stats.estimatedRange),
+                value = "%,.1f km".format(stats.estimatedRange),
                 valueColor = RangeBlue
             )
 
@@ -850,7 +850,7 @@ private fun RangeInformationCard(stats: BatteryStats) {
             RangeInfoRow(
                 title = ratedRangeLabel,
                 subtitle = ratedRangeSubtitle,
-                value = "%.1f km".format(stats.ratedRange),
+                value = "%,.1f km".format(stats.ratedRange),
                 valueColor = RangeBlue
             )
 
@@ -859,7 +859,7 @@ private fun RangeInformationCard(stats: BatteryStats) {
             RangeInfoRow(
                 title = idealRangeLabel,
                 subtitle = idealRangeSubtitle,
-                value = "%.1f km".format(stats.idealRange),
+                value = "%,.1f km".format(stats.idealRange),
                 valueColor = RangeBlue
             )
         }
@@ -993,7 +993,7 @@ private fun EstimatedCapacityCard(stats: BatteryStats) {
                 }
 
                 Text(
-                    text = "%.1f km".format(stats.rangeAt100),
+                    text = "%,.1f km".format(stats.rangeAt100),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = StatusSuccess

@@ -814,6 +814,7 @@ private fun StatusIndicatorsRow(
                     icon = when {
                         isAsleep -> Icons.Filled.Bedtime
                         isDriving -> CustomIcons.SteeringWheel
+                        isCharging -> Icons.Filled.ElectricBolt
                         else -> Icons.Filled.PowerSettingsNew
                     },
                     tooltipText = stateTooltip,
@@ -936,17 +937,15 @@ private fun StatusIndicatorsRow(
             }
         }
 
-        // Show duration when asleep or offline
-        if (isAsleep || isOffline) {
-            val sleepDuration = formatDurationSince(status.stateSince)
-            if (sleepDuration != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = sleepDuration,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = palette.onSurfaceVariant
-                )
-            }
+        // Show duration for all states
+        val stateDuration = formatDurationSince(status.stateSince)
+        if (stateDuration != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stateDuration,
+                style = MaterialTheme.typography.labelSmall,
+                color = palette.onSurfaceVariant
+            )
         }
     }
 }
@@ -1414,70 +1413,73 @@ private fun LocationCard(status: CarStatus, units: Units?, resolvedAddress: Stri
             containerColor = palette.surface
         )
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.Top
+                .padding(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.LocationOn,
-                contentDescription = null,
-                tint = palette.accent
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.location),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = palette.onSurfaceVariant
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = null,
+                    tint = palette.accent
                 )
-                Text(
-                    text = locationText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = palette.onSurface
-                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.location),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.onSurfaceVariant
+                    )
+                    Text(
+                        text = locationText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = palette.onSurface
+                    )
+                }
 
-                // Elevation row
-                if (elevationText != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Filled.Terrain,
-                            contentDescription = null,
-                            tint = palette.onSurfaceVariant,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.elevation),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = palette.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = elevationText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = palette.onSurface,
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                // Small map showing car location
+                if (latitude != null && longitude != null) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    SmallLocationMap(
+                        latitude = latitude,
+                        longitude = longitude,
+                        onClick = { openInMaps() },
+                        modifier = Modifier
+                            .width(140.dp)
+                            .height(70.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
                 }
             }
 
-            // Small map showing car location
-            if (latitude != null && longitude != null) {
-                Spacer(modifier = Modifier.width(12.dp))
-                SmallLocationMap(
-                    latitude = latitude,
-                    longitude = longitude,
-                    onClick = { openInMaps() },
-                    modifier = Modifier
-                        .width(140.dp)
-                        .height(70.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                )
+            // Elevation row - icon aligned with location icon, text aligned with location text
+            if (elevationText != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.Terrain,
+                        contentDescription = null,
+                        tint = palette.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.elevation),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = elevationText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.onSurface,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
             }
         }
     }

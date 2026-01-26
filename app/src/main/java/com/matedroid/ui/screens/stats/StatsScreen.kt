@@ -609,7 +609,7 @@ private fun QuickStatsDrivesCard(quickStats: QuickStats, palette: CarColorPalett
         Row(modifier = Modifier.fillMaxWidth()) {
             StatItem(
                 label = stringResource(R.string.total_distance),
-                value = "%.0f km".format(quickStats.totalDistanceKm),
+                value = "%,.0f km".format(quickStats.totalDistanceKm),
                 modifier = Modifier.weight(1f)
             )
             StatItem(
@@ -742,7 +742,7 @@ private fun RecordsCard(
     // Category 1: Drives
     val driveRecords = mutableListOf<RecordData>()
     quickStats.longestDrive?.let { drive ->
-        driveRecords.add(RecordData("📏", labelLongestDrive, "%.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
+        driveRecords.add(RecordData("📏", labelLongestDrive, "%,.1f km".format(drive.distance), drive.startDate.take(10)) { onDriveClick(drive.driveId) })
     }
     quickStats.fastestDrive?.let { drive ->
         driveRecords.add(RecordData("🏎️", labelTopSpeed, "${drive.speedMax} km/h", drive.startDate.take(10)) { onDriveClick(drive.driveId) })
@@ -811,7 +811,7 @@ private fun RecordsCard(
     // Category 4: Miscelaneous
     val miscRecords = mutableListOf<RecordData>()
     quickStats.maxDistanceBetweenCharges?.let { record ->
-        miscRecords.add(RecordData("🔋", labelLongestRange, "%.1f km".format(record.distance), "${record.fromDate.take(10)} → ${record.toDate.take(10)}") { onRangeRecordClick(record) })
+        miscRecords.add(RecordData("🔋", labelLongestRange, "%,.1f km".format(record.distance), "${record.fromDate.take(10)} → ${record.toDate.take(10)}") { onRangeRecordClick(record) })
     }
     quickStats.longestGapWithoutCharging?.let { gap ->
         miscRecords.add(RecordData("⏰", labelNoCharging, stringResource(R.string.format_days, gap.gapDays), "${gap.fromDate.take(10)} → ${gap.toDate.take(10)}") { onGapRecordClick(gap.gapDays, gap.fromDate, gap.toDate, gapTypeCharging) })
@@ -820,7 +820,7 @@ private fun RecordsCard(
         miscRecords.add(RecordData("🅿️", labelNoDriving, stringResource(R.string.format_days, gap.gapDays), "${gap.fromDate.take(10)} → ${gap.toDate.take(10)}") { onGapRecordClick(gap.gapDays, gap.fromDate, gap.toDate, gapTypeDriving) })
     }
     quickStats.mostDistanceDay?.let { day ->
-        miscRecords.add(RecordData("🛣️", labelMostDistanceDay, "%.1f km".format(day.totalDistance), day.day) { onDayClick(day.day) })
+        miscRecords.add(RecordData("🛣️", labelMostDistanceDay, "%,.1f km".format(day.totalDistance), day.day) { onDayClick(day.day) })
     }
 
     // Build list of all categories with their records
@@ -1510,7 +1510,7 @@ private fun RangeRecordDialog(
                                 color = palette.onSurfaceVariant
                             )
                             Text(
-                                text = "%.1f km".format(record.distance),
+                                text = "%,.1f km".format(record.distance),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = palette.onSurface
@@ -1655,7 +1655,7 @@ private fun DriveListItem(
             Spacer(modifier = Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "%.1f km".format(drive.distance),
+                    text = "%,.1f km".format(drive.distance),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = palette.onSurface

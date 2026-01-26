@@ -438,7 +438,7 @@
     <!-- Degradation section -->
     <string name="estimated_degradation">Degradación estimada</string>
     <string name="loss_kwh">Pérdida (kWh)</string>
-    <string name="loss_percent">Pérdida (%%)</string>
+    <string name="loss_percent">Pérdida (%)</string>
 
     <!-- Degradation info dialog -->
     <string name="estimated_degradation_title">Degradación Estimada</string>

@@ -1,13 +1,13 @@
-Everyone likes travelling, and with this release you can now stare at all your trips across the world from your phone! Also a 5x faster initial sync, tire pressure alerts, and many fixes.
+Love travelling? Now you can explore all your trips across the world from your phone! Plus 5x faster sync and tire pressure alerts.
 
 Added:
-- Countries Visited: explore where you've driven with interactive maps, stats by country and region
-- Tire Pressure Notifications: get alerts when any tire has low pressure
-- Today filter for drives and charges
-- Model X SteelGrey color and Slipstream wheels
+- Countries Visited: interactive maps with stats by country/region
+- Tire Pressure Notifications
+- Today filter for drives/charges
+- Model X SteelGrey + Slipstream wheels
 
 Changed:
-- 5x faster initial sync with parallel processing
+- 5x faster initial sync
 
 Fixed:
-- AC charging phase count, offline time display, translations
+- AC phase count, offline time, translations
