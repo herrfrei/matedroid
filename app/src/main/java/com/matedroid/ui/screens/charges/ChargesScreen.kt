@@ -2,6 +2,8 @@ package com.matedroid.ui.screens.charges
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -127,12 +130,12 @@ fun ChargesScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (uiState.isLoading && !uiState.isRefreshing) {
+            if (uiState.isLoading && uiState.charges.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = palette.accent)
                 }
             } else {
                 ChargesContent(
@@ -152,8 +155,8 @@ fun ChargesScreen(
                     onChargeTypeFilterSelected = { viewModel.setChargeTypeFilter(it) },
                     onChargeClick = { chargeId, scrollIndex, scrollOffset ->
                         viewModel.saveScrollPosition(scrollIndex, scrollOffset)
-                        onNavigateToChargeDetail(chargeId)
-                    }
+                        onNavigateToChargeDetail(chargeId) },
+                    isLoading = uiState.isLoading
                 )
             }
         }
@@ -174,6 +177,7 @@ private fun ChargesContent(
     selectedChargeTypeFilter: ChargeTypeFilter,
     initialScrollPosition: Int,
     initialScrollOffset: Int,
+    isLoading: Boolean,
     palette: CarColorPalette,
     onDateFilterSelected: (DateFilter) -> Unit,
     onChargeTypeFilterSelected: (ChargeTypeFilter) -> Unit,
@@ -184,10 +188,19 @@ private fun ChargesContent(
         initialFirstVisibleItemIndex = initialScrollPosition,
         initialFirstVisibleItemScrollOffset = initialScrollOffset
     )
-
+    // Animation of opacity: 0.6f when loading, 1f when ready.
+    // The "tween" of 300ms makes the change not abrupt.
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (isLoading) 0.6f else 1f,
+        animationSpec = tween(durationMillis = 300),
+        label = "chargesContentAlpha"
+    )
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        // Applying the opacity here to make the entire list dim when loading
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(alpha = contentAlpha),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -198,7 +211,6 @@ private fun ChargesContent(
                 onFilterSelected = onDateFilterSelected
             )
         }
-
         item {
             ChargeTypeFilterChips(
                 selectedFilter = selectedChargeTypeFilter,
@@ -206,12 +218,9 @@ private fun ChargesContent(
                 onFilterSelected = onChargeTypeFilterSelected
             )
         }
-
         item {
             SummaryCard(summary = summary, currencySymbol = currencySymbol, palette = palette)
         }
-
-        // Charges charts (daily/weekly/monthly based on date range) - swipeable
         if (chartData.isNotEmpty()) {
             item {
                 ChargesChartsPager(
@@ -222,7 +231,6 @@ private fun ChargesContent(
                 )
             }
         }
-
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -231,8 +239,8 @@ private fun ChargesContent(
                 fontWeight = FontWeight.Bold
             )
         }
-
-        if (charges.isEmpty()) {
+        // only show the empty message if there's no data and we're not loading
+        if (charges.isEmpty() && !isLoading) {
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -258,8 +266,6 @@ private fun ChargesContent(
             items(charges, key = { it.chargeId }) { charge ->
                 ChargeItem(
                     charge = charge,
-                    // Show DC badge if in dcChargeIds, AC otherwise
-                    // Will be correct once sync has processed charge details
                     isDcCharge = charge.chargeId in dcChargeIds,
                     currencySymbol = currencySymbol,
                     onEditCost = if (teslamateBaseUrl.isNotBlank()) {

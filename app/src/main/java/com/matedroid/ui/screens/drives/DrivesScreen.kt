@@ -1,5 +1,7 @@
 package com.matedroid.ui.screens.drives
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +30,8 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import com.matedroid.ui.icons.CustomIcons
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Speed
@@ -140,12 +144,12 @@ fun DrivesScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (uiState.isLoading && !uiState.isRefreshing) {
+            if (uiState.isLoading && uiState.drives.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = palette.accent)
                 }
             } else {
                 DrivesContent(
@@ -160,7 +164,8 @@ fun DrivesScreen(
                     listState = listState,
                     onDateFilterSelected = { viewModel.setDateFilter(it) },
                     onDistanceFilterSelected = { viewModel.setDistanceFilter(it) },
-                    onDriveClick = onNavigateToDriveDetail
+                    onDriveClick = onNavigateToDriveDetail,
+                    isLoading = uiState.isLoading
                 )
             }
         }
@@ -179,13 +184,24 @@ private fun DrivesContent(
     units: Units?,
     palette: CarColorPalette,
     listState: androidx.compose.foundation.lazy.LazyListState,
+    isLoading: Boolean, // New parameter for loading state
     onDateFilterSelected: (DriveDateFilter) -> Unit,
     onDistanceFilterSelected: (DriveDistanceFilter) -> Unit,
     onDriveClick: (driveId: Int) -> Unit
 ) {
+    // Animation of opacity: 0.6f when loading, 1f when ready.
+    // The "tween" of 300ms makes the change not abrupt.
+    val contentAlpha by animateFloatAsState(
+        targetValue = if (isLoading) 0.6f else 1f,
+        animationSpec = tween(durationMillis = 300),
+        label = "drivesContentAlpha"
+    )
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        // Use graphicsLayer to apply opacity more efficiently
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer(alpha = contentAlpha),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -196,7 +212,6 @@ private fun DrivesContent(
                 onFilterSelected = onDateFilterSelected
             )
         }
-
         item {
             DistanceFilterChips(
                 selectedFilter = selectedDistanceFilter,
@@ -205,11 +220,9 @@ private fun DrivesContent(
                 onFilterSelected = onDistanceFilterSelected
             )
         }
-
         item {
             SummaryCard(summary = summary, palette = palette)
         }
-
         // Drives charts (daily/weekly/monthly based on date range) - swipeable
         if (chartData.isNotEmpty()) {
             item {
@@ -221,7 +234,6 @@ private fun DrivesContent(
                 )
             }
         }
-
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -230,8 +242,7 @@ private fun DrivesContent(
                 fontWeight = FontWeight.Bold
             )
         }
-
-        if (drives.isEmpty()) {
+        if (drives.isEmpty() && !isLoading) { // Solo mostramos "vacío" si no está cargando
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
