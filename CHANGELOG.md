@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Dashboard**: Show elapsed time for all vehicle states (driving, online, charging), not just asleep/offline
+- **Dashboard**: Use bolt/zap icon for charging state instead of generic power icon
+
 ## [0.12.2] - 2026-01-25
 
 ### Changed
