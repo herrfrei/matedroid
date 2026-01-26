@@ -1456,20 +1456,16 @@ private fun LocationCard(status: CarStatus, units: Units?, resolvedAddress: Stri
                 }
             }
 
-            // Elevation row - aligned with location text
+            // Elevation row - icon aligned with location icon, text aligned with location text
             if (elevationText != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.padding(start = 36.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Filled.Terrain,
                         contentDescription = null,
-                        tint = palette.onSurfaceVariant,
-                        modifier = Modifier.size(14.dp)
+                        tint = palette.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = stringResource(R.string.elevation),
                         style = MaterialTheme.typography.labelSmall,
