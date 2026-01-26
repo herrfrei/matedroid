@@ -814,6 +814,7 @@ private fun StatusIndicatorsRow(
                     icon = when {
                         isAsleep -> Icons.Filled.Bedtime
                         isDriving -> CustomIcons.SteeringWheel
+                        isCharging -> Icons.Filled.ElectricBolt
                         else -> Icons.Filled.PowerSettingsNew
                     },
                     tooltipText = stateTooltip,
@@ -936,17 +937,15 @@ private fun StatusIndicatorsRow(
             }
         }
 
-        // Show duration when asleep or offline
-        if (isAsleep || isOffline) {
-            val sleepDuration = formatDurationSince(status.stateSince)
-            if (sleepDuration != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = sleepDuration,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = palette.onSurfaceVariant
-                )
-            }
+        // Show duration for all states
+        val stateDuration = formatDurationSince(status.stateSince)
+        if (stateDuration != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stateDuration,
+                style = MaterialTheme.typography.labelSmall,
+                color = palette.onSurfaceVariant
+            )
         }
     }
 }
