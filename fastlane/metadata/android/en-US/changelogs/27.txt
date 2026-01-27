@@ -1,0 +1,9 @@
+Dashboard now shows elapsed time for all vehicle states (driving, online, charging). Charging state uses a bolt icon. Location card alignment improved.
+
+Changed:
+- Elapsed time for all vehicle states
+- Bolt icon for charging
+- Location card alignment
+
+Fixed:
+- Driving time histogram Y-axis now in HH:MM format

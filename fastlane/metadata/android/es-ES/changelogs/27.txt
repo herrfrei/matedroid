@@ -1,0 +1,9 @@
+El Dashboard ahora muestra tiempo transcurrido para todos los estados (conducción, en línea, carga). Icono de rayo para carga. Alineación mejorada en tarjeta de ubicación.
+
+Cambios:
+- Tiempo transcurrido para todos los estados
+- Icono de rayo para carga
+- Alineación tarjeta ubicación
+
+Correcciones:
+- Eje Y histograma tiempo conducción ahora en formato HH:MM

@@ -1,0 +1,9 @@
+La Dashboard ora mostra il tempo trascorso per tutti gli stati (guida, online, ricarica). Icona fulmine per la ricarica. Allineamento migliorato nella card posizione.
+
+Modifiche:
+- Tempo trascorso per tutti gli stati
+- Icona fulmine per ricarica
+- Allineamento card posizione
+
+Correzioni:
+- Asse Y istogramma tempo guida ora in formato HH:MM

@@ -1,0 +1,9 @@
+El Dashboard ara mostra temps transcorregut per a tots els estats (conducció, en línia, càrrega). Icona de llamp per càrrega. Alineació millorada a la targeta d'ubicació.
+
+Canvis:
+- Temps transcorregut per a tots els estats
+- Icona de llamp per càrrega
+- Alineació targeta ubicació
+
+Correccions:
+- Eix Y histograma temps conducció ara en format HH:MM
