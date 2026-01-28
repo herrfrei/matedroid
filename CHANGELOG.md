@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Model X**: Wheels now display correctly in car images (fixes #119)
+
 ## [0.12.3] - 2026-01-27
 
 ### Changed
