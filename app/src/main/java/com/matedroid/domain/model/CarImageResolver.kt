@@ -154,9 +154,11 @@ object CarImageResolver {
 
     // Model X wheels
     private val WHEEL_PATTERNS_MX = listOf(
-        "cyberstream20" to "WX20",
-        "slipstream20" to "WX20",  // Older Model X wheel option
-        "20" to "WX20"
+        "turbine22" to "WT22",     // 22" Turbine wheels
+        "cyberstream20" to "WT20",
+        "slipstream20" to "WT20",  // Older Model X wheel option
+        "22" to "WT22",
+        "20" to "WT20"
     )
 
     // Default wheels per model variant
@@ -168,7 +170,7 @@ object CarImageResolver {
         "myj" to "WY18P",
         "myjp" to "WY21A",
         "ms" to "WT19",
-        "mx" to "WX20"
+        "mx" to "WT20"
     )
 
     // Default colors per model variant

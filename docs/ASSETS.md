@@ -171,7 +171,8 @@ https://static-assets.tesla.com/configurator/compositor?context=design_studio_2&
 | TeslamateAPI Pattern | Code | Description |
 |---------------------|------|-------------|
 | `Tempest19*` | `WT19` | Model S 19" Tempest |
-| `Cyberstream20*`, `Slipstream20*` | `WX20` | Model X 20" wheels |
+| `Cyberstream20*`, `Slipstream20*` | `WT20` | Model X 20" Slipstream |
+| `Turbine22*` | `WT22` | Model X 22" Turbine |
 
 **Note**: TeslamateAPI may append suffixes like `CapKit`, `Cover`, `Carbon`, etc. The mapping strips these.
 
@@ -258,7 +259,7 @@ Format: `{model_variant}_{color_code}_{wheel_code}.png`
 | Juniper Model Y | `myj_PX02_WY18P.png` |
 | Juniper MY Performance | `myjp_PN01_WY21A.png` |
 | Model S | `ms_PPSW_WT19.png` |
-| Model X | `mx_PPSB_WX20.png` |
+| Model X | `mx_PPSB_WT20.png` |
 
 ---
 
@@ -273,8 +274,8 @@ Format: `{model_variant}_{color_code}_{wheel_code}.png`
 | Juniper Model Y | 6 | 3 | 15 | PNG |
 | Juniper MY Performance | 6 | 1 | 6 | PNG |
 | Model S | 5 | 1 | 5 | PNG |
-| Model X | 5 | 1 | 5 | PNG |
-| **Total** | | | **91** | **~9 MB** |
+| Model X | 5 | 2 | 10 | PNG |
+| **Total** | | | **96** | **~10 MB** |
 
 ---
 

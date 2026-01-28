@@ -146,7 +146,7 @@ MODEL_X = {
     "file_prefix": "mx",
     "name": "Model X",
     "colors": ["PBSB", "PMNG", "PPSW", "PPSB", "PPMR"],
-    "wheels": ["WX20"],  # 20" Cyberstream wheels
+    "wheels": ["WT20", "WT22"],  # WT20 = 20" Slipstream, WT22 = 22" Turbine
     "compositor": "old",
 }
 
