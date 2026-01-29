@@ -384,7 +384,11 @@ private fun SummaryCard(summary: ChargesSummary, currencySymbol: String, palette
                 SummaryItem(
                     icon = Icons.Default.BatteryChargingFull,
                     label = stringResource(R.string.total_energy),
-                    value = "%.1f kWh".format(summary.totalEnergyAdded),
+                    value = when {
+                        summary.totalEnergyAdded > 999 -> "%.2f MWh".format(summary.totalEnergyAdded / 1000)
+                        summary.totalEnergyAdded < 10 -> "%.1f kWh".format(summary.totalEnergyAdded)
+                        else -> "%.0f kWh".format(summary.totalEnergyAdded)
+                    },
                     palette = palette,
                     modifier = Modifier.weight(0.8f)
                 )
@@ -398,7 +402,11 @@ private fun SummaryCard(summary: ChargesSummary, currencySymbol: String, palette
                 SummaryItem(
                     icon = Icons.Default.Paid,
                     label = stringResource(R.string.total_cost),
-                    value = "$currencySymbol%.2f".format(summary.totalCost),
+                    value = when {
+                        summary.totalCost < 100 -> "$currencySymbol%.2f".format(summary.totalCost)
+                        summary.totalCost < 1000 -> "$currencySymbol%.1f".format(summary.totalCost)
+                        else -> "$currencySymbol%.0f".format(summary.totalCost)
+                    },
                     palette = palette,
                     modifier = Modifier.weight(1.2f)
                 )

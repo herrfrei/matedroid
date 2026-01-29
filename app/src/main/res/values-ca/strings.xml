@@ -442,7 +442,7 @@
 
     <!-- Degradation info dialog -->
     <string name="estimated_degradation_title">Degradació Estimada</string>
-    <string name="estimated_degradation_message">La degradació de la bateria s\'estima basant-se en dades de Teslamate.\n\n• Capacitat %%: Salut restant de la bateria comparada amb nova\n• Pèrdua (kWh): Capacitat energètica perduda per degradació\n• Pèrdua (%%): Percentatge de la capacitat original perduda\n\nNota: Això és una estimació. Tesla no proporciona dades oficials de degradació.</string>
+    <string name="estimated_degradation_message">La degradació de la bateria s\'estima basant-se en dades de Teslamate.\n\n• Capacitat (%): Salut restant de la bateria comparada amb nova\n• Pèrdua (kWh): Capacitat energètica perduda per degradació\n• Pèrdua (%): Percentatge de la capacitat original perduda\n\nNota: Això és una estimació. Tesla no proporciona dades oficials de degradació.</string>
 
     <!-- Range section -->
     <string name="range">Autonomia</string>
@@ -460,7 +460,7 @@
 
     <!-- Current charge info dialog -->
     <string name="current_charge_title">Càrrega Actual</string>
-    <string name="current_charge_message">Mostra l\'estat de càrrega actual de la bateria.\n\n• Bateria %%: El nivell de càrrega mostrat al tauler\n• Utilitzable %%: Càrrega realment utilitzable (Tesla reserva un petit búfer per protecció)\n\nAquesta és la càrrega actual, no la salut a llarg termini de la bateria.</string>
+    <string name="current_charge_message">Mostra l\'estat de càrrega actual de la bateria.\n • Bateria (%): El nivell de càrrega mostrat al tauler\n • Utilitzable (%): Càrrega realment utilitzable (Tesla reserva un petit búfer per protecció)\n \n Aquesta és la càrrega actual, no la salut a llarg termini de la bateria.</string>
 
     <!-- Range information section -->
     <string name="range_information">Informació d\'Autonomia</string>
@@ -477,7 +477,7 @@
 
     <!-- Estimated total capacity section -->
     <string name="estimated_total_capacity">Capacitat Total Estimada</string>
-    <string name="range_at_100">Autonomia al 100%%</string>
+    <string name="range_at_100">Autonomia al 100%</string>
     <!-- %1$d is the current battery percentage, %2$.1f is the rated range in km -->
     <string name="estimated_range_description">Estimació basada en el %1$d%% actual i autonomia nominal de %2$.1f km</string>
 

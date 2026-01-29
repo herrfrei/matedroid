@@ -77,6 +77,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import java.time.format.FormatStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -853,7 +854,8 @@ private fun formatDateTime(dateStr: String?, unknownLabel: String = "Unknown"): 
         } catch (e: DateTimeParseException) {
             LocalDateTime.parse(dateStr.replace("Z", ""))
         }
-        val formatter = DateTimeFormatter.ofPattern("EEEE, MMM d, yyyy 'at' HH:mm")
+        // Use locale-aware formatter for proper date/time localization
+        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.SHORT)
         dateTime.format(formatter)
     } catch (e: Exception) {
         dateStr

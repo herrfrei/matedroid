@@ -1,0 +1,10 @@
+Bug fixes and polish for a smoother experience.
+
+Changed:
+- Cleaner charge summary totals with adaptive decimals
+
+Fixed:
+- Model X wheels now display correctly
+- Time filters no longer cause screen flickering
+- Charge details show proper locale date format
+- Battery health % symbol no longer duplicated

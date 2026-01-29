@@ -180,7 +180,8 @@ class DrivesViewModel @Inject constructor(
 
         viewModelScope.launch {
             val state = _uiState.value
-            if (!state.isRefreshing) {
+            // Only show loading spinner on initial load, not when changing filters
+            if (!state.isRefreshing && state.drives.isEmpty()) {
                 _uiState.update { it.copy(isLoading = true) }
             }
 

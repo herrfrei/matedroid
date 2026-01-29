@@ -442,7 +442,7 @@
 
     <!-- Degradation info dialog -->
     <string name="estimated_degradation_title">Estimated Degradation</string>
-    <string name="estimated_degradation_message">Battery degradation is estimated based on Teslamate data.\n\n• Capacity %%: Remaining battery health compared to new\n• Loss (kWh): Energy capacity lost due to degradation\n• Loss (%%): Percentage of original capacity lost\n\nNote: This is an estimate. Tesla does not provide official degradation data.</string>
+    <string name="estimated_degradation_message">Battery degradation is estimated based on Teslamate data.\n\n• Capacity (%): Remaining battery health compared to new\n• Loss (kWh): Energy capacity lost due to degradation\n• Loss (%): Percentage of original capacity lost\n\nNote: This is an estimate. Tesla does not provide official degradation data.</string>
 
     <!-- Range section -->
     <string name="range">Range</string>
@@ -460,7 +460,7 @@
 
     <!-- Current charge info dialog -->
     <string name="current_charge_title">Current Charge</string>
-    <string name="current_charge_message">Shows your battery\'s current state of charge.\n\n• Battery %%: The charge level displayed on your dashboard\n• Usable %%: Actual usable charge (Tesla reserves a small buffer for battery protection)\n\nThis is the current charge, not the battery\'s long-term health.</string>
+    <string name="current_charge_message">Shows your battery\'s current state of charge.\n\n • Battery (%): The charge level displayed on your dashboard\n • Usable (%): Actual usable charge (Tesla reserves a small buffer for battery protection)\n\nThis is the current charge, not the battery\'s long-term health.</string>
 
     <!-- Range information section -->
     <string name="range_information">Range Information</string>
@@ -477,7 +477,7 @@
 
     <!-- Estimated total capacity section -->
     <string name="estimated_total_capacity">Estimated Total Capacity</string>
-    <string name="range_at_100">Range at 100%%</string>
+    <string name="range_at_100">Range at 100%</string>
     <!-- %1$d is the current battery percentage, %2$.1f is the rated range in km -->
     <string name="estimated_range_description">Estimate based on current %1$d%% and rated range of %2$.1f km</string>
 

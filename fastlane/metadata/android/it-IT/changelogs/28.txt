@@ -1,0 +1,10 @@
+Correzioni e miglioramenti per un'esperienza più fluida.
+
+Modifiche:
+- Totali ricariche più puliti con decimali adattivi
+
+Correzioni:
+- Le ruote della Model X ora vengono visualizzate correttamente
+- I filtri temporali non causano più sfarfallio
+- I dettagli ricarica mostrano la data nel formato locale
+- Il simbolo % nella salute batteria non è più duplicato

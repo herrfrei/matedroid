@@ -1,0 +1,10 @@
+Correccions i millores per a una experiència més fluida.
+
+Canvis:
+- Totals de càrrega més nets amb decimals adaptatius
+
+Correccions:
+- Les rodes del Model X ara es mostren correctament
+- Els filtres de temps ja no causen parpelleig
+- Els detalls de càrrega mostren la data en format local
+- El símbol % a la salut de bateria ja no està duplicat
