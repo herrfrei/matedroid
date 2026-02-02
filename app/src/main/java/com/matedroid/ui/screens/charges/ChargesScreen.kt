@@ -837,7 +837,7 @@ private fun ChargesChartPage(
         // Set number of labels to display
         val labelInterval = when {
             barData.size <= 7 -> 1  // Show all for Today and last 7 days
-            barData.size <= 30 -> 3 // Show 1 label every 3 bars for lsat 30 days
+            barData.size <= 30 -> 3 // Show 1 label every 3 bars for last 30 days
             else -> ((barData.size + 5) / 6).coerceAtLeast(1)
         }
 
