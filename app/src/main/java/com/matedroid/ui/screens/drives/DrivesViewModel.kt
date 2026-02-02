@@ -278,7 +278,7 @@ class DrivesViewModel @Inject constructor(
         val formatter = DateTimeFormatter.ISO_DATE_TIME
         val weekFields = WeekFields.of(Locale.getDefault())
 
-        //  Group the charges by day
+        //  Group the drives by day
         val drivesByDay = drives.mapNotNull { drive ->
             drive.startDate?.let {
                 try {
