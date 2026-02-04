@@ -82,6 +82,10 @@ object CarImageResolver {
     // Colors only available on Legacy models (not on Highland/Juniper)
     private val LEGACY_ONLY_COLORS = setOf("PMNG", "PMSS", "PPMR", "PMBL")
 
+    // Colors not available on Juniper Standard (only Premium/Performance)
+    // Juniper Standard only comes in: PPSW, PN01, PX02
+    private val JUNIPER_PREMIUM_ONLY_COLORS = setOf("PN00", "PR01", "PPSB", "PB02")
+
     // Wheel types only available on Highland Model 3 (normalized, lowercase)
     // Note: "helix19" from TeslamateAPI is actually Nova 19" wheel
     private val HIGHLAND_M3_WHEEL_TYPES = setOf("photon18", "glider18", "nova18", "nova19", "helix19", "w38a")
@@ -542,9 +546,10 @@ object CarImageResolver {
      * Get available variants for a model, optionally filtered by exterior color.
      *
      * When a color is provided, variants are filtered based on color availability:
-     * - Highland/Juniper-only colors (PN00, PN01, PR01, PX02, PB02) hide legacy variants
+     * - Premium-only colors (PN00, PR01, PPSB, PB02) hide legacy AND Juniper Standard
+     * - Other new-only colors (PN01, PX02) hide only legacy variants
      * - Legacy-only colors (PMNG, PMSS, PPMR, PMBL) hide Highland/Juniper variants
-     * - Shared colors (PBSB, PPSW, PPSB) show all variants
+     * - Shared colors (PBSB, PPSW) show all variants
      *
      * @param model The car model from TeslamateAPI (e.g., "3", "Y")
      * @param colorCode The mapped color code (e.g., "PMNG", "PN00") - optional
@@ -553,6 +558,7 @@ object CarImageResolver {
     fun getVariantsForModel(model: String?, colorCode: String? = null): List<CarVariant> {
         val isNewOnlyColor = colorCode in HIGHLAND_JUNIPER_COLORS
         val isLegacyOnlyColor = colorCode in LEGACY_ONLY_COLORS
+        val isPremiumOnlyColor = colorCode in JUNIPER_PREMIUM_ONLY_COLORS
 
         return when (model?.uppercase()) {
             "Y" -> {
@@ -563,6 +569,9 @@ object CarImageResolver {
                     CarVariant("myjp", VariantResIds.MY_PERFORMANCE.hashCode())
                 )
                 when {
+                    // Premium-only colors (PN00, PR01, PPSB) exclude both legacy AND standard
+                    isPremiumOnlyColor -> allVariants.filter { it.id in setOf("myj", "myjp") }
+                    // Other new-only colors (PN01, PX02) exclude only legacy
                     isNewOnlyColor -> allVariants.filter { it.id != "my" }
                     isLegacyOnlyColor -> allVariants.filter { it.id == "my" }
                     else -> allVariants
