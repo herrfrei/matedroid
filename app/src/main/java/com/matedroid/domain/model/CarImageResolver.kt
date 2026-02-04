@@ -140,6 +140,8 @@ object CarImageResolver {
     )
 
     // Legacy Model Y wheels
+    // Note: Induction 20" (WY0S) and Überturbine 21" (WY1S) mapped to Performance 20" (WY20P)
+    // as we don't have separate assets for those wheel styles
     private val WHEEL_PATTERNS_MY = listOf(
         "gemini19" to "WY19B",
         "pinwheel18" to "WY18B",
@@ -147,12 +149,12 @@ object CarImageResolver {
         "aeroturbine19" to "WY19B",
         "stiletto19" to "WY19B",
         "sport19" to "WY19B",
-        "apollo19" to "WY9S",
-        "induction20" to "WY0S",
+        "apollo19" to "WY19B",      // Fallback to Gemini 19"
+        "induction20" to "WY20P",   // Fallback to Performance 20"
         "performance20" to "WY20P",
-        "uberturbine21" to "WY1S",
-        "21" to "WY1S",
-        "20" to "WY0S",
+        "uberturbine21" to "WY20P", // Fallback to Performance 20"
+        "21" to "WY20P",
+        "20" to "WY20P",
         "19" to "WY19B",
         "18" to "WY18B"
     )
@@ -525,7 +527,7 @@ object CarImageResolver {
         "m3" to listOf("W38B", "W39B", "W32P"),
         "m3h" to listOf("W38A"),
         "m3hp" to listOf("W30P"),
-        "my" to listOf("WY18B", "WY19B", "WY0S", "WY20P", "WY1S"),
+        "my" to listOf("WY18B", "WY19B", "WY20P"),
         "myjs" to listOf("WY18P"),
         "myj" to listOf("WY18P", "WY19P", "WY20A"),
         "myjp" to listOf("WY21A"),
