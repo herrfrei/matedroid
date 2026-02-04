@@ -77,7 +77,10 @@ object CarImageResolver {
     )
 
     // Colors only available on Highland/Juniper
-    private val HIGHLAND_JUNIPER_COLORS = setOf("PN00", "PN01", "PR01", "PX02")
+    private val HIGHLAND_JUNIPER_COLORS = setOf("PN00", "PN01", "PR01", "PX02", "PB02")
+
+    // Colors only available on Legacy models (not on Highland/Juniper)
+    private val LEGACY_ONLY_COLORS = setOf("PMNG", "PMSS", "PPMR", "PMBL")
 
     // Wheel types only available on Highland Model 3 (normalized, lowercase)
     // Note: "helix19" from TeslamateAPI is actually Nova 19" wheel
@@ -536,24 +539,47 @@ object CarImageResolver {
     )
 
     /**
-     * Get available variants for a model.
+     * Get available variants for a model, optionally filtered by exterior color.
+     *
+     * When a color is provided, variants are filtered based on color availability:
+     * - Highland/Juniper-only colors (PN00, PN01, PR01, PX02, PB02) hide legacy variants
+     * - Legacy-only colors (PMNG, PMSS, PPMR, PMBL) hide Highland/Juniper variants
+     * - Shared colors (PBSB, PPSW, PPSB) show all variants
      *
      * @param model The car model from TeslamateAPI (e.g., "3", "Y")
+     * @param colorCode The mapped color code (e.g., "PMNG", "PN00") - optional
      * @return List of available variants for the picker
      */
-    fun getVariantsForModel(model: String?): List<CarVariant> {
+    fun getVariantsForModel(model: String?, colorCode: String? = null): List<CarVariant> {
+        val isNewOnlyColor = colorCode in HIGHLAND_JUNIPER_COLORS
+        val isLegacyOnlyColor = colorCode in LEGACY_ONLY_COLORS
+
         return when (model?.uppercase()) {
-            "Y" -> listOf(
-                CarVariant("my", VariantResIds.MY_LEGACY.hashCode()),
-                CarVariant("myjs", VariantResIds.MY_STANDARD.hashCode()),
-                CarVariant("myj", VariantResIds.MY_PREMIUM.hashCode()),
-                CarVariant("myjp", VariantResIds.MY_PERFORMANCE.hashCode())
-            )
-            "3" -> listOf(
-                CarVariant("m3", VariantResIds.M3_LEGACY.hashCode()),
-                CarVariant("m3h", VariantResIds.M3_HIGHLAND.hashCode()),
-                CarVariant("m3hp", VariantResIds.M3_HIGHLAND_PERF.hashCode())
-            )
+            "Y" -> {
+                val allVariants = listOf(
+                    CarVariant("my", VariantResIds.MY_LEGACY.hashCode()),
+                    CarVariant("myjs", VariantResIds.MY_STANDARD.hashCode()),
+                    CarVariant("myj", VariantResIds.MY_PREMIUM.hashCode()),
+                    CarVariant("myjp", VariantResIds.MY_PERFORMANCE.hashCode())
+                )
+                when {
+                    isNewOnlyColor -> allVariants.filter { it.id != "my" }
+                    isLegacyOnlyColor -> allVariants.filter { it.id == "my" }
+                    else -> allVariants
+                }
+            }
+            "3" -> {
+                val allVariants = listOf(
+                    CarVariant("m3", VariantResIds.M3_LEGACY.hashCode()),
+                    CarVariant("m3h", VariantResIds.M3_HIGHLAND.hashCode()),
+                    CarVariant("m3hp", VariantResIds.M3_HIGHLAND_PERF.hashCode())
+                )
+                when {
+                    isNewOnlyColor -> allVariants.filter { it.id != "m3" }
+                    isLegacyOnlyColor -> allVariants.filter { it.id == "m3" }
+                    else -> allVariants
+                }
+            }
             else -> emptyList() // Model S/X don't have multiple variants to pick from
         }
     }

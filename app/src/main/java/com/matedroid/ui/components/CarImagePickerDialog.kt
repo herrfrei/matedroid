@@ -80,8 +80,9 @@ fun CarImagePickerDialog(
     onConfirm: (CarImageOverride) -> Unit,
     onReset: () -> Unit
 ) {
-    val variants = remember(model) { CarImageResolver.getVariantsForModel(model) }
     val colorCode = remember(exteriorColor) { CarImageResolver.mapColor(exteriorColor) }
+    // Filter variants based on detected color - new-only colors hide legacy, legacy-only colors hide new
+    val variants = remember(model, colorCode) { CarImageResolver.getVariantsForModel(model, colorCode) }
 
     // Compute the detected default from API data
     val detectedDefault = remember(model, exteriorColor, wheelType, trimBadging) {
