@@ -2,12 +2,20 @@ package com.matedroid.ui.components
 
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,7 +79,10 @@ fun DualAxisLineChart(
                         val width = size.width.toFloat()
                         val chartHeightPx = chartHeight.toPx()
 
-                        if (offset.y > chartHeightPx) return@detectTapGestures
+                        if (offset.y > chartHeightPx) {
+                            selectedPoint = null
+                            return@detectTapGestures
+                        }
 
                         val stepX = width / (dataSize - 1).coerceAtLeast(1)
                         val tappedIndex = ((offset.x / stepX).roundToInt()).coerceIn(0, dataSize - 1)
@@ -173,18 +184,37 @@ fun DualAxisLineChart(
             }
         }
 
-        // Tooltip overlay
+        // Tooltip popup - dismisses on tap outside
         selectedPoint?.let { point ->
-            DualTooltipOverlay(
-                valueLeft = point.valueLeft,
-                valueRight = point.valueRight,
-                unitLeft = unitLeft,
-                unitRight = unitRight,
-                colorLeft = colorLeft,
-                colorRight = colorRight,
-                position = point.position,
-                modifier = Modifier.fillMaxSize()
-            )
+            val density = LocalDensity.current
+            Popup(
+                offset = with(density) {
+                    IntOffset(
+                        x = point.position.x.roundToInt(),
+                        y = (point.position.y - 48.dp.toPx()).roundToInt()
+                    )
+                },
+                onDismissRequest = { selectedPoint = null },
+                properties = PopupProperties(focusable = true)
+            ) {
+                val lines = mutableListOf<String>()
+                if (point.valueLeft != null) lines.add("%.1f".format(point.valueLeft) + " $unitLeft")
+                if (point.valueRight != null) lines.add("%.1f".format(point.valueRight) + " $unitRight")
+                val text = lines.joinToString("  |  ")
+
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .background(
+                            Color(0xCC323232),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
         }
     }
 }
@@ -305,7 +335,7 @@ private fun DrawScope.drawDualYAxisLabels(
         for (i in labelPositions) {
             val y = height * i / gridLineCount
             val value = chartData.maxValue - (chartData.range * i / gridLineCount)
-            val label = "%.0f $unit".format(value)
+            val label = "%.0f".format(value) + " $unit"
 
             val textY = when (i) {
                 gridLineCount -> y - 4f
@@ -349,53 +379,3 @@ private fun DrawScope.drawDualTimeLabels(
     }
 }
 
-@Composable
-private fun DualTooltipOverlay(
-    valueLeft: Float?,
-    valueRight: Float?,
-    unitLeft: String,
-    unitRight: String,
-    colorLeft: Color,
-    colorRight: Color,
-    position: Offset,
-    modifier: Modifier = Modifier
-) {
-    Canvas(modifier = modifier) {
-        val lines = mutableListOf<String>()
-        if (valueLeft != null) lines.add("%.1f $unitLeft".format(valueLeft))
-        if (valueRight != null) lines.add("%.1f $unitRight".format(valueRight))
-        if (lines.isEmpty()) return@Canvas
-
-        val text = lines.joinToString("  |  ")
-
-        drawContext.canvas.nativeCanvas.apply {
-            val textPaint = Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 32f
-                isAntiAlias = true
-                textAlign = Paint.Align.CENTER
-            }
-
-            val bgPaint = Paint().apply {
-                color = android.graphics.Color.argb(200, 50, 50, 50)
-                isAntiAlias = true
-            }
-
-            val textWidth = textPaint.measureText(text)
-            val padding = 16f
-            val tooltipY = (position.y - 40f).coerceAtLeast(50f)
-            val tooltipX = position.x.coerceIn(textWidth / 2 + padding, size.width - textWidth / 2 - padding)
-
-            drawRoundRect(
-                tooltipX - textWidth / 2 - padding,
-                tooltipY - 30f,
-                tooltipX + textWidth / 2 + padding,
-                tooltipY + 8f,
-                12f, 12f,
-                bgPaint
-            )
-
-            drawText(text, tooltipX, tooltipY, textPaint)
-        }
-    }
-}
