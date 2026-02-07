@@ -90,29 +90,28 @@ LEGACY_MY = {
     "compositor": "old",
 }
 
-# Juniper Model Y (2025+)
-# MTY68 = Standard/Long Range configuration (18"/19" wheels)
-# MTY60 = Premium configuration with 20" Helix wheels
-JUNIPER_MY = {
+# Juniper Model Y Standard (2025+)
+# MTY68 = Standard/Long Range configuration (classic headlights, 18" wheels only)
+JUNIPER_MY_STANDARD = {
     "model_code": "my",
-    "file_prefix": "myj",  # j = juniper
-    "name": "Model Y Juniper",
+    "file_prefix": "myjs",  # js = juniper standard
+    "name": "Model Y Juniper Standard",
     "trim_code": "MTY68",
     "interior_code": "IBB3",
     "colors": ["PPSW", "PN01", "PX02"],
-    "wheels": ["WY18P", "WY19P"],  # WY18P = Photon 18" (Standard), WY19P = Crossflow 19" (Premium)
+    "wheels": ["WY18P"],  # WY18P = Photon 18" (Standard only)
     "compositor": "new",
 }
 
 # Juniper Model Y Premium (2025+)
-# MTY60 supports more colors than MTY68 for 19"/20" wheels
+# MTY60 = Premium configuration (light strip headlights, 19"/20" wheels)
 JUNIPER_MY_PREMIUM = {
     "model_code": "my",
-    "file_prefix": "myj",  # Same prefix, different wheel
+    "file_prefix": "myj",  # j = juniper (premium is the "default" juniper)
     "name": "Model Y Juniper Premium",
     "trim_code": "MTY60",
     "interior_code": "IPB8",
-    "colors": ["PPSW", "PN01", "PX02", "PN00", "PR01", "PPSB"],  # 6 colors
+    "colors": ["PPSW", "PN01", "PX02", "PN00", "PR01", "PB01"],  # 6 colors
     "wheels": ["WY19P", "WY20A"],  # 19" Crossflow and 20" Helix 2.0
     "compositor": "new",
 }
@@ -125,7 +124,7 @@ JUNIPER_MY_PERF = {
     "name": "Model Y Juniper Performance",
     "trim_code": "MTY53",
     "interior_code": "IPB10",
-    "colors": ["PPSW", "PN01", "PX02", "PB02", "PN00", "PR01"],  # All 6 colors available
+    "colors": ["PPSW", "PN01", "PX02", "PB02", "PN00", "PR01", "PB01"],  # All 7 colors available
     "wheels": ["WY21A"],  # 21" Überturbine wheels
     "compositor": "new",
 }
@@ -151,7 +150,7 @@ MODEL_X = {
 }
 
 # All model configurations
-ALL_MODELS = [LEGACY_M3, HIGHLAND_M3, HIGHLAND_M3_PERF, LEGACY_MY, JUNIPER_MY, JUNIPER_MY_PREMIUM, JUNIPER_MY_PERF, MODEL_S, MODEL_X]
+ALL_MODELS = [LEGACY_M3, HIGHLAND_M3, HIGHLAND_M3_PERF, LEGACY_MY, JUNIPER_MY_STANDARD, JUNIPER_MY_PREMIUM, JUNIPER_MY_PERF, MODEL_S, MODEL_X]
 
 # Color name mapping for display
 COLOR_NAMES = {
@@ -167,7 +166,8 @@ COLOR_NAMES = {
     "PR00": "Midnight Cherry Red",
     "PR01": "Ultra Red",
     "PX02": "Black Diamond",
-    "PB02": "Deep Blue",  # Juniper-only Deep Blue (different from PPSB)
+    "PB01": "Glacier Blue",  # Juniper Model Y Premium/Performance
+    "PB02": "Marine Blue",  # Juniper Model Y Performance only
 }
 
 
