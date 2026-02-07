@@ -558,7 +558,7 @@ object CarImageResolver {
     )
 
     /**
-     * Get available variants for a model, optionally filtered by exterior color.
+     * Get available variants for a model, optionally filtered by exterior color and wheel type.
      *
      * Filtering rules:
      * - Performance variants only shown when there's cross-generation ambiguity
@@ -569,12 +569,14 @@ object CarImageResolver {
      * - Premium-only colors (PN00, PR01, PB01) show only Premium
      * - Juniper-only colors (PN01, PX02) show Standard + Premium
      * - Shared colors (PPSW) show all variants including Performance
+     * - When wheelType is known, variants that can't map the wheel are hidden
      *
      * @param model The car model from TeslamateAPI (e.g., "3", "Y")
      * @param colorCode The mapped color code (e.g., "PMNG", "PN00") - optional
+     * @param wheelType The wheel type from TeslamateAPI (e.g., "Crossflow19") - optional
      * @return List of available variants for the picker
      */
-    fun getVariantsForModel(model: String?, colorCode: String? = null): List<CarVariant> {
+    fun getVariantsForModel(model: String?, colorCode: String? = null, wheelType: String? = null): List<CarVariant> {
         val isNewOnlyColor = colorCode in HIGHLAND_JUNIPER_COLORS
         val isLegacyOnlyColor = colorCode in LEGACY_ONLY_COLORS
         val isPremiumOnlyColor = colorCode in JUNIPER_PREMIUM_ONLY_COLORS
@@ -589,7 +591,7 @@ object CarImageResolver {
         val m3Highland = CarVariant("m3h", VariantResIds.M3_HIGHLAND.hashCode())
         val m3HighlandPerf = CarVariant("m3hp", VariantResIds.M3_HIGHLAND_PERF.hashCode())
 
-        return when (model?.uppercase()) {
+        val variants = when (model?.uppercase()) {
             "Y" -> {
                 // MY-specific: PBSB (Solid Black) and PPSB (Deep Blue) are Legacy-only
                 val isMyLegacyOnly = colorCode in MY_LEGACY_ONLY_EXTRA
@@ -617,19 +619,45 @@ object CarImageResolver {
             }
             else -> emptyList() // Model S/X don't have multiple variants to pick from
         }
+
+        // When wheel type is known, only keep variants that can map the wheel
+        if (wheelType != null) {
+            return variants.filter { variant -> mapWheel(variant.id, wheelType) != null }
+        }
+        return variants
     }
 
     /**
      * Get available wheels for a variant, with preview paths.
      *
+     * When wheelType is provided (from API), only returns the matching wheel.
+     * This ensures the picker shows only the detected wheel, not all possible wheels.
+     * Returns empty list if the wheel can't be mapped for this variant.
+     *
      * @param variant The model variant (e.g., "my", "myj")
      * @param colorCode The color code for generating preview paths (defaults to PPSW)
+     * @param wheelType The wheel type from TeslamateAPI (e.g., "Crossflow19") - optional
      * @return List of wheel options with preview paths
      */
-    fun getWheelsForVariant(variant: String, colorCode: String?): List<WheelOption> {
+    fun getWheelsForVariant(variant: String, colorCode: String?, wheelType: String? = null): List<WheelOption> {
         val wheels = VARIANT_WHEELS[variant] ?: return emptyList()
         val color = colorCode ?: DEFAULT_COLORS[variant] ?: "PPSW"
         val validatedColor = validateColorForVariant(variant, color)
+
+        // When wheel type is known, only return the matching wheel
+        if (wheelType != null) {
+            val mappedWheel = mapWheel(variant, wheelType)
+            if (mappedWheel != null && mappedWheel in wheels) {
+                return listOf(
+                    WheelOption(
+                        code = mappedWheel,
+                        displayName = WHEEL_DISPLAY_NAMES[mappedWheel] ?: mappedWheel,
+                        assetPath = "car_images/${variant}_${validatedColor}_${mappedWheel}.png"
+                    )
+                )
+            }
+            return emptyList()
+        }
 
         return wheels.map { wheelCode ->
             WheelOption(
