@@ -117,8 +117,16 @@ fun CarImagePickerDialog(
     }
 
     // Initialize selected variant from override or detected default
+    // If the override's variant isn't in the available variants (e.g., stale override
+    // from a different car config), ignore it and use the detected default
     var selectedVariant by remember(currentOverride, variants) {
-        mutableStateOf(currentOverride?.variant ?: detectedDefault.variant)
+        val overrideVariant = currentOverride?.variant
+        val initialVariant = if (overrideVariant != null && variants.any { it.id == overrideVariant }) {
+            overrideVariant
+        } else {
+            detectedDefault.variant
+        }
+        mutableStateOf(initialVariant)
     }
 
     // Get wheels for selected variant (filtered by detected wheel type if known)
