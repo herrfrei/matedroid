@@ -571,16 +571,35 @@ object CarImageResolver {
      * - Premium-only colors (PN00, PR01, PB01) show only Premium
      * - Juniper-only colors (PN01, PX02) show Standard + Premium
      * - Shared colors (PPSW) show all variants including Performance
+     * - Performance is excluded when trim or wheel data rules it out
      *
      * @param model The car model from TeslamateAPI (e.g., "3", "Y")
      * @param colorCode The mapped color code (e.g., "PMNG", "PN00") - optional
+     * @param trimBadging The trim badging from TeslamateAPI - used to exclude Performance
+     * @param wheelType The wheel type from TeslamateAPI - used to exclude Performance
      * @return List of available variants for the picker
      */
-    fun getVariantsForModel(model: String?, colorCode: String? = null): List<CarVariant> {
+    fun getVariantsForModel(
+        model: String?,
+        colorCode: String? = null,
+        trimBadging: String? = null,
+        wheelType: String? = null
+    ): List<CarVariant> {
         val isNewOnlyColor = colorCode in HIGHLAND_JUNIPER_COLORS
         val isLegacyOnlyColor = colorCode in LEGACY_ONLY_COLORS
         val isPremiumOnlyColor = colorCode in JUNIPER_PREMIUM_ONLY_COLORS
         val isPerfOnlyColor = colorCode in JUNIPER_PERF_ONLY_COLORS
+
+        // Determine if Performance can be ruled out from trim/wheel data
+        val isPerformanceTrim = trimBadging?.uppercase()?.startsWith("P") == true
+        val normalizedWheel = wheelType?.lowercase()?.replace(" ", "")?.replace("-", "")?.replace("_", "")
+        val isPerformanceWheel = normalizedWheel?.let {
+            it.startsWith("performance20") || it.startsWith("uberturbine21") ||
+            it.startsWith("arachnid21") || it.startsWith("21") || it.startsWith("20")
+        } ?: false
+        // Show Performance only if: trim/wheel indicate it, or both are unknown (can't rule it out)
+        val showPerformance = isPerformanceTrim || isPerformanceWheel ||
+            (trimBadging == null && wheelType == null)
 
         val myLegacy = CarVariant("my", VariantResIds.MY_LEGACY.hashCode())
         val myStandard = CarVariant("myjs", VariantResIds.MY_STANDARD.hashCode())
@@ -605,7 +624,12 @@ object CarImageResolver {
                     // Other Juniper-only colors (PN01, PX02): Standard + Premium, no Performance
                     isNewOnlyColor -> listOf(myStandard, myPremium)
                     // Shared colors (PPSW, null): cross-gen ambiguity, show all
-                    else -> listOf(myLegacy, myStandard, myPremium, myPerformance)
+                    // Performance only if trim/wheel don't rule it out
+                    else -> if (showPerformance) {
+                        listOf(myLegacy, myStandard, myPremium, myPerformance)
+                    } else {
+                        listOf(myLegacy, myStandard, myPremium)
+                    }
                 }
             }
             "3" -> {
@@ -613,8 +637,13 @@ object CarImageResolver {
                     isLegacyOnlyColor -> listOf(m3Legacy)
                     // Highland-only colors: gen known, no Performance needed
                     isNewOnlyColor -> listOf(m3Highland)
-                    // Shared colors (PBSB, PPSW, PPSB): cross-gen ambiguity, show all
-                    else -> listOf(m3Legacy, m3Highland, m3HighlandPerf)
+                    // Shared colors (PBSB, PPSW, PPSB): cross-gen ambiguity
+                    // Performance only if trim/wheel don't rule it out
+                    else -> if (showPerformance) {
+                        listOf(m3Legacy, m3Highland, m3HighlandPerf)
+                    } else {
+                        listOf(m3Legacy, m3Highland)
+                    }
                 }
             }
             else -> emptyList() // Model S/X don't have multiple variants to pick from

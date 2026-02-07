@@ -590,9 +590,11 @@ private fun CarImage(
 
     // Use override if set and valid for current car config, otherwise auto-detect
     val colorCode = remember(carExterior) { CarImageResolver.mapColor(carExterior?.exteriorColor) }
-    val isOverrideValid = remember(carModel, colorCode, imageOverride) {
+    val isOverrideValid = remember(carModel, colorCode, carTrimBadging, carExterior, imageOverride) {
         if (imageOverride == null) false
-        else CarImageResolver.getVariantsForModel(carModel, colorCode).any { it.id == imageOverride.variant }
+        else CarImageResolver.getVariantsForModel(
+            carModel, colorCode, carTrimBadging, carExterior?.wheelType
+        ).any { it.id == imageOverride.variant }
     }
 
     val assetPath = remember(carModel, carTrimBadging, carExterior, imageOverride, isOverrideValid) {
