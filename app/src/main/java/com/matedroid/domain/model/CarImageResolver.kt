@@ -569,14 +569,12 @@ object CarImageResolver {
      * - Premium-only colors (PN00, PR01, PB01) show only Premium
      * - Juniper-only colors (PN01, PX02) show Standard + Premium
      * - Shared colors (PPSW) show all variants including Performance
-     * - When wheelType is known, variants that can't map the wheel are hidden
      *
      * @param model The car model from TeslamateAPI (e.g., "3", "Y")
      * @param colorCode The mapped color code (e.g., "PMNG", "PN00") - optional
-     * @param wheelType The wheel type from TeslamateAPI (e.g., "Crossflow19") - optional
      * @return List of available variants for the picker
      */
-    fun getVariantsForModel(model: String?, colorCode: String? = null, wheelType: String? = null): List<CarVariant> {
+    fun getVariantsForModel(model: String?, colorCode: String? = null): List<CarVariant> {
         val isNewOnlyColor = colorCode in HIGHLAND_JUNIPER_COLORS
         val isLegacyOnlyColor = colorCode in LEGACY_ONLY_COLORS
         val isPremiumOnlyColor = colorCode in JUNIPER_PREMIUM_ONLY_COLORS
@@ -591,7 +589,7 @@ object CarImageResolver {
         val m3Highland = CarVariant("m3h", VariantResIds.M3_HIGHLAND.hashCode())
         val m3HighlandPerf = CarVariant("m3hp", VariantResIds.M3_HIGHLAND_PERF.hashCode())
 
-        val variants = when (model?.uppercase()) {
+        return when (model?.uppercase()) {
             "Y" -> {
                 // MY-specific: PBSB (Solid Black) and PPSB (Deep Blue) are Legacy-only
                 val isMyLegacyOnly = colorCode in MY_LEGACY_ONLY_EXTRA
@@ -619,12 +617,6 @@ object CarImageResolver {
             }
             else -> emptyList() // Model S/X don't have multiple variants to pick from
         }
-
-        // When wheel type is known, only keep variants that can map the wheel
-        if (wheelType != null) {
-            return variants.filter { variant -> mapWheel(variant.id, wheelType) != null }
-        }
-        return variants
     }
 
     /**
@@ -644,19 +636,22 @@ object CarImageResolver {
         val color = colorCode ?: DEFAULT_COLORS[variant] ?: "PPSW"
         val validatedColor = validateColorForVariant(variant, color)
 
-        // When wheel type is known, only return the matching wheel
+        // When wheel type is known, only return the matching wheel (or default if unmappable)
         if (wheelType != null) {
             val mappedWheel = mapWheel(variant, wheelType)
-            if (mappedWheel != null && mappedWheel in wheels) {
-                return listOf(
-                    WheelOption(
-                        code = mappedWheel,
-                        displayName = WHEEL_DISPLAY_NAMES[mappedWheel] ?: mappedWheel,
-                        assetPath = "car_images/${variant}_${validatedColor}_${mappedWheel}.png"
-                    )
-                )
+            val wheelCode = if (mappedWheel != null && mappedWheel in wheels) {
+                mappedWheel
+            } else {
+                // Wheel doesn't map to this variant - show the variant's default wheel
+                DEFAULT_WHEELS[variant] ?: wheels.first()
             }
-            return emptyList()
+            return listOf(
+                WheelOption(
+                    code = wheelCode,
+                    displayName = WHEEL_DISPLAY_NAMES[wheelCode] ?: wheelCode,
+                    assetPath = "car_images/${variant}_${validatedColor}_${wheelCode}.png"
+                )
+            )
         }
 
         return wheels.map { wheelCode ->

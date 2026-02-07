@@ -81,9 +81,8 @@ fun CarImagePickerDialog(
     onReset: () -> Unit
 ) {
     val colorCode = remember(exteriorColor) { CarImageResolver.mapColor(exteriorColor) }
-    // Filter variants based on detected color and wheel type
-    // When wheel type is known, only show variants that can map the detected wheel
-    val variants = remember(model, colorCode, wheelType) { CarImageResolver.getVariantsForModel(model, colorCode, wheelType) }
+    // Filter variants based on detected color
+    val variants = remember(model, colorCode) { CarImageResolver.getVariantsForModel(model, colorCode) }
 
     // Compute the detected default from API data
     val detectedDefault = remember(model, exteriorColor, wheelType, trimBadging) {
