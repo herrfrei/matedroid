@@ -5,6 +5,7 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -146,6 +147,7 @@ fun CurrentChargeScreen(
                     detail = uiState.chargeDetail!!,
                     isDcCharge = uiState.isDcCharge,
                     timeToFullCharge = uiState.timeToFullCharge,
+                    chargeLimitSoc = uiState.chargeLimitSoc,
                     chronologicalPoints = uiState.chronologicalPoints,
                     modifier = Modifier.padding(padding)
                 )
@@ -204,6 +206,7 @@ private fun CurrentChargeContent(
     detail: ChargeDetail,
     isDcCharge: Boolean,
     timeToFullCharge: Double?,
+    chargeLimitSoc: Int?,
     chronologicalPoints: List<ChargePoint>,
     modifier: Modifier = Modifier
 ) {
@@ -221,6 +224,7 @@ private fun CurrentChargeContent(
             detail = detail,
             isDcCharge = isDcCharge,
             timeToFullCharge = timeToFullCharge,
+            chargeLimitSoc = chargeLimitSoc,
             chronologicalPoints = chronologicalPoints
         )
 
@@ -299,6 +303,7 @@ private fun CurrentChargeHeaderCard(
     detail: ChargeDetail,
     isDcCharge: Boolean,
     timeToFullCharge: Double?,
+    chargeLimitSoc: Int?,
     chronologicalPoints: List<ChargePoint>
 ) {
     val unknownLabel = stringResource(R.string.unknown)
@@ -426,6 +431,14 @@ private fun CurrentChargeHeaderCard(
                 }
             }
 
+            // SoC progress bar
+            LiveSocProgressBar(
+                currentLevel = detail.currentOrEndBatteryLevel ?: 0,
+                startLevel = detail.startBatteryLevel ?: 0,
+                targetLevel = chargeLimitSoc ?: 100,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             // Instant power + voltage/current
             if (instantPower != null) {
                 HorizontalDivider(
@@ -503,6 +516,62 @@ private fun LiveChargeTypeBadge(isDcCharge: Boolean) {
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
+    }
+}
+
+@Composable
+private fun LiveSocProgressBar(
+    currentLevel: Int,
+    startLevel: Int,
+    targetLevel: Int,
+    modifier: Modifier = Modifier
+) {
+    val currentFraction = currentLevel / 100f
+    val startFraction = startLevel / 100f
+    val targetFraction = targetLevel / 100f
+    val solidGreen = Color(0xFF4CAF50)
+    val dimmedGreen = Color(0xFF4CAF50).copy(alpha = 0.3f)
+    val trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
+    val startMarkerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.4f)
+
+    Canvas(
+        modifier = modifier
+            .height(10.dp)
+            .clip(RoundedCornerShape(5.dp))
+    ) {
+        val width = size.width
+        val height = size.height
+
+        // Background track
+        drawRect(color = trackColor, size = size)
+
+        // Dimmed green for target area (from current to target)
+        if (targetFraction > currentFraction) {
+            drawRect(
+                color = dimmedGreen,
+                topLeft = androidx.compose.ui.geometry.Offset(width * currentFraction, 0f),
+                size = androidx.compose.ui.geometry.Size(
+                    width * (targetFraction - currentFraction), height
+                )
+            )
+        }
+
+        // Solid green for current charge level
+        drawRect(
+            color = solidGreen,
+            size = androidx.compose.ui.geometry.Size(width * currentFraction, height)
+        )
+
+        // Start level marker (thin vertical line)
+        if (startFraction > 0f) {
+            val markerX = width * startFraction
+            drawLine(
+                color = startMarkerColor,
+                start = androidx.compose.ui.geometry.Offset(markerX, 0f),
+                end = androidx.compose.ui.geometry.Offset(markerX, height),
+                strokeWidth = 2f
+            )
+        }
     }
 }
 

@@ -29,6 +29,7 @@ data class CurrentChargeUiState(
     val isUnsupportedApi: Boolean = false,
     val isNotCharging: Boolean = false,
     val timeToFullCharge: Double? = null,
+    val chargeLimitSoc: Int? = null,
     /** Charge points in chronological order (reversed from API's newest-first) */
     val chronologicalPoints: List<ChargePoint> = emptyList()
 )
@@ -82,6 +83,10 @@ class CurrentChargeViewModel @Inject constructor(
             is ApiResult.Success -> statusResult.data.status.timeToFullCharge
             is ApiResult.Error -> _uiState.value.timeToFullCharge
         }
+        val chargeLimitSoc = when (statusResult) {
+            is ApiResult.Success -> statusResult.data.status.chargeLimitSoc
+            is ApiResult.Error -> _uiState.value.chargeLimitSoc
+        }
 
         when (chargeResult) {
             is ApiResult.Success -> {
@@ -104,6 +109,7 @@ class CurrentChargeViewModel @Inject constructor(
                         isUnsupportedApi = false,
                         isNotCharging = detail.isCharging == false,
                         timeToFullCharge = timeToFullCharge,
+                        chargeLimitSoc = chargeLimitSoc,
                         chronologicalPoints = chronoPoints,
                         error = null
                     )
