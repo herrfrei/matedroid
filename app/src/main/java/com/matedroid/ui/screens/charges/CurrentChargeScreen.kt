@@ -24,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.ElectricalServices
 import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Timer
@@ -54,7 +53,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,8 +61,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.matedroid.R
 import com.matedroid.data.api.models.ChargeDetail
 import com.matedroid.data.api.models.ChargePoint
-import com.matedroid.data.api.models.Units
-import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenDualAxisLineChart
 import com.matedroid.ui.components.FullscreenLineChart
 import java.time.LocalDateTime
@@ -148,8 +144,6 @@ fun CurrentChargeScreen(
             uiState.chargeDetail != null -> {
                 CurrentChargeContent(
                     detail = uiState.chargeDetail!!,
-                    stats = uiState.stats,
-                    units = uiState.units,
                     isDcCharge = uiState.isDcCharge,
                     timeToFullCharge = uiState.timeToFullCharge,
                     chronologicalPoints = uiState.chronologicalPoints,
@@ -208,8 +202,6 @@ private fun FallbackMessage(message: String, modifier: Modifier = Modifier) {
 @Composable
 private fun CurrentChargeContent(
     detail: ChargeDetail,
-    stats: ChargeDetailStats?,
-    units: Units?,
     isDcCharge: Boolean,
     timeToFullCharge: Double?,
     chronologicalPoints: List<ChargePoint>,
@@ -228,7 +220,8 @@ private fun CurrentChargeContent(
         CurrentChargeHeaderCard(
             detail = detail,
             isDcCharge = isDcCharge,
-            timeToFullCharge = timeToFullCharge
+            timeToFullCharge = timeToFullCharge,
+            chronologicalPoints = chronologicalPoints
         )
 
         // Charts - right after header card
@@ -299,106 +292,8 @@ private fun CurrentChargeContent(
                 }
             }
 
-            // Temperature chart
-            val temps = chronologicalPoints.mapNotNull { it.outsideTemp?.toFloat() }
-            if (temps.size >= 2) {
-                val temperatureLabel = stringResource(R.string.temperature)
-                LiveChartCard(
-                    title = temperatureLabel,
-                    icon = Icons.Default.DeviceThermostat
-                ) {
-                    FullscreenLineChart(
-                        data = temps,
-                        color = Color(0xFFFF9800),
-                        unit = UnitFormatter.getTemperatureUnit(units),
-                        timeLabels = timeLabels,
-                        convertValue = { value ->
-                            if (units?.unitOfTemperature == "F") (value * 9f / 5f + 32f) else value
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
         }
 
-        // Stats section
-        stats?.let { s ->
-            // Energy section
-            val energyLabel = stringResource(R.string.energy)
-            val addedLabel = stringResource(R.string.energy_added)
-            val usedLabel = stringResource(R.string.used)
-            val efficiencyLabel = stringResource(R.string.efficiency)
-
-            LiveStatsSectionCard(
-                title = energyLabel,
-                icon = Icons.Default.Bolt,
-                stats = listOf(
-                    StatItem(addedLabel, "%.2f kWh".format(s.energyAdded)),
-                    StatItem(usedLabel, "%.2f kWh".format(s.energyUsed)),
-                    StatItem(efficiencyLabel, "%.1f%%".format(s.efficiency))
-                )
-            )
-
-            // Power section
-            if (s.powerMax > 0) {
-                val powerLabel = stringResource(R.string.power)
-                val maximumLabel = stringResource(R.string.maximum)
-                val minimumLabel = stringResource(R.string.minimum)
-                val averageLabel = stringResource(R.string.average)
-
-                LiveStatsSectionCard(
-                    title = powerLabel,
-                    icon = Icons.Default.Bolt,
-                    stats = listOf(
-                        StatItem(maximumLabel, "${s.powerMax} kW"),
-                        StatItem(minimumLabel, "${s.powerMin} kW"),
-                        StatItem(averageLabel, "%.1f kW".format(s.powerAvg))
-                    )
-                )
-            }
-
-            // Voltage & Current section (AC only)
-            if (!isDcCharge) {
-                val chargerLabel = stringResource(R.string.charger)
-                val voltageMaxLabel = stringResource(R.string.voltage_max)
-                val voltageMinLabel = stringResource(R.string.voltage_min)
-                val voltageAvgLabel = stringResource(R.string.voltage_avg)
-                val currentMaxLabel = stringResource(R.string.current_max)
-                val currentMinLabel = stringResource(R.string.current_min)
-                val currentAvgLabel = stringResource(R.string.current_avg)
-
-                LiveStatsSectionCard(
-                    title = chargerLabel,
-                    icon = Icons.Default.ElectricalServices,
-                    stats = listOf(
-                        StatItem(voltageMaxLabel, "${s.voltageMax} V"),
-                        StatItem(voltageMinLabel, "${s.voltageMin} V"),
-                        StatItem(voltageAvgLabel, "%.0f V".format(s.voltageAvg)),
-                        StatItem(currentMaxLabel, "${s.currentMax} A"),
-                        StatItem(currentMinLabel, "${s.currentMin} A"),
-                        StatItem(currentAvgLabel, "%.1f A".format(s.currentAvg))
-                    )
-                )
-            }
-
-            // Temperature section
-            if (s.tempMax > -100) {
-                val temperatureLabel = stringResource(R.string.temperature)
-                val maximumLabel = stringResource(R.string.maximum)
-                val minimumLabel = stringResource(R.string.minimum)
-                val averageLabel = stringResource(R.string.average)
-
-                LiveStatsSectionCard(
-                    title = temperatureLabel,
-                    icon = Icons.Default.DeviceThermostat,
-                    stats = listOf(
-                        StatItem(maximumLabel, UnitFormatter.formatTemperature(s.tempMax, units)),
-                        StatItem(minimumLabel, UnitFormatter.formatTemperature(s.tempMin, units)),
-                        StatItem(averageLabel, UnitFormatter.formatTemperature(s.tempAvg, units))
-                    )
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(16.dp))
     }
@@ -408,12 +303,19 @@ private fun CurrentChargeContent(
 private fun CurrentChargeHeaderCard(
     detail: ChargeDetail,
     isDcCharge: Boolean,
-    timeToFullCharge: Double?
+    timeToFullCharge: Double?,
+    chronologicalPoints: List<ChargePoint>
 ) {
     val unknownLabel = stringResource(R.string.unknown)
     val estimatedEndLabel = stringResource(R.string.current_charge_estimated_end)
     val energyAddedLabel = stringResource(R.string.energy_added_header)
     val elapsedLabel = stringResource(R.string.current_charge_elapsed)
+
+    // Get instant values from the latest data point
+    val latestPoint = chronologicalPoints.lastOrNull()
+    val instantPower = latestPoint?.chargerPower
+    val instantVoltage = latestPoint?.chargerVoltage
+    val instantCurrent = latestPoint?.chargerCurrent
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -528,6 +430,62 @@ private fun CurrentChargeHeaderCard(
                     )
                 }
             }
+
+            // Instant power + voltage/current
+            if (instantPower != null) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Instant power
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.power),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "$instantPower kW",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+
+                    // Voltage & Current (AC only)
+                    if (!isDcCharge && instantVoltage != null && instantCurrent != null) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = stringResource(R.string.voltage_and_current_profile),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    text = "$instantVoltage V \u00B7 $instantCurrent A",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -602,83 +560,6 @@ private fun ElapsedTimeCounter(
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onPrimaryContainer
     )
-}
-
-@Composable
-private fun LiveStatsSectionCard(
-    title: String,
-    icon: ImageVector,
-    stats: List<StatItem>
-) {
-    val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp
-
-    val columnCount = when {
-        screenWidth > 600 -> 4
-        screenWidth > 340 -> 3
-        else -> 2
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            val chunked = stats.chunked(columnCount)
-            chunked.forEachIndexed { index, row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    row.forEach { stat ->
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stat.label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                text = stat.value,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    val emptySlots = columnCount - row.size
-                    if (emptySlots > 0) {
-                        repeat(emptySlots) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                }
-                if (index < chunked.size - 1) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-            }
-        }
-    }
 }
 
 @Composable
