@@ -76,8 +76,9 @@ https://static-assets.tesla.com/configurator/compositor?context=design_studio_2&
 | Highland Model 3 | 2024+ | New | `m3h` |
 | Highland Model 3 Performance | 2024+ Perf | New | `m3hp` |
 | Legacy Model Y | Pre-2025 | Old | `my` |
-| Juniper Model Y | 2025+ Standard/Premium | New | `myj` |
-| Juniper Model Y Performance | 2025+ Performance | New | `myjp` |
+| Juniper Model Y Standard | 2025+ Standard (classic headlights) | New | `myjs` |
+| Juniper Model Y Premium | 2025+ Premium (light strip headlights) | New | `myj` |
+| Juniper Model Y Performance | 2025+ Perf (light strip + red calipers) | New | `myjp` |
 | Model S | All | Old | `ms` |
 | Model X | All | Old | `mx` |
 
@@ -103,9 +104,17 @@ https://static-assets.tesla.com/configurator/compositor?context=design_studio_2&
 
 | Trim Badge | Variant | Default Wheels | Notes |
 |------------|---------|----------------|-------|
-| `50` | Standard Range | 18" Photon (WY18P) | |
-| `74`, `74D` | Long Range/Premium | 19" Crossflow (WY19P) | |
-| `P74D` | Performance | 21" Überturbine (WY21A) | Red brake calipers |
+| `50` | Standard Range | 18" Photon (WY18P) | Classic headlights |
+| `74`, `74D` | Long Range/Premium | 19" Crossflow (WY19P) | Light strip headlights |
+| `P74D` | Performance | 21" Überturbine (WY21A) | Light strip + red brake calipers |
+
+### Juniper Standard vs Premium Visual Difference
+
+The key visual difference between Standard and Premium is the **headlights**:
+- **Standard** (`myjs`): Classic separate headlight units, uses compositor trim code `MTY68`
+- **Premium** (`myj`): Connected light strip across the front, uses compositor trim code `MTY60`
+
+Wheels are largely mutually exclusive between Standard and Premium, though some markets (US) offer Crossflow 19" on Standard trim as well.
 
 ---
 
@@ -122,28 +131,31 @@ https://static-assets.tesla.com/configurator/compositor?context=design_studio_2&
 | `White`, `PearlWhite`, `PearlWhiteMultiCoat` | `PPSW` | Pearl White Multi-Coat | All |
 | `DeepBlue`, `DeepBlueMetallic`, `Blue` | `PPSB` | Deep Blue Metallic | All except Juniper |
 | `Red`, `RedMultiCoat` | `PPMR` | Red Multi-Coat | Legacy |
-| `Quicksilver` | `PN00` | Quicksilver | Highland M3 |
-| `StealthGrey`, `StealthGray` | `PN01` | Stealth Grey | Highland, Juniper |
+| `Quicksilver` | `PN00` | Quicksilver | Highland M3, Juniper MY Premium/Perf |
+| `StealthGrey`, `StealthGray` | `PN01` | Stealth Grey | Highland, Juniper (all trims) |
 | `MidnightCherryRed` | `PR00` | Midnight Cherry Red | None (discontinued) |
-| `UltraRed` | `PR01` | Ultra Red | Highland M3 |
-| `BlackDiamond` | `PX02` | Black Diamond | Highland, Juniper |
+| `UltraRed` | `PR01` | Ultra Red | Highland M3, Juniper MY Premium/Perf |
+| `BlackDiamond` | `PX02` | Black Diamond | Highland, Juniper (all trims) |
+| `GlacierBlue` | `PB01` | Glacier Blue | Juniper MY Premium/Perf |
+| `MarineBlue` | `PB02` | Marine Blue | Juniper MY Performance only |
 
 ### Color Availability by Model Variant
 
-| Color Code | Legacy M3 | Highland M3 | Legacy MY | Juniper MY | Juniper MY Perf |
-|------------|-----------|-------------|-----------|------------|-----------------|
-| `PBSB` | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `PMBL` | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `PMNG` | ✅ | ❌ | ✅ | ❌ | ❌ |
-| `PMSS` | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `PPSW` | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `PPSB` | ✅ | ✅ | ✅ | ❌ | ❌ |
-| `PPMR` | ✅ | ❌ | ✅ | ❌ | ❌ |
-| `PN00` | ❌ | ✅ | ❌ | ❌ | ✅ |
-| `PN01` | ❌ | ✅ | ❌ | ✅ | ✅ |
-| `PR01` | ❌ | ✅ | ❌ | ❌ | ✅ |
-| `PX02` | ❌ | ✅ | ❌ | ✅ | ✅ |
-| `PB02` | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Color Code | Legacy M3 | Highland M3 | Legacy MY | MY Standard | MY Premium | MY Perf |
+|------------|-----------|-------------|-----------|-------------|------------|---------|
+| `PBSB` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `PMBL` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `PMNG` | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| `PMSS` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `PPSW` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `PPSB` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| `PPMR` | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| `PN00` | ❌ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| `PN01` | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| `PR01` | ❌ | ✅ | ❌ | ❌ | ✅ | ✅ |
+| `PX02` | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| `PB01` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| `PB02` | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
@@ -162,8 +174,9 @@ https://static-assets.tesla.com/configurator/compositor?context=design_studio_2&
 | `Uberturbine21*` | - | `WY1S` | 21" Uberturbine (MY) |
 | `Photon18*` | `W38A` | `WY18P` | 18" Photon (Highland/Juniper) |
 | `Nova19*`, `Helix19*` | `W38A`* | - | 19" Nova (Highland M3) - *fallback, not in compositor |
-| `Crossflow19*` | - | `WY19P` | 19" Crossflow (Juniper MY) |
+| `Crossflow19*` | - | `WY19P` | 19" Crossflow (Juniper MY Standard/Premium) |
 | `Helix20*` | - | `WY20A` | 20" Helix 2.0 (Juniper MY Premium) |
+| `Uberturbine21*`, `Arachnid21*` | - | `WY21A` | 21" Überturbine/Arachnid (Juniper MY Perf) |
 | `Glider18*`, `Nova18*` | `W38A` | - | 18" Glider/Nova (Highland M3) |
 
 **Model S/X Wheels**:
@@ -178,22 +191,20 @@ https://static-assets.tesla.com/configurator/compositor?context=design_studio_2&
 
 ### Wheel Availability by Model Variant
 
-| Wheel Code | Legacy M3 | Highland M3 | Highland M3P | Legacy MY | Juniper MY | Juniper MY Perf |
-|------------|-----------|-------------|--------------|-----------|------------|-----------------|
-| `W38B` | ✅ | ❌ | ❌ | - | - | - |
-| `W39B` | ✅ | ❌ | ❌ | - | - | - |
-| `W32P` | ✅ | ❌ | ❌ | - | - | - |
-| `W38A` | ❌ | ✅ | ❌ | - | - | - |
-| `W30P` | ❌ | ❌ | ✅ | - | - | - |
-| `WY18B` | - | - | - | ✅ | ❌ | ❌ |
-| `WY19B` | - | - | - | ✅ | ❌ | ❌ |
-| `WY20P` | - | - | - | ✅ | ❌ | ❌ |
-| `WY0S` | - | - | - | ✅ | ❌ | ❌ |
-| `WY1S` | - | - | - | ✅ | ❌ | ❌ |
-| `WY18P` | - | - | - | ❌ | ✅ | ❌ |
-| `WY19P` | - | - | - | ❌ | ✅ | ❌ |
-| `WY20A` | - | - | - | ❌ | ✅ | ❌ |
-| `WY21A` | - | - | - | ❌ | ❌ | ✅ |
+| Wheel Code | Legacy M3 | Highland M3 | Highland M3P | Legacy MY | MY Standard | MY Premium | MY Perf |
+|------------|-----------|-------------|--------------|-----------|-------------|------------|---------|
+| `W38B` | ✅ | ❌ | ❌ | - | - | - | - |
+| `W39B` | ✅ | ❌ | ❌ | - | - | - | - |
+| `W32P` | ✅ | ❌ | ❌ | - | - | - | - |
+| `W38A` | ❌ | ✅ | ❌ | - | - | - | - |
+| `W30P` | ❌ | ❌ | ✅ | - | - | - | - |
+| `WY18B` | - | - | - | ✅ | ❌ | ❌ | ❌ |
+| `WY19B` | - | - | - | ✅ | ❌ | ❌ | ❌ |
+| `WY20P` | - | - | - | ✅ | ❌ | ❌ | ❌ |
+| `WY18P` | - | - | - | ❌ | ✅ | ❌ | ❌ |
+| `WY19P` | - | - | - | ❌ | ✅ | ✅ | ❌ |
+| `WY20A` | - | - | - | ❌ | ❌ | ✅ | ❌ |
+| `WY21A` | - | - | - | ❌ | ❌ | ❌ | ✅ |
 
 ---
 
@@ -207,25 +218,29 @@ The old compositor returns **grayscale shadow placeholders** (~26KB) for color/w
 ### 2. New Colors Don't Work on Old Compositor
 Colors introduced with Highland/Juniper (`PN00`, `PN01`, `PR01`, `PX02`) return placeholders on the old compositor. Must use the new compositor for these colors.
 
-### 3. Highland/Juniper Have Limited Wheel Options
-- Highland Model 3: Only `W38A` (standard) or `W30P` (Performance)
-- Juniper Model Y: Only `WY18P`
-
-Each trim level has exactly ONE wheel option available.
-
-### 4. Highland/Juniper Detection from TeslamateAPI
+### 3. Highland/Juniper Detection from TeslamateAPI
 TeslamateAPI doesn't explicitly indicate if a car is Highland/Juniper. Detection heuristics:
 
-1. **Color-based**: If exterior color is `PN00`, `PN01`, `PR01`, or `PX02` → Highland/Juniper
+1. **Color-based**: If exterior color is `PN00`, `PN01`, `PR01`, `PX02`, `PB01`, or `PB02` → Highland/Juniper
 2. **Wheel-based**: If wheel type is Highland/Juniper-only:
    - Model 3: `Photon18`, `Glider18`, `Nova18` → Highland
-   - Model Y: `Photon18` → Juniper
+   - Model Y: `Photon18`, `Crossflow19`, `Helix20` → Juniper
+3. **Trim-based** (Juniper MY only):
+   - `50` → Standard (classic headlights)
+   - `74`/`74D` → Premium (light strip)
+   - `P74D` → Performance
 
-This correctly identifies Highland/Juniper cars even with common colors like Pearl White (`PPSW`).
+### 4. Mismatched Wheel Names from API
+TeslamateAPI sometimes reports legacy wheel names on Highland/Juniper cars (see [discussion #40](https://github.com/vide/matedroid/discussions/40)). Example: Highland M3 reporting `Pinwheel18CapKit` instead of `Photon18`.
+
+The picker handles this by showing all available wheels for variants where the API wheel doesn't map.
 
 ### 5. Trim Badging for Performance Detection
 - Legacy: `P` prefix (e.g., `P74D`) indicates Performance
 - Highland: Uses `MT371` trim code
+
+### 6. Model Y PBSB and PPSB are Legacy-only
+Since TeslamateAPI reports color as a **name** (e.g., `"SolidBlack"`, `"BlackDiamond"`), the Solid Black (PBSB) / Diamond Black (PX02) and Deep Blue (PPSB) / Glacier Blue (PB01) distinction is unambiguous. PBSB and PPSB are treated as Legacy-only for Model Y.
 
 ### 6. Model S/X Support
 The old compositor supports Model S (`ms`) and Model X (`mx`) with legacy colors. Both models are now included with 5 colors each.
@@ -246,6 +261,39 @@ We use `bkba_opt=1` for all images to get consistent transparent PNGs.
 
 ---
 
+## Car Image Picker Logic
+
+The car image picker dialog lets users manually select their car's variant and wheel when auto-detection is ambiguous. The logic is in `CarImageResolver.kt`.
+
+### Which Variants Appear in the Picker
+
+Variants are filtered by **color**, **trim badging**, and **wheel type**:
+
+| Detected Color | Category | Model Y Variants | Model 3 Variants |
+|---|---|---|---|
+| PMNG, PPMR, PMSS, PMBL | Legacy-only | Legacy | Legacy |
+| PBSB, PPSB | Legacy-only (MY) / Shared (M3) | Legacy | Legacy, Highland, (Perf) |
+| PN01, PX02 | Juniper-only, all trims | Standard, Premium | Highland |
+| PN00, PR01, PB01 | Premium+ only | Premium | Highland |
+| PB02 | Performance-only | (auto-select Performance) | - |
+| PPSW, null | Shared / unknown | Legacy, Standard, Premium, (Perf) | Legacy, Highland, (Perf) |
+
+**Performance filtering**: Performance variants are only shown when trim and wheel data can't rule them out. If `trim_badging` is known and not P-prefixed, or `wheel_type` is known and not a Performance wheel, Performance is hidden.
+
+### Which Wheels Appear per Variant
+
+Wheels are filtered by the detected **wheel type** from the API:
+
+- **Wheel maps to variant** (e.g., Crossflow19 → Premium WY19P): show only that wheel
+- **Wheel doesn't map** (e.g., Pinwheel18CapKit on Highland M3): show all available wheels for the variant, so the user can pick
+- **No wheel type** (null): show all available wheels
+
+### Override Validation
+
+When a user saves a manual override (variant + wheel), it persists across sessions. If the car's configuration changes (e.g., switching mock profiles), the override is validated against the current car's available variants. Stale overrides (variant not valid for current color) are ignored and auto-detection takes over.
+
+---
+
 ## Asset File Naming Convention
 
 Format: `{model_variant}_{color_code}_{wheel_code}.png`
@@ -256,7 +304,8 @@ Format: `{model_variant}_{color_code}_{wheel_code}.png`
 | Highland Model 3 | `m3h_PN01_W38A.png` |
 | Highland M3 Performance | `m3hp_PR01_W30P.png` |
 | Legacy Model Y | `my_PPSW_WY19B.png` |
-| Juniper Model Y | `myj_PX02_WY18P.png` |
+| Juniper MY Standard | `myjs_PN01_WY18P.png` |
+| Juniper MY Premium | `myj_PX02_WY19P.png` |
 | Juniper MY Performance | `myjp_PN01_WY21A.png` |
 | Model S | `ms_PPSW_WT19.png` |
 | Model X | `mx_PPSB_WT20.png` |
@@ -270,12 +319,13 @@ Format: `{model_variant}_{color_code}_{wheel_code}.png`
 | Legacy Model 3 | 7 | 3 | 21 | PNG |
 | Highland Model 3 | 7 | 1 | 7 | PNG |
 | Highland M3 Performance | 7 | 1 | 7 | PNG |
-| Legacy Model Y | 5 | 5 | 25 | PNG |
-| Juniper Model Y | 6 | 3 | 15 | PNG |
-| Juniper MY Performance | 6 | 1 | 6 | PNG |
+| Legacy Model Y | 5 | 3 | 15 | PNG |
+| Juniper MY Standard | 3 | 2 | 6 | PNG |
+| Juniper MY Premium | 6 | 2 | 12 | PNG |
+| Juniper MY Performance | 7 | 1 | 7 | PNG |
 | Model S | 5 | 1 | 5 | PNG |
 | Model X | 5 | 2 | 10 | PNG |
-| **Total** | | | **96** | **~10 MB** |
+| **Total** | | | **90** | |
 
 ---
 
