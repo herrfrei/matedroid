@@ -224,74 +224,69 @@ private fun CurrentChargeContent(
             chronologicalPoints = chronologicalPoints
         )
 
-        // Charts - right after header card
-        if (chronologicalPoints.size > 2) {
-            val timeLabels = extractChronoTimeLabels(chronologicalPoints)
+        // Charts - always show cards, even with few data points
+        val timeLabels = extractChronoTimeLabels(chronologicalPoints)
+        val powers = chronologicalPoints.mapNotNull { it.chargerPower?.toFloat() }
+        val batteryLevels = chronologicalPoints.mapNotNull { it.batteryLevel?.toFloat() }
 
-            // Power chart (always shown)
-            if (chronologicalPoints.any { (it.chargerPower ?: 0) > 0 }) {
-                val powers = chronologicalPoints.mapNotNull { it.chargerPower?.toFloat() }
-                if (powers.size >= 2) {
-                    val powerProfileTitle = stringResource(R.string.power_profile)
-                    LiveChartCard(
-                        title = powerProfileTitle,
-                        icon = Icons.Default.Bolt
-                    ) {
-                        FullscreenLineChart(
-                            data = powers,
-                            color = Color(0xFF4CAF50),
-                            unit = "kW",
-                            timeLabels = timeLabels,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
+        // Power chart (always shown)
+        val powerProfileTitle = stringResource(R.string.power_profile)
+        LiveChartCard(
+            title = powerProfileTitle,
+            icon = Icons.Default.Bolt
+        ) {
+            if (powers.size >= 2) {
+                FullscreenLineChart(
+                    data = powers,
+                    color = Color(0xFF4CAF50),
+                    unit = "kW",
+                    timeLabels = timeLabels,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
+        }
 
-            // Voltage & Current combined chart (AC only)
-            if (!isDcCharge) {
-                val voltages = chronologicalPoints.mapNotNull { it.chargerVoltage?.toFloat() }
-                val currents = chronologicalPoints.mapNotNull { it.chargerCurrent?.toFloat() }
+        // Voltage & Current combined chart (AC only)
+        if (!isDcCharge) {
+            val voltages = chronologicalPoints.mapNotNull { it.chargerVoltage?.toFloat() }
+            val currents = chronologicalPoints.mapNotNull { it.chargerCurrent?.toFloat() }
 
+            val vcTitle = stringResource(R.string.voltage_and_current_profile)
+            LiveChartCard(
+                title = vcTitle,
+                icon = Icons.Default.ElectricalServices
+            ) {
                 if (voltages.size >= 2 && currents.size >= 2) {
-                    val vcTitle = stringResource(R.string.voltage_and_current_profile)
-                    LiveChartCard(
-                        title = vcTitle,
-                        icon = Icons.Default.ElectricalServices
-                    ) {
-                        FullscreenDualAxisLineChart(
-                            dataLeft = voltages,
-                            dataRight = currents,
-                            colorLeft = MaterialTheme.colorScheme.tertiary,
-                            colorRight = MaterialTheme.colorScheme.secondary,
-                            unitLeft = "V",
-                            unitRight = "A",
-                            timeLabels = timeLabels,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-            }
-
-            // Battery level chart
-            val batteryLevels = chronologicalPoints.mapNotNull { it.batteryLevel?.toFloat() }
-            if (batteryLevels.size >= 2) {
-                val batteryLevelTitle = stringResource(R.string.battery_level)
-                LiveChartCard(
-                    title = batteryLevelTitle,
-                    icon = Icons.Default.BatteryChargingFull
-                ) {
-                    FullscreenLineChart(
-                        data = batteryLevels,
-                        color = MaterialTheme.colorScheme.primary,
-                        unit = "%",
-                        fixedMinMax = Pair(0f, 100f),
+                    FullscreenDualAxisLineChart(
+                        dataLeft = voltages,
+                        dataRight = currents,
+                        colorLeft = MaterialTheme.colorScheme.tertiary,
+                        colorRight = MaterialTheme.colorScheme.secondary,
+                        unitLeft = "V",
+                        unitRight = "A",
                         timeLabels = timeLabels,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
+        }
 
+        // Battery level chart
+        val batteryLevelTitle = stringResource(R.string.battery_level)
+        LiveChartCard(
+            title = batteryLevelTitle,
+            icon = Icons.Default.BatteryChargingFull
+        ) {
+            if (batteryLevels.size >= 2) {
+                FullscreenLineChart(
+                    data = batteryLevels,
+                    color = MaterialTheme.colorScheme.primary,
+                    unit = "%",
+                    fixedMinMax = Pair(0f, 100f),
+                    timeLabels = timeLabels,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
 
