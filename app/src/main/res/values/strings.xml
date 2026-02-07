@@ -1028,6 +1028,8 @@
     <!-- ==================== Live Charge Screen ==================== -->
     <!-- Live indicator badge shown during active charging -->
     <string name="current_charge_live">LIVE</string>
+    <!-- Elapsed time label for live counter -->
+    <string name="current_charge_elapsed">Elapsed</string>
     <!-- Estimated completion time label -->
     <string name="current_charge_estimated_end">Estimated End</string>
     <!-- Shown when API version is too old -->

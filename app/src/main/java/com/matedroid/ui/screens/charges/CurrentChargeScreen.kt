@@ -26,9 +26,7 @@ import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DeviceThermostat
 import androidx.compose.material.icons.filled.ElectricalServices
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Power
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,7 +46,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,7 +71,6 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
-import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -232,86 +231,7 @@ private fun CurrentChargeContent(
             timeToFullCharge = timeToFullCharge
         )
 
-        // Stats section
-        stats?.let { s ->
-            // Energy section
-            val energyLabel = stringResource(R.string.energy)
-            val addedLabel = stringResource(R.string.energy_added)
-            val usedLabel = stringResource(R.string.used)
-            val efficiencyLabel = stringResource(R.string.efficiency)
-
-            LiveStatsSectionCard(
-                title = energyLabel,
-                icon = Icons.Default.Bolt,
-                stats = listOf(
-                    StatItem(addedLabel, "%.2f kWh".format(s.energyAdded)),
-                    StatItem(usedLabel, "%.2f kWh".format(s.energyUsed)),
-                    StatItem(efficiencyLabel, "%.1f%%".format(s.efficiency))
-                )
-            )
-
-            // Power section
-            if (s.powerMax > 0) {
-                val powerLabel = stringResource(R.string.power)
-                val maximumLabel = stringResource(R.string.maximum)
-                val minimumLabel = stringResource(R.string.minimum)
-                val averageLabel = stringResource(R.string.average)
-
-                LiveStatsSectionCard(
-                    title = powerLabel,
-                    icon = Icons.Default.Bolt,
-                    stats = listOf(
-                        StatItem(maximumLabel, "${s.powerMax} kW"),
-                        StatItem(minimumLabel, "${s.powerMin} kW"),
-                        StatItem(averageLabel, "%.1f kW".format(s.powerAvg))
-                    )
-                )
-            }
-
-            // Voltage & Current section (AC only)
-            if (!isDcCharge) {
-                val chargerLabel = stringResource(R.string.charger)
-                val voltageMaxLabel = stringResource(R.string.voltage_max)
-                val voltageMinLabel = stringResource(R.string.voltage_min)
-                val voltageAvgLabel = stringResource(R.string.voltage_avg)
-                val currentMaxLabel = stringResource(R.string.current_max)
-                val currentMinLabel = stringResource(R.string.current_min)
-                val currentAvgLabel = stringResource(R.string.current_avg)
-
-                LiveStatsSectionCard(
-                    title = chargerLabel,
-                    icon = Icons.Default.ElectricalServices,
-                    stats = listOf(
-                        StatItem(voltageMaxLabel, "${s.voltageMax} V"),
-                        StatItem(voltageMinLabel, "${s.voltageMin} V"),
-                        StatItem(voltageAvgLabel, "%.0f V".format(s.voltageAvg)),
-                        StatItem(currentMaxLabel, "${s.currentMax} A"),
-                        StatItem(currentMinLabel, "${s.currentMin} A"),
-                        StatItem(currentAvgLabel, "%.1f A".format(s.currentAvg))
-                    )
-                )
-            }
-
-            // Temperature section
-            if (s.tempMax > -100) {
-                val temperatureLabel = stringResource(R.string.temperature)
-                val maximumLabel = stringResource(R.string.maximum)
-                val minimumLabel = stringResource(R.string.minimum)
-                val averageLabel = stringResource(R.string.average)
-
-                LiveStatsSectionCard(
-                    title = temperatureLabel,
-                    icon = Icons.Default.DeviceThermostat,
-                    stats = listOf(
-                        StatItem(maximumLabel, UnitFormatter.formatTemperature(s.tempMax, units)),
-                        StatItem(minimumLabel, UnitFormatter.formatTemperature(s.tempMin, units)),
-                        StatItem(averageLabel, UnitFormatter.formatTemperature(s.tempAvg, units))
-                    )
-                )
-            }
-        }
-
-        // Charts
+        // Charts - right after header card
         if (chronologicalPoints.size > 2) {
             val timeLabels = extractChronoTimeLabels(chronologicalPoints)
 
@@ -401,6 +321,85 @@ private fun CurrentChargeContent(
             }
         }
 
+        // Stats section
+        stats?.let { s ->
+            // Energy section
+            val energyLabel = stringResource(R.string.energy)
+            val addedLabel = stringResource(R.string.energy_added)
+            val usedLabel = stringResource(R.string.used)
+            val efficiencyLabel = stringResource(R.string.efficiency)
+
+            LiveStatsSectionCard(
+                title = energyLabel,
+                icon = Icons.Default.Bolt,
+                stats = listOf(
+                    StatItem(addedLabel, "%.2f kWh".format(s.energyAdded)),
+                    StatItem(usedLabel, "%.2f kWh".format(s.energyUsed)),
+                    StatItem(efficiencyLabel, "%.1f%%".format(s.efficiency))
+                )
+            )
+
+            // Power section
+            if (s.powerMax > 0) {
+                val powerLabel = stringResource(R.string.power)
+                val maximumLabel = stringResource(R.string.maximum)
+                val minimumLabel = stringResource(R.string.minimum)
+                val averageLabel = stringResource(R.string.average)
+
+                LiveStatsSectionCard(
+                    title = powerLabel,
+                    icon = Icons.Default.Bolt,
+                    stats = listOf(
+                        StatItem(maximumLabel, "${s.powerMax} kW"),
+                        StatItem(minimumLabel, "${s.powerMin} kW"),
+                        StatItem(averageLabel, "%.1f kW".format(s.powerAvg))
+                    )
+                )
+            }
+
+            // Voltage & Current section (AC only)
+            if (!isDcCharge) {
+                val chargerLabel = stringResource(R.string.charger)
+                val voltageMaxLabel = stringResource(R.string.voltage_max)
+                val voltageMinLabel = stringResource(R.string.voltage_min)
+                val voltageAvgLabel = stringResource(R.string.voltage_avg)
+                val currentMaxLabel = stringResource(R.string.current_max)
+                val currentMinLabel = stringResource(R.string.current_min)
+                val currentAvgLabel = stringResource(R.string.current_avg)
+
+                LiveStatsSectionCard(
+                    title = chargerLabel,
+                    icon = Icons.Default.ElectricalServices,
+                    stats = listOf(
+                        StatItem(voltageMaxLabel, "${s.voltageMax} V"),
+                        StatItem(voltageMinLabel, "${s.voltageMin} V"),
+                        StatItem(voltageAvgLabel, "%.0f V".format(s.voltageAvg)),
+                        StatItem(currentMaxLabel, "${s.currentMax} A"),
+                        StatItem(currentMinLabel, "${s.currentMin} A"),
+                        StatItem(currentAvgLabel, "%.1f A".format(s.currentAvg))
+                    )
+                )
+            }
+
+            // Temperature section
+            if (s.tempMax > -100) {
+                val temperatureLabel = stringResource(R.string.temperature)
+                val maximumLabel = stringResource(R.string.maximum)
+                val minimumLabel = stringResource(R.string.minimum)
+                val averageLabel = stringResource(R.string.average)
+
+                LiveStatsSectionCard(
+                    title = temperatureLabel,
+                    icon = Icons.Default.DeviceThermostat,
+                    stats = listOf(
+                        StatItem(maximumLabel, UnitFormatter.formatTemperature(s.tempMax, units)),
+                        StatItem(minimumLabel, UnitFormatter.formatTemperature(s.tempMin, units)),
+                        StatItem(averageLabel, UnitFormatter.formatTemperature(s.tempAvg, units))
+                    )
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
@@ -411,12 +410,10 @@ private fun CurrentChargeHeaderCard(
     isDcCharge: Boolean,
     timeToFullCharge: Double?
 ) {
-    val startLabel = stringResource(R.string.started)
     val unknownLabel = stringResource(R.string.unknown)
     val estimatedEndLabel = stringResource(R.string.current_charge_estimated_end)
     val energyAddedLabel = stringResource(R.string.energy_added_header)
-    val locationLabel = stringResource(R.string.location)
-    val unknownLocationLabel = stringResource(R.string.unknown_location)
+    val elapsedLabel = stringResource(R.string.current_charge_elapsed)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -428,72 +425,38 @@ private fun CurrentChargeHeaderCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Location
-            if (detail.address != null) {
+            // Elapsed time (live counter) + Estimated end
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // Elapsed time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.LocationOn,
+                        imageVector = Icons.Default.Timer,
                         contentDescription = null,
                         modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = locationLabel,
+                            text = elapsedLabel,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         )
-                        Text(
-                            text = detail.address,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        ElapsedTimeCounter(
+                            startDate = detail.startDate,
+                            unknownLabel = unknownLabel
                         )
                     }
                 }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 36.dp),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-                )
-            }
-
-            // Start time
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Schedule,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = startLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = formatLiveDateTime(detail.startDate, unknownLabel),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-
-            // Estimated end time
-            timeToFullCharge?.let { hours ->
-                if (hours > 0) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Timer,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                // Estimated end time
+                timeToFullCharge?.let { hours ->
+                    if (hours > 0) {
+                        Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = estimatedEndLabel,
                                 style = MaterialTheme.typography.labelSmall,
@@ -502,6 +465,7 @@ private fun CurrentChargeHeaderCard(
                             Text(
                                 text = formatEstimatedEnd(hours),
                                 style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
@@ -511,7 +475,6 @@ private fun CurrentChargeHeaderCard(
 
             // Energy added + battery progress + AC/DC badge
             HorizontalDivider(
-                modifier = Modifier.padding(start = 36.dp),
                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
             )
 
@@ -588,6 +551,57 @@ private fun LiveChargeTypeBadge(isDcCharge: Boolean) {
             color = Color.White
         )
     }
+}
+
+@Composable
+private fun ElapsedTimeCounter(
+    startDate: String?,
+    unknownLabel: String
+) {
+    val startEpochMs = remember(startDate) {
+        if (startDate == null) return@remember null
+        try {
+            val odt = try {
+                OffsetDateTime.parse(startDate)
+            } catch (e: DateTimeParseException) {
+                OffsetDateTime.parse(startDate.replace("Z", "+00:00"))
+            }
+            odt.toInstant().toEpochMilli()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    val elapsedMs = remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(startEpochMs) {
+        if (startEpochMs == null) return@LaunchedEffect
+        while (true) {
+            elapsedMs.longValue = System.currentTimeMillis() - startEpochMs
+            delay(1000L)
+        }
+    }
+
+    val displayText = if (startEpochMs == null) {
+        unknownLabel
+    } else {
+        val totalSeconds = elapsedMs.longValue / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        if (hours > 0) {
+            "%d:%02d:%02d".format(hours, minutes, seconds)
+        } else {
+            "%d:%02d".format(minutes, seconds)
+        }
+    }
+
+    Text(
+        text = displayText,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onPrimaryContainer
+    )
 }
 
 @Composable
@@ -729,21 +743,6 @@ private fun extractChronoTimeLabels(chargePoints: List<ChargePoint>): List<Strin
     val indices = listOf(0, times.size / 4, times.size / 2, times.size * 3 / 4, times.size - 1)
     return indices.map { idx ->
         times.getOrNull(idx.coerceIn(0, times.size - 1))?.format(timeFormatter) ?: ""
-    }
-}
-
-private fun formatLiveDateTime(dateStr: String?, unknownLabel: String = "Unknown"): String {
-    if (dateStr == null) return unknownLabel
-    return try {
-        val dateTime = try {
-            OffsetDateTime.parse(dateStr).toLocalDateTime()
-        } catch (e: DateTimeParseException) {
-            LocalDateTime.parse(dateStr.replace("Z", ""))
-        }
-        val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL, FormatStyle.SHORT)
-        dateTime.format(formatter)
-    } catch (e: Exception) {
-        dateStr
     }
 }
 

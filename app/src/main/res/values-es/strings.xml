@@ -1027,6 +1027,8 @@
     <!-- ==================== Live Charge Screen ==================== -->
     <!-- Indicador en tiempo real mostrado durante la carga activa -->
     <string name="current_charge_live">LIVE</string>
+    <!-- Etiqueta de tiempo transcurrido para el contador en tiempo real -->
+    <string name="current_charge_elapsed">Transcurrido</string>
     <!-- Etiqueta de tiempo estimado de finalización -->
     <string name="current_charge_estimated_end">Fin estimado</string>
     <!-- Mostrado cuando la versión de la API es demasiado antigua -->
