@@ -624,9 +624,9 @@ object CarImageResolver {
     /**
      * Get available wheels for a variant, with preview paths.
      *
-     * When wheelType is provided (from API), only returns the matching wheel.
-     * This ensures the picker shows only the detected wheel, not all possible wheels.
-     * Returns empty list if the wheel can't be mapped for this variant.
+     * When wheelType is provided (from API) and maps to this variant, returns only
+     * that wheel. When wheelType doesn't map (e.g., API reports a legacy wheel name
+     * on a Highland car), returns ALL wheels so the user can browse and pick.
      *
      * @param variant The model variant (e.g., "my", "myj")
      * @param colorCode The color code for generating preview paths (defaults to PPSW)
@@ -638,22 +638,20 @@ object CarImageResolver {
         val color = colorCode ?: DEFAULT_COLORS[variant] ?: "PPSW"
         val validatedColor = validateColorForVariant(variant, color)
 
-        // When wheel type is known, only return the matching wheel (or default if unmappable)
+        // When wheel type is known and maps to this variant, show only that wheel
         if (wheelType != null) {
             val mappedWheel = mapWheel(variant, wheelType)
-            val wheelCode = if (mappedWheel != null && mappedWheel in wheels) {
-                mappedWheel
-            } else {
-                // Wheel doesn't map to this variant - show the variant's default wheel
-                DEFAULT_WHEELS[variant] ?: wheels.first()
-            }
-            return listOf(
-                WheelOption(
-                    code = wheelCode,
-                    displayName = WHEEL_DISPLAY_NAMES[wheelCode] ?: wheelCode,
-                    assetPath = "car_images/${variant}_${validatedColor}_${wheelCode}.png"
+            if (mappedWheel != null && mappedWheel in wheels) {
+                return listOf(
+                    WheelOption(
+                        code = mappedWheel,
+                        displayName = WHEEL_DISPLAY_NAMES[mappedWheel] ?: mappedWheel,
+                        assetPath = "car_images/${variant}_${validatedColor}_${mappedWheel}.png"
+                    )
                 )
-            )
+            }
+            // Wheel doesn't map to this variant (e.g., API reports "Pinwheel18CapKit"
+            // on a Highland M3) - show all wheels so the user can pick
         }
 
         return wheels.map { wheelCode ->
