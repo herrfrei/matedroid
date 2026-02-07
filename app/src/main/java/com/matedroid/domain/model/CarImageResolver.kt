@@ -183,9 +183,11 @@ object CarImageResolver {
         "19" to "WY19P"
     )
 
-    // Juniper Model Y Standard wheels (only 18" Photon)
+    // Juniper Model Y Standard wheels (18" Photon standard, 19" Crossflow in some markets)
     private val WHEEL_PATTERNS_MYJS = listOf(
         "photon18" to "WY18P",
+        "crossflow19" to "WY19P",
+        "19" to "WY19P",
         "18" to "WY18P"
     )
 
@@ -550,7 +552,7 @@ object CarImageResolver {
         "m3h" to listOf("W38A"),
         "m3hp" to listOf("W30P"),
         "my" to listOf("WY18B", "WY19B", "WY20P"),
-        "myjs" to listOf("WY18P"),
+        "myjs" to listOf("WY18P", "WY19P"),
         "myj" to listOf("WY19P", "WY20A"),
         "myjp" to listOf("WY21A"),
         "ms" to listOf("WT19"),
