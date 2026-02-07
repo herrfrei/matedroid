@@ -1357,6 +1357,14 @@ private fun ChargingPowerGaugeCompact(
                 color = androidx.compose.ui.graphics.Color.White
             )
         }
+
+        // Chevron to indicate tappable
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = gaugeColor
+        )
     }
 }
 
