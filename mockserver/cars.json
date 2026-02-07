@@ -115,6 +115,11 @@
     "car_exterior": { "exterior_color": "RedMulticoat", "spoiler_type": "None", "wheel_type": "Gemini19" }
   },
 
+  "modely_legacy_silver_apollo_50": {
+    "car_details": { "model": "Y", "trim_badging": "50" },
+    "car_exterior": { "exterior_color": "MidnightSilver", "spoiler_type": "None", "wheel_type": "Apollo19" }
+  },
+
   "modely_juniper_white_18": {
     "car_details": { "model": "Y", "trim_badging": "50" },
     "car_exterior": { "exterior_color": "PearlWhite", "spoiler_type": "None", "wheel_type": "Photon18" }
@@ -166,6 +171,19 @@
   "modely_juniper_blue_20": {
     "car_details": { "model": "Y", "trim_badging": "74" },
     "car_exterior": { "exterior_color": "DeepBlue", "spoiler_type": "None", "wheel_type": "Helix20" }
+  },
+
+  "modely_juniper_glacierblue_19": {
+    "car_details": { "model": "Y", "trim_badging": "74" },
+    "car_exterior": { "exterior_color": "GlacierBlue", "spoiler_type": "None", "wheel_type": "Crossflow19" }
+  },
+  "modely_juniper_marineblue_perf": {
+    "car_details": { "model": "Y", "trim_badging": "P74D" },
+    "car_exterior": { "exterior_color": "MarineBlue", "spoiler_type": "None", "wheel_type": "Uberturbine21" }
+  },
+  "modely_juniper_white_standard_crossflow": {
+    "car_details": { "model": "Y", "trim_badging": "50" },
+    "car_exterior": { "exterior_color": "PearlWhite", "spoiler_type": "None", "wheel_type": "Crossflow19" }
   },
 
   "modely_juniper_perf_white": {
