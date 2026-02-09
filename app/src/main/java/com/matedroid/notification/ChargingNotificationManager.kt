@@ -182,12 +182,11 @@ class ChargingNotificationManager @Inject constructor(
         // Load car image (semi-transparent for background)
         val carBitmap = loadCarImage(car)
 
-        // Single-color bar with styledByProgress: the system renders
-        // 0→batteryLevel bright and batteryLevel→100 dimmed automatically.
-        // Charge limit is shown in the notification text (e.g. "68% → 80%").
+        // Place the bolt tracker at chargeLimit so it marks the target.
+        // styledByProgress renders 0→chargeLimit bright, rest dimmed.
         val accentArgb = palette.accent.toArgb()
         val progressStyle = Notification.ProgressStyle()
-            .setProgress(batteryLevel)
+            .setProgress(chargeLimit)
             .setStyledByProgress(true)
             .setProgressTrackerIcon(
                 android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_bolt)
