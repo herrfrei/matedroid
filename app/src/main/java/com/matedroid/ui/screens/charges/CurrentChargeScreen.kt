@@ -330,39 +330,17 @@ private fun CurrentChargeHeaderCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Hero SoC display
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Bolt,
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = solidGreen
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "$currentLevel%",
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    color = solidGreen
-                )
-            }
-
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
-            )
-
             // 3-column SoC row: start → current → target
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 // Start
-                Column(horizontalAlignment = Alignment.Start) {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = "$startLevel%",
                         style = MaterialTheme.typography.titleMedium,
@@ -376,24 +354,23 @@ private fun CurrentChargeHeaderCard(
                     )
                 }
 
-                // Current (with arrows)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Current (hero, with bolt icon)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(2f)
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "\u2192 ",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = solidGreen
                         )
                         Text(
                             text = "$currentLevel%",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.ExtraBold,
                             color = solidGreen
-                        )
-                        Text(
-                            text = " \u2192",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
                         )
                     }
                     Text(
@@ -404,7 +381,10 @@ private fun CurrentChargeHeaderCard(
                 }
 
                 // Target
-                Column(horizontalAlignment = Alignment.End) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = "$targetLevel%",
                         style = MaterialTheme.typography.titleMedium,
