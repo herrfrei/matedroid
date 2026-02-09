@@ -182,11 +182,10 @@ class ChargingNotificationManager @Inject constructor(
         // Load car image (semi-transparent for background)
         val carBitmap = loadCarImage(car)
 
-        // Two segments with different colors: accent up to chargeLimit, grey beyond.
-        // styledByProgress makes the filled portion (0→batteryLevel) bright and the
-        // rest dimmed, so the color change at chargeLimit marks the target visually.
+        // Single-color bar with styledByProgress: the system renders
+        // 0→batteryLevel bright and batteryLevel→100 dimmed automatically.
+        // Charge limit is shown in the notification text (e.g. "68% → 80%").
         val accentArgb = palette.accent.toArgb()
-        val greyArgb = android.graphics.Color.parseColor("#40808080")
         val progressStyle = Notification.ProgressStyle()
             .setProgress(batteryLevel)
             .setStyledByProgress(true)
@@ -194,10 +193,7 @@ class ChargingNotificationManager @Inject constructor(
                 android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_bolt)
             )
             .addProgressSegment(
-                Notification.ProgressStyle.Segment(chargeLimit).setColor(accentArgb)
-            )
-            .addProgressSegment(
-                Notification.ProgressStyle.Segment(100 - chargeLimit).setColor(greyArgb)
+                Notification.ProgressStyle.Segment(100).setColor(accentArgb)
             )
 
         val builder = Notification.Builder(context, CHANNEL_ID)
