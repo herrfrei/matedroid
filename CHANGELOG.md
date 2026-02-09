@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Live Charge Screen**: Current SoC is now the most prominent element — displayed as a large hero number at the top of the header card, with a 3-column start/current/target row and progress bar below. Energy and power stats are compacted into a single row.
 
 ### Fixed
-- **Notifications**: Charge limit indicator in live notification now renders as a vertical bar instead of a grey square (#147)
+- **Notifications**: Charging notification now shows a 3-segment progress bar — charged (bright), charging-to-limit (dimmed), and beyond-limit (gray) — with bolt tracker at current SoC (#147)
 
 ## [1.0.0] - 2026-02-08
 
