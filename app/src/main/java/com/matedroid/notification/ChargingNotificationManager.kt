@@ -164,6 +164,7 @@ class ChargingNotificationManager @Inject constructor(
 
     /**
      * Build Android 16+ ProgressStyle notification with visual battery progress bar.
+     * Uses NotificationCompat APIs (matching official Android sample).
      */
     @RequiresApi(36)
     private fun buildProgressStyleNotification(
@@ -173,18 +174,19 @@ class ChargingNotificationManager @Inject constructor(
         batteryLevel: Int,
         chargeLimit: Int
     ): Notification {
-        // Get car palette accent color for target marker
+        // Get car palette accent color
         val palette = CarColorPalettes.forExteriorColor(
             car.carExterior?.exteriorColor,
             darkTheme = false  // Use light theme colors for notification
         )
 
-        // Load car image (semi-transparent for background)
+        // Load car image
         val carBitmap = loadCarImage(car)
 
-        // Place the bolt tracker at chargeLimit so it marks the target.
-        // styledByProgress renders 0→chargeLimit bright, rest dimmed.
         val accentArgb = palette.accent.toArgb()
+        Log.d(TAG, "ProgressStyle: progress=$chargeLimit (chargeLimit), batteryLevel=$batteryLevel")
+
+        // Bolt tracker sits at chargeLimit to mark the target.
         val progressStyle = Notification.ProgressStyle()
             .setProgress(chargeLimit)
             .setStyledByProgress(true)
@@ -199,10 +201,11 @@ class ChargingNotificationManager @Inject constructor(
             .setContentTitle(title)
             .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_notification)
+            .setProgress(100, chargeLimit, false)  // Also set on Builder for tracker position
             .setStyle(progressStyle)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)  // Show on lock screen
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setContentIntent(createContentIntent(car.carId))
 
         // Add car image as large icon if available
@@ -211,7 +214,6 @@ class ChargingNotificationManager @Inject constructor(
         }
 
         // Request promoted ongoing status (Live Update)
-        // Use literal string since the constant is only available in API 36+
         builder.extras.putBoolean("android.requestPromotedOngoing", true)
 
         return builder.build()
