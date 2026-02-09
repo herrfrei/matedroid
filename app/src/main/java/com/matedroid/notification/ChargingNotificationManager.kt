@@ -182,8 +182,9 @@ class ChargingNotificationManager @Inject constructor(
         // Load car image (semi-transparent for background)
         val carBitmap = loadCarImage(car)
 
-        // Use a single segment for the full bar color, and a Point marker
-        // at the charge limit position to show a visible target indicator.
+        // The bar represents the charging journey from 0 to chargeLimit.
+        // The bolt icon tracks current batteryLevel, and a vertical line
+        // at the end marks the charge limit target.
         val accentArgb = palette.accent.toArgb()
         val progressStyle = Notification.ProgressStyle()
             .setProgress(batteryLevel)
@@ -191,12 +192,11 @@ class ChargingNotificationManager @Inject constructor(
             .setProgressTrackerIcon(
                 android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_bolt)
             )
-            .addProgressSegment(
-                Notification.ProgressStyle.Segment(100).setColor(accentArgb)
+            .setProgressEndIcon(
+                android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_charge_limit_line)
             )
-            .addProgressPoint(
-                Notification.ProgressStyle.Point(chargeLimit)
-                    .setColor(android.graphics.Color.WHITE)
+            .addProgressSegment(
+                Notification.ProgressStyle.Segment(chargeLimit).setColor(accentArgb)
             )
 
         val builder = Notification.Builder(context, CHANNEL_ID)
