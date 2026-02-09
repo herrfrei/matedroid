@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Notifications**: Charge limit indicator in live notification now renders as a vertical bar instead of a grey square (#147)
+
 ## [1.0.0] - 2026-02-08
 
 ### Added
