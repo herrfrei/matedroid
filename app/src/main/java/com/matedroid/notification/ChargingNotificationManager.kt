@@ -184,24 +184,34 @@ class ChargingNotificationManager @Inject constructor(
         val carBitmap = loadCarImage(car)
 
         val accentArgb = palette.accent.toArgb()
-        Log.d(TAG, "ProgressStyle: progress=$chargeLimit (chargeLimit), batteryLevel=$batteryLevel")
+        val grayArgb = android.graphics.Color.argb(80, 128, 128, 128)
 
-        // Bolt tracker sits at chargeLimit to mark the target.
+        // Clamp values to safe ranges
+        val soc = batteryLevel.coerceIn(0, 100)
+        val limit = chargeLimit.coerceIn(soc, 100)
+
+        Log.d(TAG, "ProgressStyle: soc=$soc, limit=$limit (segments: $soc, ${limit - soc}, ${100 - limit})")
+
+        // 3 segments: charged (accent, bright) | charging-to-limit (accent, dimmed) | beyond limit (gray, dimmed)
+        val segments = listOfNotNull(
+            if (soc > 0) Notification.ProgressStyle.Segment(soc).setColor(accentArgb) else null,
+            if (limit - soc > 0) Notification.ProgressStyle.Segment(limit - soc).setColor(accentArgb) else null,
+            if (100 - limit > 0) Notification.ProgressStyle.Segment(100 - limit).setColor(grayArgb) else null,
+        )
+
         val progressStyle = Notification.ProgressStyle()
-            .setProgress(chargeLimit)
+            .setProgress(soc)
             .setStyledByProgress(true)
             .setProgressTrackerIcon(
                 android.graphics.drawable.Icon.createWithResource(context, R.drawable.ic_bolt)
             )
-            .addProgressSegment(
-                Notification.ProgressStyle.Segment(100).setColor(accentArgb)
-            )
+            .setProgressSegments(segments)
 
         val builder = Notification.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_notification)
-            .setProgress(100, chargeLimit, false)  // Also set on Builder for tracker position
+            .setProgress(100, soc, false)
             .setStyle(progressStyle)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
