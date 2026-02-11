@@ -359,7 +359,11 @@ private fun CurrentChargeHeaderCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(2f)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
@@ -372,6 +376,8 @@ private fun CurrentChargeHeaderCard(
                             fontWeight = FontWeight.ExtraBold,
                             color = solidGreen
                         )
+                        // Balance the bolt icon so the percentage text is visually centered
+                        Spacer(modifier = Modifier.size(28.dp))
                     }
                     Text(
                         text = stringResource(R.string.soc_now),
