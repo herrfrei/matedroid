@@ -50,10 +50,10 @@ class ChargingNotificationManager @Inject constructor(
      * @param car The car data (for name and image)
      * @param status The current car status with charging details
      */
-    fun showChargingNotification(car: CarData, status: CarStatus) {
+    fun showChargingNotification(car: CarData, status: CarStatus, liveChargeAvailable: Boolean = false) {
         createNotificationChannel()
         val notificationId = NOTIFICATION_ID_BASE + car.carId
-        val notification = buildNotification(car, status)
+        val notification = buildNotification(car, status, liveChargeAvailable)
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Showed charging notification for car ${car.carId}: ${status.batteryLevel}% -> ${status.chargeLimitSoc}%")
     }
@@ -62,7 +62,7 @@ class ChargingNotificationManager @Inject constructor(
      * Build a charging notification for a car (without showing it).
      * Used by ChargingMonitorService for foreground notification.
      */
-    fun buildNotification(car: CarData, status: CarStatus): Notification {
+    fun buildNotification(car: CarData, status: CarStatus, liveChargeAvailable: Boolean = false): Notification {
         createNotificationChannel()
 
         val carName = car.displayName
@@ -85,14 +85,16 @@ class ChargingNotificationManager @Inject constructor(
                 title = title,
                 contentText = contentText,
                 batteryLevel = batteryLevel,
-                chargeLimit = chargeLimit
+                chargeLimit = chargeLimit,
+                liveChargeAvailable = liveChargeAvailable
             )
         } else {
             buildFallbackNotification(
                 carId = car.carId,
                 title = title,
                 contentText = contentText,
-                batteryLevel = batteryLevel
+                batteryLevel = batteryLevel,
+                liveChargeAvailable = liveChargeAvailable
             )
         }
     }
@@ -172,7 +174,8 @@ class ChargingNotificationManager @Inject constructor(
         title: String,
         contentText: String,
         batteryLevel: Int,
-        chargeLimit: Int
+        chargeLimit: Int,
+        liveChargeAvailable: Boolean
     ): Notification {
         // Get car palette accent color
         val palette = CarColorPalettes.forExteriorColor(
@@ -216,7 +219,7 @@ class ChargingNotificationManager @Inject constructor(
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setContentIntent(createContentIntent(car.carId))
+            .setContentIntent(createContentIntent(car.carId, liveChargeAvailable))
 
         // Add car image as large icon if available
         carBitmap?.let { bitmap ->
@@ -236,7 +239,8 @@ class ChargingNotificationManager @Inject constructor(
         carId: Int,
         title: String,
         contentText: String,
-        batteryLevel: Int
+        batteryLevel: Int,
+        liveChargeAvailable: Boolean
     ): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
@@ -247,18 +251,22 @@ class ChargingNotificationManager @Inject constructor(
             .setOnlyAlertOnce(true)
             .setAutoCancel(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Show on lock screen
-            .setContentIntent(createContentIntent(carId))
+            .setContentIntent(createContentIntent(carId, liveChargeAvailable))
             .build()
     }
 
     /**
-     * Create a PendingIntent that opens the app and navigates to the current charge screen.
+     * Create a PendingIntent that opens the app.
+     * When [liveChargeAvailable] is true, navigates to the current charge screen;
+     * otherwise just opens the main activity.
      */
-    private fun createContentIntent(carId: Int): PendingIntent {
+    private fun createContentIntent(carId: Int, liveChargeAvailable: Boolean): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("EXTRA_NAVIGATE_TO", "current_charge")
-            putExtra("EXTRA_CAR_ID", carId)
+            if (liveChargeAvailable) {
+                putExtra("EXTRA_NAVIGATE_TO", "current_charge")
+                putExtra("EXTRA_CAR_ID", carId)
+            }
         }
         return PendingIntent.getActivity(
             context,

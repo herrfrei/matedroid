@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Dashboard / Notifications**: Live charge navigation and notification deep-link are now hidden when TeslaMate API < 1.24 (endpoint unavailable) (#155)
+
 ## [1.1.0-beta1] - 2026-02-10
 
 ### Changed
