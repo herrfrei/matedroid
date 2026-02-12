@@ -204,7 +204,8 @@ class ChargingNotificationWorker @AssistedInject constructor(
                 // On Android 12+, can't start foreground service from background
                 // Fall back to showing notification directly (won't update in real-time)
                 Log.w(TAG, "Cannot start foreground service, showing notification directly: ${e.message}")
-                chargingNotificationManager.showChargingNotification(car, status)
+                val liveChargeAvailable = teslamateRepository.isCurrentChargeAvailable(carId)
+                chargingNotificationManager.showChargingNotification(car, status, liveChargeAvailable)
             }
         } else {
             // Car is not charging - stop service and cancel notification
