@@ -2,10 +2,13 @@ package com.matedroid.receiver
 
 import android.content.Context
 import android.content.Intent
+import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
+import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.matedroid.BuildConfig
 import com.matedroid.data.sync.ChargingNotificationWorker
 import com.matedroid.data.sync.TpmsPressureWorker
 import io.mockk.*
@@ -61,13 +64,23 @@ class BootReceiverTest {
         verify {
             WorkManager.getInstance(context)
         }
-        // Verify work was enqueued by checking WorkManager interactions
-        verify(atLeast = 1) {
-            workManager.enqueueUniqueWork(
-                eq(TpmsPressureWorker.WORK_NAME),
-                any<ExistingWorkPolicy>(),
-                any<OneTimeWorkRequest>()
-            )
+        // TpmsPressureWorker uses OneTimeWorkRequest in debug, PeriodicWorkRequest in release
+        if (BuildConfig.DEBUG) {
+            verify(atLeast = 1) {
+                workManager.enqueueUniqueWork(
+                    eq(TpmsPressureWorker.WORK_NAME),
+                    any<ExistingWorkPolicy>(),
+                    any<OneTimeWorkRequest>()
+                )
+            }
+        } else {
+            verify(atLeast = 1) {
+                workManager.enqueueUniquePeriodicWork(
+                    eq(TpmsPressureWorker.WORK_NAME),
+                    any<ExistingPeriodicWorkPolicy>(),
+                    any<PeriodicWorkRequest>()
+                )
+            }
         }
     }
 
@@ -114,13 +127,32 @@ class BootReceiverTest {
         )
 
         for (workerName in criticalWorkers) {
-            verify(atLeast = 1) {
-                workManager.enqueueUniqueWork(
-                    eq(workerName),
-                    any<ExistingWorkPolicy>(),
-                    any<OneTimeWorkRequest>()
-                )
-            }
+            // Workers may use enqueueUniqueWork or enqueueUniquePeriodicWork
+            // depending on build variant, so check for either
+            val oneTimeScheduled = runCatching {
+                verify(atLeast = 1) {
+                    workManager.enqueueUniqueWork(
+                        eq(workerName),
+                        any<ExistingWorkPolicy>(),
+                        any<OneTimeWorkRequest>()
+                    )
+                }
+            }.isSuccess
+
+            val periodicScheduled = runCatching {
+                verify(atLeast = 1) {
+                    workManager.enqueueUniquePeriodicWork(
+                        eq(workerName),
+                        any<ExistingPeriodicWorkPolicy>(),
+                        any<PeriodicWorkRequest>()
+                    )
+                }
+            }.isSuccess
+
+            assertTrue(
+                "Worker $workerName was not scheduled on boot via either enqueue method",
+                oneTimeScheduled || periodicScheduled
+            )
         }
     }
 
