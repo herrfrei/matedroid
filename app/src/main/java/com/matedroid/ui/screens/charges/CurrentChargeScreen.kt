@@ -97,6 +97,12 @@ fun CurrentChargeScreen(
         }
     }
 
+    LaunchedEffect(uiState.isNotCharging) {
+        if (uiState.isNotCharging) {
+            onNavigateBack()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
