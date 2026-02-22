@@ -44,6 +44,28 @@ class CarWidgetUpdateWorker @AssistedInject constructor(
         // Debug: 1 minute, Release: 3 minutes
         private val INTERVAL_MINUTES = if (BuildConfig.DEBUG) 1L else 3L
 
+        /**
+         * Enqueues an immediate (no-delay) update — used when a widget is first configured
+         * so it shows real data right away instead of waiting for the next scheduled poll.
+         */
+        fun scheduleImmediateUpdate(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val immediateRequest = OneTimeWorkRequestBuilder<CarWidgetUpdateWorker>()
+                .setConstraints(constraints)
+                .addTag(TAG)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniqueWork(
+                WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
+                immediateRequest
+            )
+            Log.d(TAG, "Scheduled immediate widget update")
+        }
+
         fun scheduleWork(context: Context) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

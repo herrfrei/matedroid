@@ -214,9 +214,10 @@ class CarWidgetConfigActivity : ComponentActivity() {
                 }
             }
 
-            // Show the "Loading…" state immediately, then schedule the real fetch
+            // Show the "Loading…" state immediately, then fire an immediate fetch
+            // (scheduleWork would add a delay — scheduleImmediateUpdate runs right away)
             CarWidget().update(this@CarWidgetConfigActivity, glanceId)
-            CarWidgetUpdateWorker.scheduleWork(this@CarWidgetConfigActivity)
+            CarWidgetUpdateWorker.scheduleImmediateUpdate(this@CarWidgetConfigActivity)
 
             setResult(RESULT_OK, Intent().apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
