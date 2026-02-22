@@ -425,8 +425,14 @@ class CarWidget : GlanceAppWidget() {
             val scaledW: Int
             val scaledH: Int
             if (isCompact) {
-                scaledW = width
-                scaledH = (scaledW / carAspect).roundToInt().coerceAtLeast(1)
+                // Cover mode: scale so the car fills the entire widget surface.
+                // Use the larger of the two scale factors so neither dimension
+                // is left uncovered; overflow is clipped by the canvas bounds.
+                val scaleByWidth = width.toFloat() / carBitmap.width
+                val scaleByHeight = height.toFloat() / carBitmap.height
+                val coverScale = maxOf(scaleByWidth, scaleByHeight)
+                scaledW = (carBitmap.width * coverScale).roundToInt().coerceAtLeast(1)
+                scaledH = (carBitmap.height * coverScale).roundToInt().coerceAtLeast(1)
             } else if (carAspect >= areaAspect) {
                 scaledW = (width * 0.95f).roundToInt()
                 scaledH = (scaledW / carAspect).roundToInt().coerceAtLeast(1)
