@@ -11,6 +11,9 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.compose.ui.graphics.Color
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.PI
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -612,13 +615,31 @@ class CarWidget : GlanceAppWidget() {
         canvas.drawPath(path, paint)
     }
 
-    /** SteeringWheel — two concentric circles (simplified). */
+    /** SteeringWheel — outer rim + hub + three equally-spaced spokes (Y-shape). */
     private fun drawSteeringWheel(canvas: Canvas, cx: Float, cy: Float, r: Float, paint: Paint) {
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = r * 0.22f
+        paint.strokeWidth = r * 0.20f
         paint.strokeCap = Paint.Cap.ROUND
+
+        // Outer rim
         canvas.drawCircle(cx, cy, r, paint)
-        canvas.drawCircle(cx, cy, r * 0.38f, paint)
+
+        // Hub
+        val hubR = r * 0.28f
+        canvas.drawCircle(cx, cy, hubR, paint)
+
+        // Three spokes at 30°, 150°, 270° (canvas clockwise from right)
+        // → lower-right, lower-left, top — forming a Y
+        for (angleDeg in listOf(30.0, 150.0, 270.0)) {
+            val rad = angleDeg * PI / 180.0
+            val cosA = cos(rad).toFloat()
+            val sinA = sin(rad).toFloat()
+            canvas.drawLine(
+                cx + hubR * cosA, cy + hubR * sinA,
+                cx + r * cosA,    cy + r * sinA,
+                paint
+            )
+        }
     }
 
     /** PowerSettingsNew — circle arc with gap at top + vertical line through the gap. */
