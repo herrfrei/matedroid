@@ -163,7 +163,7 @@ class CarWidget : GlanceAppWidget() {
                             val heightPx = (size.height.value * density).toInt().coerceAtLeast(50)
 
                             // Bitmap generated at the exact widget pixel size — FillBounds is safe
-                            val bgBitmap = buildBackgroundBitmap(ctx, prefs, widthPx, heightPx)
+                            val bgBitmap = buildBackgroundBitmap(ctx, prefs, widthPx, heightPx, density)
                             Image(
                                 provider = ImageProvider(bgBitmap),
                                 contentDescription = null,
@@ -340,7 +340,8 @@ class CarWidget : GlanceAppWidget() {
         context: Context,
         prefs: Preferences,
         width: Int,
-        height: Int
+        height: Int,
+        density: Float = 2f
     ): Bitmap {
         val exteriorColor = prefs[EXTERIOR_COLOR_KEY]
         val model = prefs[MODEL_KEY]
@@ -366,8 +367,11 @@ class CarWidget : GlanceAppWidget() {
         // 1. Solid background
         canvas.drawColor(colorToAndroidArgb(palette.surface))
 
-        // Status bar occupies the top ~18% of the bitmap
-        val statusBarH = (height * 0.18f).coerceAtLeast(20f)
+        // Status bar: icon height matches the dashboard's compact icon size (16dp),
+        // with 3dp padding above and below.
+        val iconSzPx = 16f * density
+        val sbPadPx = 3f * density
+        val statusBarH = iconSzPx + sbPadPx * 2f
         val carAreaTop = statusBarH
         val carAreaH = height.toFloat() - carAreaTop
 
@@ -431,10 +435,8 @@ class CarWidget : GlanceAppWidget() {
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), scrimPaint)
 
         // 5. Status bar icons (drawn after scrim so they are visible)
-        val sbPad = (height * 0.04f).coerceAtLeast(5f)
-        val iconSz = (statusBarH * 0.65f).coerceAtLeast(10f)
         drawStatusBar(
-            canvas, sbPad, iconSz, width,
+            canvas, sbPadPx, iconSzPx, width,
             state, isLocked, sentryMode, pluggedIn,
             isClimateOn, outsideTemp, insideTemp, palette
         )
