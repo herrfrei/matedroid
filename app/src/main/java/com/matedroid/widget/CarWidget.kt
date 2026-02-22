@@ -403,8 +403,7 @@ class CarWidget : GlanceAppWidget() {
         // 1. Solid background
         canvas.drawColor(colorToAndroidArgb(palette.surface))
 
-        // In compact (1-cell-tall) mode, the car fills the full widget height and the
-        // status bar is rendered as an overlay on top of the car image.
+        // Compact (1-cell-tall) mode uses tighter status-bar padding.
         val isCompact = height.toFloat() / density < 80f
 
         // Status bar: icon height matches the dashboard's compact icon size (16dp).
@@ -415,40 +414,21 @@ class CarWidget : GlanceAppWidget() {
         val sbHorzPadPx = if (isCompact) 8f * density else 12f * density
         val statusBarH = iconSzPx + sbTopPadPx * 2f
 
-        // In compact mode, no space is reserved above the car — car fills the full height.
-        val carAreaTop = if (isCompact) 0f else statusBarH
-        val carAreaH = if (isCompact) height.toFloat() else height.toFloat() - statusBarH
-
         // 2 & 3. Car image (glow behind, dimmed car on top)
+        // Cover mode: the car fills the full widget surface at all sizes.
+        // The larger scale factor ensures neither dimension is left uncovered;
+        // overflow is clipped by the canvas bounds.  The status bar, scrim and
+        // progress bar are all drawn on top, so no space needs to be reserved.
         val carBitmap = loadCarBitmap(context, model, exteriorColor, wheelType, trimBadging)
         if (carBitmap != null) {
-            // Scale to fit the car area while preserving aspect ratio.
-            // In compact mode, scale to fill full width so the car touches the side edges;
-            // the height may exceed the widget height and will be clipped by the canvas.
-            val carAspect = carBitmap.width.toFloat() / carBitmap.height.toFloat()
-            val areaAspect = width.toFloat() / carAreaH
-            val scaledW: Int
-            val scaledH: Int
-            if (isCompact) {
-                // Cover mode: scale so the car fills the entire widget surface.
-                // Use the larger of the two scale factors so neither dimension
-                // is left uncovered; overflow is clipped by the canvas bounds.
-                val scaleByWidth = width.toFloat() / carBitmap.width
-                val scaleByHeight = height.toFloat() / carBitmap.height
-                val coverScale = maxOf(scaleByWidth, scaleByHeight)
-                scaledW = (carBitmap.width * coverScale).roundToInt().coerceAtLeast(1)
-                scaledH = (carBitmap.height * coverScale).roundToInt().coerceAtLeast(1)
-            } else if (carAspect >= areaAspect) {
-                scaledW = (width * 0.95f).roundToInt()
-                scaledH = (scaledW / carAspect).roundToInt().coerceAtLeast(1)
-            } else {
-                scaledH = (carAreaH * 0.85f).roundToInt()
-                scaledW = (scaledH * carAspect).roundToInt().coerceAtLeast(1)
-            }
+            val scaleByWidth = width.toFloat() / carBitmap.width
+            val scaleByHeight = height.toFloat() / carBitmap.height
+            val coverScale = maxOf(scaleByWidth, scaleByHeight)
+            val scaledW = (carBitmap.width * coverScale).roundToInt().coerceAtLeast(1)
+            val scaledH = (carBitmap.height * coverScale).roundToInt().coerceAtLeast(1)
 
             val carLeft = (width - scaledW) / 2f
-            val carTop = if (isCompact) (height - scaledH) / 2f
-                         else carAreaTop + (carAreaH - scaledH) * 0.35f
+            val carTop = (height - scaledH) / 2f
 
             // Glow first (behind the car)
             if (isCharging) {
