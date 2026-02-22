@@ -199,20 +199,31 @@ class CarWidget : GlanceAppWidget() {
                             val chargerCurrent = prefs[CHARGER_CURRENT_KEY]?.takeIf { it >= 0 }
                             val acPhases = prefs[AC_PHASES_KEY]?.takeIf { it >= 0 }
 
+                            // Adapt layout to widget size:
+                            //  isCompact  → height < 1.5 cells (~80dp); car fills full height,
+                            //               overlays rendered on top; smaller text + less padding.
+                            //  isNarrow   → width < ~2.5 cells (~150dp); omit range/limit to
+                            //               avoid crowding in a 2-column widget.
+                            val isCompact = size.height.value < 80f
+                            val isNarrow = size.width.value < 150f
+
                             Column(
                                 modifier = GlanceModifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                                    .padding(
+                                        horizontal = if (isCompact) 10.dp else 16.dp,
+                                        vertical = if (isCompact) 6.dp else 10.dp
+                                    )
                             ) {
                                 Spacer(modifier = GlanceModifier.defaultWeight())
 
-                                // Car name (small label above battery %)
-                                if (carName.isNotEmpty()) {
+                                // Car name (small label above battery %) — hidden in 2x1
+                                if (carName.isNotEmpty() && !(isCompact && isNarrow)) {
                                     Text(
                                         text = carName,
                                         style = TextStyle(
                                             color = ColorProvider(Color.White.copy(alpha = 0.65f)),
-                                            fontSize = 10.sp
+                                            fontSize = if (isCompact) 9.sp else 10.sp
                                         )
                                     )
                                 }
@@ -223,6 +234,11 @@ class CarWidget : GlanceAppWidget() {
                                     batteryLevel < 40 -> Color(0xFFFF9800)
                                     else -> Color.White
                                 }
+                                val batteryFontSize = when {
+                                    isCompact && isNarrow -> 16.sp
+                                    isCompact -> 20.sp
+                                    else -> 24.sp
+                                }
                                 Row(
                                     modifier = GlanceModifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
@@ -231,7 +247,7 @@ class CarWidget : GlanceAppWidget() {
                                         text = "$batteryLevel%",
                                         style = TextStyle(
                                             color = ColorProvider(batteryColor),
-                                            fontSize = 24.sp,
+                                            fontSize = batteryFontSize,
                                             fontWeight = FontWeight.Bold
                                         )
                                     )
@@ -240,30 +256,32 @@ class CarWidget : GlanceAppWidget() {
                                             text = if (isDcCharging) "  DC" else "  AC",
                                             style = TextStyle(
                                                 color = ColorProvider(Color.White.copy(alpha = 0.8f)),
-                                                fontSize = 12.sp,
+                                                fontSize = if (isCompact) 10.sp else 12.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                         )
                                     }
-                                    Spacer(modifier = GlanceModifier.defaultWeight())
-                                    val rangeAndLimit = buildList<String> {
-                                        if (ratedRange != null) add("${ratedRange.roundToInt()} km")
-                                        if (chargeLimit != null) add("Limit: $chargeLimit%")
-                                    }.joinToString("  ")
-                                    if (rangeAndLimit.isNotEmpty()) {
-                                        Text(
-                                            text = rangeAndLimit,
-                                            style = TextStyle(
-                                                color = ColorProvider(Color.White.copy(alpha = 0.85f)),
-                                                fontSize = 12.sp
+                                    // Range + charge limit hidden on narrow (2x1) widgets
+                                    if (!isNarrow) {
+                                        Spacer(modifier = GlanceModifier.defaultWeight())
+                                        val rangeAndLimit = buildList<String> {
+                                            if (ratedRange != null) add("${ratedRange.roundToInt()} km")
+                                            if (chargeLimit != null) add("Limit: $chargeLimit%")
+                                        }.joinToString("  ")
+                                        if (rangeAndLimit.isNotEmpty()) {
+                                            Text(
+                                                text = rangeAndLimit,
+                                                style = TextStyle(
+                                                    color = ColorProvider(Color.White.copy(alpha = 0.85f)),
+                                                    fontSize = if (isCompact) 10.sp else 12.sp
+                                                )
                                             )
-                                        )
+                                        }
                                     }
                                 }
 
-                                // Charging details row: voltage / current / phases on left,
-                                // energy added + time-to-full on right
-                                if (isCharging) {
+                                // Charging details row: hidden in compact mode (limited vertical space)
+                                if (isCharging && !isCompact) {
                                     val leftPart = buildString {
                                         if (chargerVoltage != null) append("${chargerVoltage}V")
                                         if (chargerCurrent != null) append(" ${chargerCurrent}A")
@@ -380,25 +398,36 @@ class CarWidget : GlanceAppWidget() {
         // 1. Solid background
         canvas.drawColor(colorToAndroidArgb(palette.surface))
 
+        // In compact (1-cell-tall) mode, the car fills the full widget height and the
+        // status bar is rendered as an overlay on top of the car image.
+        val isCompact = height.toFloat() / density < 80f
+
         // Status bar: icon height matches the dashboard's compact icon size (16dp).
         // Top pad of 8dp and horizontal pad of 12dp keep all content well inside
         // the 16dp corner radius used by cornerRadius() above, preventing clipping.
         val iconSzPx = 16f * density
-        val sbTopPadPx = 8f * density
-        val sbHorzPadPx = 12f * density
+        val sbTopPadPx = if (isCompact) 5f * density else 8f * density
+        val sbHorzPadPx = if (isCompact) 8f * density else 12f * density
         val statusBarH = iconSzPx + sbTopPadPx * 2f
-        val carAreaTop = statusBarH
-        val carAreaH = height.toFloat() - carAreaTop
+
+        // In compact mode, no space is reserved above the car — car fills the full height.
+        val carAreaTop = if (isCompact) 0f else statusBarH
+        val carAreaH = if (isCompact) height.toFloat() else height.toFloat() - statusBarH
 
         // 2 & 3. Car image (glow behind, dimmed car on top)
         val carBitmap = loadCarBitmap(context, model, exteriorColor, wheelType, trimBadging)
         if (carBitmap != null) {
-            // Scale to fit the car area while preserving aspect ratio
+            // Scale to fit the car area while preserving aspect ratio.
+            // In compact mode, scale to fill full width so the car touches the side edges;
+            // the height may exceed the widget height and will be clipped by the canvas.
             val carAspect = carBitmap.width.toFloat() / carBitmap.height.toFloat()
             val areaAspect = width.toFloat() / carAreaH
             val scaledW: Int
             val scaledH: Int
-            if (carAspect >= areaAspect) {
+            if (isCompact) {
+                scaledW = width
+                scaledH = (scaledW / carAspect).roundToInt().coerceAtLeast(1)
+            } else if (carAspect >= areaAspect) {
                 scaledW = (width * 0.95f).roundToInt()
                 scaledH = (scaledW / carAspect).roundToInt().coerceAtLeast(1)
             } else {
@@ -407,7 +436,8 @@ class CarWidget : GlanceAppWidget() {
             }
 
             val carLeft = (width - scaledW) / 2f
-            val carTop = carAreaTop + (carAreaH - scaledH) * 0.35f
+            val carTop = if (isCompact) (height - scaledH) / 2f
+                         else carAreaTop + (carAreaH - scaledH) * 0.35f
 
             // Glow first (behind the car)
             if (isCharging) {
