@@ -1,6 +1,7 @@
 package com.matedroid.widget
 
 import android.content.Context
+import android.os.Build
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -121,11 +122,19 @@ class CarWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
+                // Mirror the approach used by Glance's own Scaffold:
+                // use system_app_widget_background_radius on API 31+, nothing on older devices
+                // (pre-31 launchers don't clip widgets to rounded corners).
+                val cornerMod = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    GlanceModifier.cornerRadius(android.R.dimen.system_app_widget_background_radius)
+                } else {
+                    GlanceModifier
+                }
                 Box(
                     modifier = GlanceModifier
                         .fillMaxSize()
                         .appWidgetBackground()
-                        .cornerRadius(16.dp)
+                        .then(cornerMod)
                         .clickable(actionStartActivity<MainActivity>())
                 ) {
                     when {
