@@ -15,12 +15,12 @@ class CarWidgetReceiver : GlanceAppWidgetReceiver() {
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
         // Schedule background updates when the first widget instance is added
-        CarWidgetUpdateWorker.schedulePeriodicWork(context)
+        CarWidgetUpdateWorker.scheduleWork(context)
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
         // Cancel background updates when the last widget instance is removed
-        CarWidgetUpdateWorker.cancelPeriodicWork(context)
+        CarWidgetUpdateWorker.cancelWork(context)
     }
 }

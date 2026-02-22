@@ -100,7 +100,7 @@ class CarWidgetConfigActivity : ComponentActivity() {
             }
 
             // Trigger an immediate update to populate widget content
-            CarWidgetUpdateWorker.schedulePeriodicWork(this@CarWidgetConfigActivity)
+            CarWidgetUpdateWorker.scheduleWork(this@CarWidgetConfigActivity)
             CarWidget().update(this@CarWidgetConfigActivity, glanceId)
 
             setResult(RESULT_OK, android.content.Intent().apply {
