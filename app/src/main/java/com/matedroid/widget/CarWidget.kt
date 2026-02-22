@@ -26,6 +26,7 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.Image
+import androidx.glance.currentState
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
@@ -116,11 +117,15 @@ class CarWidget : GlanceAppWidget() {
     override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val prefs = getAppWidgetState(context, PreferencesGlanceStateDefinition, id)
-        val carId = prefs[CAR_ID_KEY]
-        val hasData = prefs[HAS_DATA_KEY] ?: false
-
         provideContent {
+            // Read state inside the composable so Glance observes the DataStore and
+            // automatically re-renders whenever updateAppWidgetState writes new values.
+            // Reading outside provideContent captured a one-time snapshot and caused
+            // "Tap to configure" to persist even after confirmSelection wrote carId.
+            val prefs = currentState<Preferences>()
+            val carId = prefs[CAR_ID_KEY]
+            val hasData = prefs[HAS_DATA_KEY] ?: false
+
             GlanceTheme {
                 // Mirror the approach used by Glance's own Scaffold:
                 // use system_app_widget_background_radius on API 31+, nothing on older devices
