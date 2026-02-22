@@ -32,6 +32,8 @@ import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -122,6 +124,8 @@ class CarWidget : GlanceAppWidget() {
                 Box(
                     modifier = GlanceModifier
                         .fillMaxSize()
+                        .appWidgetBackground()
+                        .cornerRadius(16.dp)
                         .clickable(actionStartActivity<MainActivity>())
                 ) {
                     when {
@@ -189,7 +193,7 @@ class CarWidget : GlanceAppWidget() {
                             Column(
                                 modifier = GlanceModifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
                             ) {
                                 Spacer(modifier = GlanceModifier.defaultWeight())
 
@@ -367,11 +371,13 @@ class CarWidget : GlanceAppWidget() {
         // 1. Solid background
         canvas.drawColor(colorToAndroidArgb(palette.surface))
 
-        // Status bar: icon height matches the dashboard's compact icon size (16dp),
-        // with 3dp padding above and below.
+        // Status bar: icon height matches the dashboard's compact icon size (16dp).
+        // Top pad of 8dp and horizontal pad of 12dp keep all content well inside
+        // the 16dp corner radius used by cornerRadius() above, preventing clipping.
         val iconSzPx = 16f * density
-        val sbPadPx = 3f * density
-        val statusBarH = iconSzPx + sbPadPx * 2f
+        val sbTopPadPx = 8f * density
+        val sbHorzPadPx = 12f * density
+        val statusBarH = iconSzPx + sbTopPadPx * 2f
         val carAreaTop = statusBarH
         val carAreaH = height.toFloat() - carAreaTop
 
@@ -436,7 +442,7 @@ class CarWidget : GlanceAppWidget() {
 
         // 5. Status bar icons (drawn after scrim so they are visible)
         drawStatusBar(
-            canvas, sbPadPx, iconSzPx, width,
+            canvas, sbTopPadPx, sbHorzPadPx, iconSzPx, width,
             state, isLocked, sentryMode, pluggedIn,
             isClimateOn, outsideTemp, insideTemp, palette
         )
@@ -497,7 +503,8 @@ class CarWidget : GlanceAppWidget() {
 
     private fun drawStatusBar(
         canvas: Canvas,
-        padding: Float,
+        topPad: Float,
+        horzPad: Float,
         iconSz: Float,
         bitmapWidth: Int,
         state: String?,
@@ -526,8 +533,8 @@ class CarWidget : GlanceAppWidget() {
         val lockColor = if (isLocked) variantColor else ANDROID_STATUS_ERROR_DIM
 
         val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val cy = padding + iconSz / 2f   // vertical centre of the status bar row
-        var cursorX = padding
+        val cy = topPad + iconSz / 2f    // vertical centre of the status bar row
+        var cursorX = horzPad
 
         // --- State icon ---
         iconPaint.color = stateColor
@@ -537,12 +544,13 @@ class CarWidget : GlanceAppWidget() {
             isDriving -> drawSteeringWheel(canvas, cursorX + iconSz / 2f, cy, iconSz / 2f - 1f, iconPaint)
             else -> drawPowerSymbol(canvas, cursorX + iconSz / 2f, cy, iconSz / 2f - 1f, iconPaint)
         }
-        cursorX += iconSz + padding * 0.5f
+        val iconGap = iconSz * 0.5f   // gap between icons, ~8dp
+        cursorX += iconSz + iconGap
 
         // --- Lock icon ---
         iconPaint.color = lockColor
         drawPadlock(canvas, cursorX + iconSz / 2f, cy, iconSz * 0.44f, isLocked, iconPaint)
-        cursorX += iconSz + padding * 0.5f
+        cursorX += iconSz + iconGap
 
         // --- Sentry dot (12dp-equivalent red circle, same as dashboard) ---
         if (sentryMode) {
@@ -550,7 +558,7 @@ class CarWidget : GlanceAppWidget() {
             iconPaint.style = Paint.Style.FILL
             val dotR = iconSz * 0.25f
             canvas.drawCircle(cursorX + dotR, cy, dotR, iconPaint)
-            cursorX += dotR * 2f + padding * 0.5f
+            cursorX += dotR * 2f + iconGap
         }
 
         // --- Plug icon (shown when plugged in but not currently charging) ---
@@ -579,7 +587,7 @@ class CarWidget : GlanceAppWidget() {
             val textBaseline = cy + textPaint.textSize * 0.36f
             canvas.drawText(
                 tempParts.joinToString("  "),
-                bitmapWidth - padding,
+                bitmapWidth - horzPad,
                 textBaseline,
                 textPaint
             )
@@ -646,17 +654,19 @@ class CarWidget : GlanceAppWidget() {
 
     /** PowerSettingsNew — circle arc with gap at top + vertical line through the gap. */
     private fun drawPowerSymbol(canvas: Canvas, cx: Float, cy: Float, r: Float, paint: Paint) {
+        // Use a smaller effective radius so the symbol sits comfortably in its cell
+        val er = r * 0.82f
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = r * 0.24f
+        paint.strokeWidth = er * 0.20f
         paint.strokeCap = Paint.Cap.ROUND
         // 60° gap centred at the top (270° in Android canvas coordinates):
         // arc from 300° sweeping 300° clockwise ends at 240°, leaving the 240°–300° gap at top.
         canvas.drawArc(
-            RectF(cx - r, cy - r, cx + r, cy + r),
+            RectF(cx - er, cy - er, cx + er, cy + er),
             300f, 300f, false, paint
         )
         // Vertical line from top through the gap down to ~35% radius
-        canvas.drawLine(cx, cy - r * 1.02f, cx, cy - r * 0.32f, paint)
+        canvas.drawLine(cx, cy - er * 0.98f, cx, cy - er * 0.30f, paint)
     }
 
     /**
