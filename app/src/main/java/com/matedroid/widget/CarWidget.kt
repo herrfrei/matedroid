@@ -7,14 +7,12 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.compose.ui.graphics.Color
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.PI
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -472,7 +470,7 @@ class CarWidget : GlanceAppWidget() {
 
         // 5. Status bar icons (drawn after scrim so they are visible)
         drawStatusBar(
-            canvas, sbTopPadPx, sbHorzPadPx, iconSzPx, width,
+            context, canvas, sbTopPadPx, sbHorzPadPx, iconSzPx, width,
             state, isLocked, sentryMode, pluggedIn,
             isClimateOn, outsideTemp, insideTemp, palette
         )
@@ -532,6 +530,7 @@ class CarWidget : GlanceAppWidget() {
     // -------------------------------------------------------------------------
 
     private fun drawStatusBar(
+        context: Context,
         canvas: Canvas,
         topPad: Float,
         horzPad: Float,
@@ -562,39 +561,41 @@ class CarWidget : GlanceAppWidget() {
         // Lock colour: grey when locked, light red when unlocked
         val lockColor = if (isLocked) variantColor else ANDROID_STATUS_ERROR_DIM
 
-        val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG)
         val cy = topPad + iconSz / 2f    // vertical centre of the status bar row
         var cursorX = horzPad
 
         // --- State icon ---
-        iconPaint.color = stateColor
-        when {
-            isCharging -> drawLightningBolt(canvas, cursorX + iconSz / 2f, cy, iconSz, iconPaint)
-            isAsleep -> drawCrescent(canvas, cursorX + iconSz / 2f, cy, iconSz / 2f - 1f, iconPaint)
-            isDriving -> drawSteeringWheel(canvas, cursorX + iconSz / 2f, cy, iconSz / 2f - 1f, iconPaint)
-            else -> drawPowerSymbol(canvas, cursorX + iconSz / 2f, cy, iconSz / 2f - 1f, iconPaint)
+        val stateIconRes = when {
+            isCharging -> com.matedroid.R.drawable.ic_bolt
+            isAsleep   -> com.matedroid.R.drawable.ic_bedtime
+            isDriving  -> com.matedroid.R.drawable.ic_steering_wheel
+            else       -> com.matedroid.R.drawable.ic_power_settings_new
         }
+        drawIcon(context, canvas, stateIconRes, cursorX + iconSz / 2f, cy, iconSz, stateColor)
         val iconGap = iconSz * 0.5f   // gap between icons, ~8dp
         cursorX += iconSz + iconGap
 
         // --- Lock icon ---
-        iconPaint.color = lockColor
-        drawPadlock(canvas, cursorX + iconSz / 2f, cy, iconSz * 0.44f, isLocked, iconPaint)
+        val lockIconRes = if (isLocked) com.matedroid.R.drawable.ic_lock
+                          else          com.matedroid.R.drawable.ic_lock_open
+        drawIcon(context, canvas, lockIconRes, cursorX + iconSz / 2f, cy, iconSz, lockColor)
         cursorX += iconSz + iconGap
 
         // --- Sentry dot (12dp-equivalent red circle, same as dashboard) ---
         if (sentryMode) {
-            iconPaint.color = ANDROID_STATUS_ERROR
-            iconPaint.style = Paint.Style.FILL
+            val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = ANDROID_STATUS_ERROR
+                style = Paint.Style.FILL
+            }
             val dotR = iconSz * 0.25f
-            canvas.drawCircle(cursorX + dotR, cy, dotR, iconPaint)
+            canvas.drawCircle(cursorX + dotR, cy, dotR, dotPaint)
             cursorX += dotR * 2f + iconGap
         }
 
         // --- Plug icon (shown when plugged in but not currently charging) ---
         if (pluggedIn && !isCharging) {
-            iconPaint.color = variantColor
-            drawPlugIcon(canvas, cursorX + iconSz / 2f, cy, iconSz * 0.5f, iconPaint)
+            drawIcon(context, canvas, com.matedroid.R.drawable.ic_plug,
+                cursorX + iconSz / 2f, cy, iconSz, variantColor)
         }
 
         // --- Temperatures (RIGHT side, right-aligned) ---
@@ -625,156 +626,26 @@ class CarWidget : GlanceAppWidget() {
     }
 
     // -------------------------------------------------------------------------
-    // Icon drawing helpers — each draws within an iconSz × iconSz box
-    // -------------------------------------------------------------------------
-
-    /** ElectricBolt — classic lightning-bolt polygon. */
-    private fun drawLightningBolt(canvas: Canvas, cx: Float, cy: Float, size: Float, paint: Paint) {
-        val w = size * 0.48f
-        val h = size * 0.78f
-        val path = Path()
-        path.moveTo(cx + w * 0.18f, cy - h / 2f)       // top-right
-        path.lineTo(cx - w * 0.50f, cy + h * 0.06f)    // left-middle
-        path.lineTo(cx + w * 0.08f, cy + h * 0.06f)    // center-middle
-        path.lineTo(cx - w * 0.18f, cy + h / 2f)       // bottom-left
-        path.lineTo(cx + w * 0.50f, cy - h * 0.06f)    // right-middle
-        path.lineTo(cx - w * 0.08f, cy - h * 0.06f)    // center-upper
-        path.close()
-        paint.style = Paint.Style.FILL
-        canvas.drawPath(path, paint)
-    }
-
-    /** Bedtime — crescent moon via EVEN_ODD path. */
-    private fun drawCrescent(canvas: Canvas, cx: Float, cy: Float, r: Float, paint: Paint) {
-        val path = Path()
-        path.fillType = Path.FillType.EVEN_ODD
-        path.addCircle(cx, cy, r, Path.Direction.CW)
-        // Overlapping circle creates the crescent cutout
-        path.addCircle(cx + r * 0.38f, cy - r * 0.18f, r * 0.70f, Path.Direction.CW)
-        paint.style = Paint.Style.FILL
-        canvas.drawPath(path, paint)
-    }
-
-    /** SteeringWheel — outer rim + hub + three equally-spaced spokes (Y-shape). */
-    private fun drawSteeringWheel(canvas: Canvas, cx: Float, cy: Float, r: Float, paint: Paint) {
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = r * 0.20f
-        paint.strokeCap = Paint.Cap.ROUND
-
-        // Outer rim
-        canvas.drawCircle(cx, cy, r, paint)
-
-        // Hub
-        val hubR = r * 0.28f
-        canvas.drawCircle(cx, cy, hubR, paint)
-
-        // Three spokes at 30°, 150°, 270° (canvas clockwise from right)
-        // → lower-right, lower-left, top — forming a Y
-        for (angleDeg in listOf(30.0, 150.0, 270.0)) {
-            val rad = angleDeg * PI / 180.0
-            val cosA = cos(rad).toFloat()
-            val sinA = sin(rad).toFloat()
-            canvas.drawLine(
-                cx + hubR * cosA, cy + hubR * sinA,
-                cx + r * cosA,    cy + r * sinA,
-                paint
-            )
-        }
-    }
-
-    /** PowerSettingsNew — circle arc with gap at top + vertical line through the gap. */
-    private fun drawPowerSymbol(canvas: Canvas, cx: Float, cy: Float, r: Float, paint: Paint) {
-        // Use a smaller effective radius so the symbol sits comfortably in its cell
-        val er = r * 0.82f
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = er * 0.20f
-        paint.strokeCap = Paint.Cap.ROUND
-        // 60° gap centred at the top (270° in Android canvas coordinates):
-        // arc from 300° sweeping 300° clockwise ends at 240°, leaving the 240°–300° gap at top.
-        canvas.drawArc(
-            RectF(cx - er, cy - er, cx + er, cy + er),
-            300f, 300f, false, paint
-        )
-        // Vertical line from top through the gap down to ~35% radius
-        canvas.drawLine(cx, cy - er * 0.98f, cx, cy - er * 0.30f, paint)
-    }
-
-    /**
-     * Lock / LockOpen padlock.
-     * Body: filled rounded rect.
-     * Shackle: U-shaped arc + two sides.
-     *   Locked  → right side connects to body.
-     *   Unlocked → right side is raised/open.
-     */
-    private fun drawPadlock(
-        canvas: Canvas,
-        cx: Float,
-        cy: Float,
-        r: Float,
-        isLocked: Boolean,
-        paint: Paint
-    ) {
-        // Body (lower portion of the icon)
-        val bodyW = r * 1.5f
-        val bodyH = r * 1.05f
-        val bodyTop = cy - r * 0.12f
-        paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(
-            RectF(cx - bodyW / 2f, bodyTop, cx + bodyW / 2f, bodyTop + bodyH),
-            r * 0.18f, r * 0.18f, paint
-        )
-
-        // Keyhole (dark circle inside body)
-        val savedColor = paint.color
-        paint.color = android.graphics.Color.argb(100, 0, 0, 0)
-        canvas.drawCircle(cx, bodyTop + bodyH * 0.42f, r * 0.17f, paint)
-        paint.color = savedColor
-
-        // Shackle (U-shape above the body)
-        val shR = r * 0.38f          // radius of the shackle arc
-        val arcCy = bodyTop - shR    // centre of the arc's circle
-        val arcRect = RectF(cx - shR, arcCy - shR, cx + shR, arcCy + shR)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = r * 0.30f
-        paint.strokeCap = Paint.Cap.ROUND
-
-        // Top arc: from 180° sweep 180° → draws the upper semicircle (arch at top)
-        canvas.drawArc(arcRect, 180f, 180f, false, paint)
-        // Left side: always connects down to the body
-        canvas.drawLine(cx - shR, arcCy, cx - shR, bodyTop, paint)
-
-        if (isLocked) {
-            // Right side connects to body
-            canvas.drawLine(cx + shR, arcCy, cx + shR, bodyTop, paint)
-        } else {
-            // Right side is raised (open shackle) — extends further up
-            canvas.drawLine(cx + shR, arcCy, cx + shR, arcCy - shR * 0.85f, paint)
-        }
-    }
-
-    /** Power plug — two prongs at top + rounded body. */
-    private fun drawPlugIcon(canvas: Canvas, cx: Float, cy: Float, r: Float, paint: Paint) {
-        val bodyW = r * 1.1f
-        val bodyH = r * 1.15f
-        val bodyTop = cy - bodyH * 0.38f
-        paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(
-            RectF(cx - bodyW / 2f, bodyTop, cx + bodyW / 2f, bodyTop + bodyH),
-            r * 0.2f, r * 0.2f, paint
-        )
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = r * 0.22f
-        paint.strokeCap = Paint.Cap.ROUND
-        val prongX1 = cx - bodyW * 0.25f
-        val prongX2 = cx + bodyW * 0.25f
-        val prongTop = bodyTop - r * 0.5f
-        canvas.drawLine(prongX1, bodyTop, prongX1, prongTop, paint)
-        canvas.drawLine(prongX2, bodyTop, prongX2, prongTop, paint)
-    }
-
-    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /**
+     * Draws an XML vector drawable centered at (cx, cy) within a sizePx × sizePx box,
+     * tinted to [color]. Uses [ContextCompat] + [DrawableCompat] so it works on API 21+
+     * without requiring the appcompat library directly.
+     */
+    private fun drawIcon(context: Context, canvas: Canvas, resId: Int, cx: Float, cy: Float, sizePx: Float, color: Int) {
+        val drawable = ContextCompat.getDrawable(context, resId)?.mutate() ?: return
+        DrawableCompat.setTint(DrawableCompat.wrap(drawable), color)
+        val half = sizePx / 2f
+        drawable.setBounds(
+            (cx - half).toInt(),
+            (cy - half).toInt(),
+            (cx + half).toInt(),
+            (cy + half).toInt()
+        )
+        drawable.draw(canvas)
+    }
 
     private fun loadCarBitmap(
         context: Context,
