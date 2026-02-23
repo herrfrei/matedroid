@@ -1,6 +1,8 @@
 package com.matedroid.widget
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
+import android.os.Bundle
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 
@@ -22,5 +24,16 @@ class CarWidgetReceiver : GlanceAppWidgetReceiver() {
         super.onDisabled(context)
         // Cancel background updates when the last widget instance is removed
         CarWidgetUpdateWorker.cancelWork(context)
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        // Re-fetch data immediately so the resized widget shows fresh content
+        CarWidgetUpdateWorker.scheduleImmediateUpdate(context)
     }
 }

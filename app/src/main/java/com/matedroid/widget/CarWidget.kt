@@ -28,7 +28,7 @@ import androidx.glance.currentState
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
-import androidx.glance.action.actionStartActivity
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
@@ -53,7 +53,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.matedroid.MainActivity
 import com.matedroid.domain.model.CarImageResolver
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
@@ -138,7 +137,7 @@ class CarWidget : GlanceAppWidget() {
                         .fillMaxSize()
                         .appWidgetBackground()
                         .then(cornerMod)
-                        .clickable(actionStartActivity<MainActivity>())
+                        .clickable(actionRunCallback<RefreshWidgetCallback>())
                 ) {
                     when {
                         carId == null -> {
@@ -411,7 +410,7 @@ class CarWidget : GlanceAppWidget() {
         canvas.drawColor(colorToAndroidArgb(palette.surface))
 
         // Compact (1-cell-tall) mode uses tighter status-bar padding.
-        val isCompact = height.toFloat() / density < 80f
+        val isCompact = height.toFloat() / density < COMPACT_HEIGHT_DP
 
         // Status bar: icon height matches the dashboard's compact icon size (16dp).
         // Top pad of 8dp and horizontal pad of 12dp keep all content well inside

@@ -22,11 +22,13 @@ class WidgetLayoutTest {
 
     // Representative dp values — chosen well inside each threshold bucket
     // so tests do not depend on the exact threshold values.
-    private val W_NARROW  = 100f   // 1-column  (< NARROW_WIDTH_DP  = 150)
-    private val W_MEDIUM  = 180f   // 2-column  ([NARROW, WIDE)      = 150–210)
-    private val W_WIDE    = 260f   // 3-column  (≥ WIDE_WIDTH_DP     = 210)
-    private val H_COMPACT =  60f   // 1-row     (< COMPACT_HEIGHT_DP =  80)
-    private val H_TALL    = 150f   // 2-row     (≥ COMPACT_HEIGHT_DP =  80)
+    // Calibrated against Pixel 6a measurements: 1-col=179, 2-col=277, 3-col=374 dp;
+    // 1-row=96, 2-row=202 dp.
+    private val W_NARROW  = 100f   // 1-column  (< NARROW_WIDTH_DP  = 220)
+    private val W_MEDIUM  = 270f   // 2-column  ([NARROW, WIDE)      = 220–320)
+    private val W_WIDE    = 380f   // 3-column  (≥ WIDE_WIDTH_DP     = 320)
+    private val H_COMPACT =  60f   // 1-row     (< COMPACT_HEIGHT_DP = 130)
+    private val H_TALL    = 150f   // 2-row     (≥ COMPACT_HEIGHT_DP = 130)
 
     // -------------------------------------------------------------------------
     // 1×1

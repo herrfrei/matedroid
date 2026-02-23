@@ -19,12 +19,15 @@ data class WidgetLayout(
     val showVoltageCurrentPhases: Boolean,
 )
 
-/** Width threshold (dp) below which the widget is treated as 1-column wide. */
-internal const val NARROW_WIDTH_DP  = 150f
-/** Width threshold (dp) at or above which the widget is treated as 3-column wide. */
-internal const val WIDE_WIDTH_DP    = 210f
-/** Height threshold (dp) below which the widget is treated as 1-row tall. */
-internal const val COMPACT_HEIGHT_DP = 80f
+/** Width threshold (dp) below which the widget is treated as 1-column wide.
+ *  Calibrated on Pixel 6a: 1-col = 179 dp, 2-col = 277 dp. */
+internal const val NARROW_WIDTH_DP  = 220f
+/** Width threshold (dp) at or above which the widget is treated as 3-column wide.
+ *  Calibrated on Pixel 6a: 2-col = 277 dp, 3-col = 374 dp. */
+internal const val WIDE_WIDTH_DP    = 320f
+/** Height threshold (dp) below which the widget is treated as 1-row tall.
+ *  Calibrated on Pixel 6a: 1-row = 96 dp, 2-row = 202 dp. */
+internal const val COMPACT_HEIGHT_DP = 130f
 
 /**
  * Pure function — no Android dependencies — that maps widget dp dimensions and
