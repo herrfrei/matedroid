@@ -476,7 +476,7 @@ class CarWidget : GlanceAppWidget() {
         )
 
         // 6. Progress bar at the very bottom
-        val barH = (height * 0.03f).coerceAtLeast(4f).coerceAtMost(8f)
+        val barH = (height * 0.06f).coerceAtLeast(8f).coerceAtMost(16f)
         val barTop = height - barH
         val barRadius = barH / 2f
         val barPaint = Paint(Paint.ANTI_ALIAS_FLAG)
