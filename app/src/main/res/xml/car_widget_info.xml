@@ -9,6 +9,6 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:configure="com.matedroid.widget.CarWidgetConfigActivity"
-    android:previewLayout="@layout/widget_preview"
+    android:previewImage="@drawable/widget_preview"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_preview" />
