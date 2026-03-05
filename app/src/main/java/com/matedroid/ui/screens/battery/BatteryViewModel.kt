@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.matedroid.data.api.models.BatteryHealth
 import com.matedroid.data.api.models.CarStatus
 import com.matedroid.data.api.models.Units
+import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.TeslamateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -49,8 +51,19 @@ data class BatteryStats(
 
 @HiltViewModel
 class BatteryViewModel @Inject constructor(
-    private val repository: TeslamateRepository
+    private val repository: TeslamateRepository,
+    private val settingsDataStore: SettingsDataStore
 ) : ViewModel() {
+
+    // Helper
+    private suspend fun resolveUnits(apiUnits: Units?): Units? {
+        val override = settingsDataStore.unitsOverride.first()
+        return when (override) {
+            "imperial" -> apiUnits?.copy(unitOfLength = "mi")
+            "metric"   -> apiUnits?.copy(unitOfLength = "km")
+            else       -> apiUnits
+        }
+    }
 
     private val _uiState = MutableStateFlow(BatteryUiState())
     val uiState: StateFlow<BatteryUiState> = _uiState.asStateFlow()
@@ -107,7 +120,7 @@ class BatteryViewModel @Inject constructor(
                             isRefreshing = false,
                             batteryHealth = healthResult.data,
                             carStatus = statusResult.data.status,
-                            units = statusResult.data.units,
+                            units = resolveUnits(statusResult.data.units),
                             error = null
                         )
                     }

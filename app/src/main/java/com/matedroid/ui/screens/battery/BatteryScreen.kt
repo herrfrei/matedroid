@@ -143,6 +143,7 @@ fun BatteryScreen(
                         BatteryHealthContent(
                             stats = stats,
                             palette = palette,
+                            isImperial = uiState.units?.isImperial == true,
                             onCardClick = { viewModel.showDetail() }
                         )
                     } else {
@@ -171,6 +172,7 @@ fun BatteryScreen(
             if (stats != null) {
                 BatteryDetailScreen(
                     stats = stats,
+                    isImperial = uiState.units?.isImperial == true,
                     onClose = { viewModel.hideDetail() }
                 )
             }
@@ -182,6 +184,7 @@ fun BatteryScreen(
 private fun BatteryHealthContent(
     stats: BatteryStats,
     palette: CarColorPalette,
+    isImperial: Boolean,
     onCardClick: () -> Unit
 ) {
     Column(
@@ -192,18 +195,18 @@ private fun BatteryHealthContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Capacity Section
-        CapacityCard(stats = stats, palette = palette, onClick = onCardClick)
+        CapacityCard(stats = stats, palette = palette, isImperial = isImperial, onClick = onCardClick)
 
         // Degradation Section
         DegradationCard(stats = stats, palette = palette, onClick = onCardClick)
 
         // Range Section
-        RangeCard(stats = stats, palette = palette, onClick = onCardClick)
+        RangeCard(stats = stats, palette = palette, isImperial = isImperial, onClick = onCardClick)
     }
 }
 
 @Composable
-private fun CapacityCard(stats: BatteryStats, palette: CarColorPalette, onClick: () -> Unit) {
+private fun CapacityCard(stats: BatteryStats, palette: CarColorPalette, isImperial: Boolean, onClick: () -> Unit) {
     var showTooltip by remember { mutableStateOf(false) }
     val capacityTitle = stringResource(R.string.battery_capacity_title)
     val capacityMessage = stringResource(R.string.battery_capacity_message)
@@ -213,6 +216,9 @@ private fun CapacityCard(stats: BatteryStats, palette: CarColorPalette, onClick:
     val ratedLabel = stringResource(R.string.rated)
     val infoLabel = stringResource(R.string.info)
     val gotItLabel = stringResource(R.string.got_it)
+    val effUnit = if (isImperial) "Wh/mi" else "Wh/km"
+    val eff = if (isImperial) stats.ratedEfficiency * 1.60934 else stats.ratedEfficiency
+
 
     if (showTooltip) {
         InfoDialog(
@@ -300,7 +306,7 @@ private fun CapacityCard(stats: BatteryStats, palette: CarColorPalette, onClick:
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "%.1f Wh/km".format(stats.ratedEfficiency),
+                        text = "%.1f $effUnit".format(eff),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = palette.onSurface
@@ -515,11 +521,13 @@ private fun LossValueCard(
 }
 
 @Composable
-private fun RangeCard(stats: BatteryStats, palette: CarColorPalette, onClick: () -> Unit) {
+private fun RangeCard(stats: BatteryStats, palette: CarColorPalette, isImperial: Boolean, onClick: () -> Unit) {
     val rangeLabel = stringResource(R.string.range)
     val maxRangeNewLabel = stringResource(R.string.max_range_new)
     val maxRangeNowLabel = stringResource(R.string.max_range_now)
     val rangeLossLabel = stringResource(R.string.range_loss)
+    val distUnit = if (isImperial) "mi" else "km"
+    fun fmtRange(v: Double) = "%,.1f $distUnit".format(if (isImperial) v * 0.621371 else v)
 
     Card(
         modifier = Modifier
@@ -548,13 +556,13 @@ private fun RangeCard(stats: BatteryStats, palette: CarColorPalette, onClick: ()
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 RangeValueCard(
-                    value = "%,.1f km".format(stats.maxRangeNew),
+                    value = fmtRange(stats.maxRangeNew),
                     label = maxRangeNewLabel,
                     iconColor = CapacityGreen,
                     modifier = Modifier.weight(1f)
                 )
                 RangeValueCard(
-                    value = "%,.1f km".format(stats.maxRangeNow),
+                    value = fmtRange(stats.maxRangeNow),
                     label = maxRangeNowLabel,
                     iconColor = CapacityYellow,
                     modifier = Modifier.weight(1f)
@@ -578,7 +586,7 @@ private fun RangeCard(stats: BatteryStats, palette: CarColorPalette, onClick: ()
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "%,.1f km".format(stats.rangeLoss),
+                        text = fmtRange(stats.rangeLoss),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = palette.onSurface
@@ -639,6 +647,7 @@ private fun RangeValueCard(
 @Composable
 private fun BatteryDetailScreen(
     stats: BatteryStats,
+    isImperial: Boolean,
     onClose: () -> Unit
 ) {
     Scaffold(
@@ -668,19 +677,19 @@ private fun BatteryDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Battery Status Section
-            BatteryStatusCard(stats = stats)
+            BatteryStatusCard(stats = stats, isImperial = isImperial)
 
             // Range Information Section
-            RangeInformationCard(stats = stats)
+            RangeInformationCard(stats = stats, isImperial = isImperial)
 
             // Estimated Total Capacity Section
-            EstimatedCapacityCard(stats = stats)
+            EstimatedCapacityCard(stats = stats, isImperial = isImperial)
         }
     }
 }
 
 @Composable
-private fun BatteryStatusCard(stats: BatteryStats) {
+private fun BatteryStatusCard(stats: BatteryStats, isImperial: Boolean) {
     var showTooltip by remember { mutableStateOf(false) }
     val currentChargeTitle = stringResource(R.string.current_charge_title)
     val currentChargeMessage = stringResource(R.string.current_charge_message)
@@ -688,6 +697,8 @@ private fun BatteryStatusCard(stats: BatteryStats) {
     val usablePercentLabel = stringResource(R.string.usable_percent, stats.usableBatteryLevel)
     val infoLabel = stringResource(R.string.info)
     val gotItLabel = stringResource(R.string.got_it)
+    val distUnit = if (isImperial) "mi" else "km"
+    fun fmtRange(v: Double) = "%,.1f $distUnit".format(if (isImperial) v * 0.621371 else v)
 
     if (showTooltip) {
         InfoDialog(
@@ -781,7 +792,7 @@ private fun BatteryStatusCard(stats: BatteryStats) {
 }
 
 @Composable
-private fun RangeInformationCard(stats: BatteryStats) {
+private fun RangeInformationCard(stats: BatteryStats, isImperial: Boolean) {
     var showTooltip by remember { mutableStateOf(false) }
     val rangeInfoTitle = stringResource(R.string.range_information_title)
     val rangeInfoMessage = stringResource(R.string.range_information_message)
@@ -794,6 +805,8 @@ private fun RangeInformationCard(stats: BatteryStats) {
     val idealRangeSubtitle = stringResource(R.string.ideal_range_subtitle)
     val infoLabel = stringResource(R.string.info)
     val gotItLabel = stringResource(R.string.got_it)
+    val distUnit = if (isImperial) "mi" else "km"
+    fun fmtRange(v: Double) = "%,.1f $distUnit".format(if (isImperial) v * 0.621371 else v)
 
     if (showTooltip) {
         InfoDialog(
@@ -839,7 +852,7 @@ private fun RangeInformationCard(stats: BatteryStats) {
             RangeInfoRow(
                 title = estimatedRangeLabel,
                 subtitle = estimatedRangeSubtitle,
-                value = "%,.1f km".format(stats.estimatedRange),
+                value = fmtRange(stats.estimatedRange),
                 valueColor = RangeBlue
             )
 
@@ -848,7 +861,7 @@ private fun RangeInformationCard(stats: BatteryStats) {
             RangeInfoRow(
                 title = ratedRangeLabel,
                 subtitle = ratedRangeSubtitle,
-                value = "%,.1f km".format(stats.ratedRange),
+                value = fmtRange(stats.ratedRange),
                 valueColor = RangeBlue
             )
 
@@ -857,7 +870,7 @@ private fun RangeInformationCard(stats: BatteryStats) {
             RangeInfoRow(
                 title = idealRangeLabel,
                 subtitle = idealRangeSubtitle,
-                value = "%,.1f km".format(stats.idealRange),
+                value = fmtRange(stats.idealRange),
                 valueColor = RangeBlue
             )
         }
@@ -914,7 +927,7 @@ private fun RangeInfoRow(
 }
 
 @Composable
-private fun EstimatedCapacityCard(stats: BatteryStats) {
+private fun EstimatedCapacityCard(stats: BatteryStats, isImperial: Boolean) {
     var showTooltip by remember { mutableStateOf(false) }
     val estimatedCapacityTitle = stringResource(R.string.estimated_total_capacity_title)
     val estimatedCapacityMessage = stringResource(R.string.estimated_total_capacity_message, stats.batteryLevel)
@@ -923,6 +936,7 @@ private fun EstimatedCapacityCard(stats: BatteryStats) {
     val estimatedRangeDescription = stringResource(R.string.estimated_range_description, stats.batteryLevel, stats.ratedRange)
     val infoLabel = stringResource(R.string.info)
     val gotItLabel = stringResource(R.string.got_it)
+    val distUnit = if (isImperial) "mi" else "km"
 
     if (showTooltip) {
         InfoDialog(
@@ -991,7 +1005,7 @@ private fun EstimatedCapacityCard(stats: BatteryStats) {
                 }
 
                 Text(
-                    text = "%,.1f km".format(stats.rangeAt100),
+                    text = "%,.1f $distUnit".format(if (isImperial) stats.rangeAt100 * 0.621371 else stats.rangeAt100),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = StatusSuccess
