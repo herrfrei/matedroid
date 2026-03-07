@@ -1129,7 +1129,7 @@ private fun DayTripRow(
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
-                        text = UnitFormatter.formatDistance(dayData.totalDistance, units),
+                        text = UnitFormatter.formatDistance(dayData.totalDistance, units, 2),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -1320,7 +1320,7 @@ private fun DaySummaryCard(
             ) {
                 StatChip(
                     icon = CustomIcons.Road,
-                    value = UnitFormatter.formatDistance(dayData.totalDistance, units),
+                    value = UnitFormatter.formatDistance(dayData.totalDistance, units, 2),
                     modifier = Modifier.weight(1f)
                 )
                 StatChip(
@@ -1411,7 +1411,7 @@ private fun DriveRow(
                     )
                     Spacer(modifier = Modifier.width(2.dp))
                     Text(
-                        text = UnitFormatter.formatDistance(distance, units),
+                        text = UnitFormatter.formatDistance(distance, units, 2),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
