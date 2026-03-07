@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Drives screen**: Speed and distance in the drives list and summary card now correctly respect the unit system configured in TeslamateAPI (km/km/h vs mi/mph), matching what the drive detail screen already showed (#176)
+
 ## [1.2.1] - 2026-03-07
 
 ### Added
