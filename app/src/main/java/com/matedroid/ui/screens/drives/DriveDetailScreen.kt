@@ -248,7 +248,7 @@ private fun DriveDetailContent(
                     icon = Icons.Default.Landscape,
                     stats = listOf(
                         StatItem(stringResource(R.string.maximum), UnitFormatter.formatElevation(s.elevationMax, units)),
-                        StatItem(stringResource(R.string.minimum), UnitFormatter.formatElevation(s.elevationMax, units)),
+                        StatItem(stringResource(R.string.minimum), UnitFormatter.formatElevation(s.elevationMin, units)),
                         StatItem(stringResource(R.string.gain), "+" + UnitFormatter.formatElevation(s.elevationGain, units)),
                         StatItem(stringResource(R.string.loss), "-" + UnitFormatter.formatElevation(s.elevationLoss, units)),
                     )
