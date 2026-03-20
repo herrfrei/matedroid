@@ -899,42 +899,57 @@ private fun formatDuration(minutes: Int): String {
 
 /**
  * Computes annotation ranges for periods where the battery heater was active.
- * Contiguous runs of battery_heater=true are merged into single ranges.
+ *
+ * The battery_heater field tends to flap (single-point true surrounded by false/null gaps
+ * of ~30-60 positions) because the heater cycles on/off rapidly. To produce clean Grafana-style
+ * bands, nearby true-runs separated by gaps smaller than [mergeGap] positions are merged
+ * into a single continuous range.
+ *
  * Returns fractional ranges (0.0–1.0) suitable for chart annotation overlays.
  */
-private fun computeBatteryHeaterRanges(positions: List<DrivePosition>): List<AnnotationRange> {
+private fun computeBatteryHeaterRanges(
+    positions: List<DrivePosition>,
+    mergeGap: Int = 80
+): List<AnnotationRange> {
     if (positions.size < 2) return emptyList()
+
+    // Collect indices where heater is on
+    val heaterIndices = positions.indices.filter { positions[it].isBatteryHeaterOn }
+    if (heaterIndices.isEmpty()) return emptyList()
 
     val heaterColor = Color(0xFFFF9800) // Material Orange
     val lastIndex = positions.lastIndex.toFloat()
-    val ranges = mutableListOf<AnnotationRange>()
-    var rangeStart: Int? = null
 
-    for (i in positions.indices) {
-        val isOn = positions[i].isBatteryHeaterOn
-        if (isOn && rangeStart == null) {
-            rangeStart = i
-        } else if (!isOn && rangeStart != null) {
+    // Merge nearby indices into contiguous ranges
+    val ranges = mutableListOf<AnnotationRange>()
+    var rangeStart = heaterIndices[0]
+    var rangeEnd = heaterIndices[0]
+
+    for (i in 1 until heaterIndices.size) {
+        if (heaterIndices[i] - rangeEnd <= mergeGap) {
+            // Close enough — extend current range
+            rangeEnd = heaterIndices[i]
+        } else {
+            // Gap too large — emit current range and start a new one
             ranges.add(
                 AnnotationRange(
                     startFraction = rangeStart / lastIndex,
-                    endFraction = (i - 1) / lastIndex,
+                    endFraction = rangeEnd / lastIndex,
                     color = heaterColor
                 )
             )
-            rangeStart = null
+            rangeStart = heaterIndices[i]
+            rangeEnd = heaterIndices[i]
         }
     }
-    // Close open range at the end
-    if (rangeStart != null) {
-        ranges.add(
-            AnnotationRange(
-                startFraction = rangeStart / lastIndex,
-                endFraction = 1f,
-                color = heaterColor
-            )
+    // Emit last range
+    ranges.add(
+        AnnotationRange(
+            startFraction = rangeStart / lastIndex,
+            endFraction = rangeEnd / lastIndex,
+            color = heaterColor
         )
-    }
+    )
 
     return ranges
 }
