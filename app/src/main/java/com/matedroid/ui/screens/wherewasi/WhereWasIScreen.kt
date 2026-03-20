@@ -244,8 +244,12 @@ fun WhereWasIScreen(
                                         Text(text = flag, fontSize = 16.sp)
                                         Spacer(modifier = Modifier.width(4.dp))
                                     }
+                                    val localizedCountryName = loc.countryCode?.let { code ->
+                                        java.util.Locale("", code).getDisplayCountry(java.util.Locale.getDefault())
+                                            .takeIf { it.isNotBlank() && it != code }
+                                    } ?: loc.countryName ?: loc.countryCode
                                     val breadcrumbParts = listOfNotNull(
-                                        loc.countryName ?: loc.countryCode,
+                                        localizedCountryName,
                                         loc.regionName,
                                         loc.city
                                     )
