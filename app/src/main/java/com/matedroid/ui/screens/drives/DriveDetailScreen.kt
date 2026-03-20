@@ -800,8 +800,8 @@ private fun SpeedHistogramCard(
     val bucketSize = if (isImperial) 5 else 10
     val speedUnit = UnitFormatter.getSpeedUnit(units)
 
-    val histogramData = remember(speeds, isImperial) {
-        buildSpeedHistogram(speeds, bucketSize, isImperial)
+    val histogramData = remember(speeds, bucketSize) {
+        buildSpeedHistogram(speeds, bucketSize)
     }
 
     if (histogramData.isEmpty()) return
@@ -852,29 +852,25 @@ private fun SpeedHistogramCard(
 /**
  * Builds speed histogram data with buckets of [bucketSize] units.
  * Returns bar chart data with percentage values.
+ *
+ * Note: The TeslaMate API pre-converts speed to the user's unit system,
+ * so speeds are already in km/h or mph — no conversion needed here.
  */
 private fun buildSpeedHistogram(
     speeds: List<Int>,
-    bucketSize: Int,
-    isImperial: Boolean
+    bucketSize: Int
 ): List<BarChartData> {
     if (speeds.isEmpty()) return emptyList()
 
-    val convertedSpeeds = if (isImperial) {
-        speeds.map { (it * 0.621371).toInt() }
-    } else {
-        speeds
-    }
-
-    val minSpeed = (convertedSpeeds.min() / bucketSize) * bucketSize
-    val maxSpeed = ((convertedSpeeds.max() / bucketSize) + 1) * bucketSize
-    val total = convertedSpeeds.size.toDouble()
+    val minSpeed = (speeds.min() / bucketSize) * bucketSize
+    val maxSpeed = ((speeds.max() / bucketSize) + 1) * bucketSize
+    val total = speeds.size.toDouble()
 
     val buckets = mutableListOf<BarChartData>()
     var bucketStart = minSpeed
     while (bucketStart < maxSpeed) {
         val bucketEnd = bucketStart + bucketSize
-        val count = convertedSpeeds.count { it >= bucketStart && it < bucketEnd }
+        val count = speeds.count { it >= bucketStart && it < bucketEnd }
         val pct = (count / total) * 100.0
         buckets.add(
             BarChartData(
