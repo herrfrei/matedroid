@@ -1757,7 +1757,16 @@ private fun LocationCard(
                     Text(stringResource(android.R.string.cancel))
                 }
             },
-            title = { Text(stringResource(R.string.where_was_i_pick_time)) },
+            title = {
+                val selectedMillis = datePickerState.selectedDateMillis
+                val dateText = if (selectedMillis != null) {
+                    val date = java.time.Instant.ofEpochMilli(selectedMillis)
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate()
+                    date.format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM))
+                } else ""
+                Text(dateText)
+            },
             text = {
                 TimePicker(state = timePickerState)
             }

@@ -47,7 +47,8 @@ data class WhereWasIUiState(
     val batteryLevel: Int? = null,
     val chargerPower: Int? = null,
     // Display
-    val targetDateTime: String? = null
+    val targetDateTime: String? = null,
+    val geofenceName: String? = null
 )
 
 @HiltViewModel
@@ -135,13 +136,14 @@ class WhereWasIViewModel @Inject constructor(
             carState = CarActivityState.DRIVING,
             latitude = lat,
             longitude = lon,
-            odometer = nearest?.let { detail?.positions?.lastOrNull()?.let { p -> null } } ?: drive.odometerDetails?.odometerEnd,
-            outsideTemp = nearest?.outsideTemp?.toDouble() ?: drive.outsideTempAvg,
+            odometer = drive.odometerDetails?.odometerEnd,
+            outsideTemp = nearest?.outsideTemp ?: drive.outsideTempAvg,
             speed = nearest?.speed,
             driveId = drive.driveId,
             driveDistance = drive.distance,
             units = units,
-            targetDateTime = _uiState.value.targetDateTime
+            targetDateTime = _uiState.value.targetDateTime,
+            geofenceName = drive.endAddress ?: drive.startAddress
         )
 
         // Fetch geocoding and weather in background
@@ -174,7 +176,8 @@ class WhereWasIViewModel @Inject constructor(
             chargerPower = nearestPoint?.chargerPower,
             chargeId = charge.chargeId,
             units = units,
-            targetDateTime = _uiState.value.targetDateTime
+            targetDateTime = _uiState.value.targetDateTime,
+            geofenceName = charge.address
         )
 
         fetchGeocodingAndWeather(lat, lon, targetTime)

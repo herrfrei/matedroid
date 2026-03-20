@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
@@ -227,67 +228,64 @@ fun WhereWasIScreen(
                         }
                     }
 
-                    // Location breadcrumb
+                    // Location breadcrumb + address
                     state.location?.let { loc ->
                         Card(
                             colors = CardDefaults.cardColors(containerColor = palette.surface)
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                // Country (tappable)
-                                loc.countryCode?.let { code ->
-                                    val flag = countryCodeToFlag(code)
-                                    val countryName = loc.countryName ?: code
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { onNavigateToCountriesVisited() }
-                                            .padding(vertical = 4.dp)
-                                    ) {
-                                        Text(text = flag, fontSize = 20.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = countryName,
-                                            style = MaterialTheme.typography.titleSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = palette.accent,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        Icon(
-                                            Icons.Default.ChevronRight,
-                                            contentDescription = null,
-                                            tint = palette.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                        )
+                                // Breadcrumb line: flag Country > Region > City
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    loc.countryCode?.let { code ->
+                                        val flag = countryCodeToFlag(code)
+                                        Text(text = flag, fontSize = 16.sp)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                    }
+                                    val breadcrumbParts = listOfNotNull(
+                                        loc.countryName ?: loc.countryCode,
+                                        loc.regionName,
+                                        loc.city
+                                    )
+                                    breadcrumbParts.forEachIndexed { index, part ->
+                                        if (index == 0 && loc.countryCode != null) {
+                                            // Country is tappable
+                                            Text(
+                                                text = part,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold,
+                                                color = palette.accent,
+                                                modifier = Modifier.clickable { onNavigateToCountriesVisited() }
+                                            )
+                                        } else {
+                                            Text(
+                                                text = part,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = palette.onSurfaceVariant
+                                            )
+                                        }
+                                        if (index < breadcrumbParts.lastIndex) {
+                                            Text(
+                                                text = " > ",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = palette.onSurfaceVariant.copy(alpha = 0.5f)
+                                            )
+                                        }
                                     }
                                 }
-                                // Region
-                                loc.regionName?.let { region ->
+
+                                // Geofence name or full address (bigger)
+                                val displayAddress = state.geofenceName
+                                    ?: loc.address
+                                if (displayAddress != null) {
+                                    Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = region,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = palette.onSurface,
-                                        modifier = Modifier.padding(start = 28.dp, top = 2.dp)
+                                        text = displayAddress,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = palette.onSurface
                                     )
-                                }
-                                // City / address
-                                loc.city?.let { city ->
-                                    Text(
-                                        text = city,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = palette.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 28.dp, top = 2.dp)
-                                    )
-                                }
-                                loc.address?.let { addr ->
-                                    if (addr != loc.city) {
-                                        Text(
-                                            text = addr,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = palette.onSurfaceVariant,
-                                            modifier = Modifier.padding(start = 28.dp, top = 2.dp)
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -399,15 +397,16 @@ fun WhereWasIScreen(
                                     CarActivityState.PARKED -> { /* No additional rows */ }
                                 }
 
-                                // Tap hint
+                                // Chevron hint for tappable cards
                                 if (isClickable) {
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = stringResource(R.string.where_was_i_tap_details),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = palette.accent,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.fillMaxWidth()
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = palette.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .size(24.dp)
+                                            .align(Alignment.End)
                                     )
                                 }
                             }
