@@ -85,10 +85,10 @@
     <string name="climate_inactive">空调已关闭</string>
 
     <!-- Tooltip shown when car is asleep, %s is the time when it went to sleep -->
-    <string name="asleep_since">休眠自 %s</string>
+    <string name="asleep_since">自 %s 起休眠</string>
 
     <!-- Tooltip shown when car is offline, %s is the time when it went offline -->
-    <string name="offline_since">离线自 %s</string>
+    <string name="offline_since">自 %s 起离线</string>
 
     <!-- Word for yesterday used in timestamps -->
     <string name="yesterday">昨天</string>
@@ -121,7 +121,7 @@
     <string name="high_charge_level">电量过高</string>
 
     <!-- Title and message for the high SoC info dialog shown when tapping the warning icon -->
-    <string name="high_soc_warning_title">电量过高警告</string>
+    <string name="high_soc_warning_title">高电量状态</string>
     <string name="high_soc_warning_message">长时间将电池保持在 100% 或接近满电状态可能会加速电池老化。\n\n• NCM 电池（大多数 Tesla 车型）：日常使用建议充电至 80–90%。仅在长途出行前充至 100%。\n• LFP 电池（标准续航版 Model 3/Y）：可以经常充至 100%——Tesla 建议定期满充以校准电池。\n\n请尽量避免车辆长时间停放在满电状态。</string>
 
     <!-- Location card section title -->
@@ -250,7 +250,7 @@
     <string name="no_drives_found">所选时段内无行程记录</string>
 
     <!-- Summary card title -->
-    <string name="summary">摘要</string>
+    <string name="summary">概览</string>
 
     <!-- Summary card labels -->
     <string name="total_trips">总行程数</string>
@@ -663,7 +663,7 @@
     <string name="stats_coldest">最低温</string>
 
     <!-- Sub-section: cabin (interior) temperatures -->
-    <string name="stats_cabin_temperature">车厢温度</string>
+    <string name="stats_cabin_temperature">车内温度</string>
 
     <!-- Section: ratio between AC and DC charging -->
     <string name="stats_ac_dc_ratio">AC/DC 充电比例</string>
@@ -687,7 +687,7 @@
     <string name="gap_type_charging">充电</string>
 
     <!-- Gap type: driving -->
-    <string name="gap_type_driving">驾驶</string>
+    <string name="gap_type_driving">行驶</string>
 
     <!-- Dialog title for range record details -->
     <string name="stats_range_record_title">最长续航</string>
@@ -770,7 +770,7 @@
     <string name="no_regions_found">暂无地区记录。</string>
 
     <!-- Header card title showing country totals -->
-    <string name="regions_country_summary">国家摘要</string>
+    <string name="regions_country_summary">国家概览</string>
 
     <!-- Map showing charge locations in the country -->
     <string name="country_charge_map_title">充电位置</string>
@@ -944,7 +944,7 @@
     <string name="weather_clear">晴朗</string>
 
     <!-- Weather condition: partly cloudy -->
-    <string name="weather_partly_cloudy">多云</string>
+    <string name="weather_partly_cloudy">局部多云</string>
 
     <!-- Weather condition: foggy -->
     <string name="weather_fog">有雾</string>
@@ -992,7 +992,7 @@
 
     <!-- ==================== Charging Notifications ==================== -->
     <!-- Notification channel name for charging session alerts -->
-    <string name="charging_channel_name">充电通知</string>
+    <string name="charging_channel_name">充电动态</string>
 
     <!-- Notification channel description -->
     <string name="charging_channel_description">充电期间的实时更新</string>
@@ -1075,7 +1075,7 @@
     <string name="soc_target">目标</string>
     <!-- Compact energy/power row labels -->
     <string name="soc_energy_added">已充电量</string>
-    <string name="soc_instant_power">实时功率</string>
+    <string name="soc_instant_power">实时</string>
 
     <!-- ==================== Home Screen Widget ==================== -->
     <!-- Widget description shown in the system widget picker -->
@@ -1095,7 +1095,7 @@
 
     <!-- ==================== Notification Permission Dialog ==================== -->
     <!-- Title of the one-time dialog asking the user to enable notifications -->
-    <string name="notification_permission_title">保持知情</string>
+    <string name="notification_permission_title">及时了解车况</string>
     <!-- Body text explaining why notifications are useful -->
     <string name="notification_permission_message">MateDroid 可以通知你哨兵模式事件、胎压警告和充电状态。开启通知以随时了解你的车辆状况。</string>
     <!-- Confirm button to trigger the system notification permission prompt -->
