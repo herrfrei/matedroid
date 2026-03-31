@@ -202,6 +202,7 @@ class CarWidget : GlanceAppWidget() {
                             val locationText = prefs[LOCATION_TEXT_KEY]
                             val chargeEnergyAdded = prefs[CHARGE_ENERGY_ADDED_KEY]?.takeIf { it >= 0f }
                             val timeToFull = prefs[TIME_TO_FULL_KEY]?.takeIf { it >= 0f }
+                            val chargerPower = prefs[CHARGER_POWER_KEY]?.takeIf { it >= 0 }
                             val chargerVoltage = prefs[CHARGER_VOLTAGE_KEY]?.takeIf { it >= 0 }
                             val chargerCurrent = prefs[CHARGER_CURRENT_KEY]?.takeIf { it >= 0 }
                             val acPhases = prefs[AC_PHASES_KEY]?.takeIf { it >= 0 }
@@ -261,7 +262,18 @@ class CarWidget : GlanceAppWidget() {
                                     modifier = GlanceModifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // State icon
+                                    // Charging power + state icon
+                                    if (stateIsCharging && chargerPower != null && chargerPower > 0) {
+                                        Text(
+                                            text = "${chargerPower} kW",
+                                            style = TextStyle(
+                                                color = ColorProvider(stateColor),
+                                                fontSize = if (isCompact) 9.sp else 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        )
+                                        Spacer(modifier = GlanceModifier.width(3.dp))
+                                    }
                                     val stateIconRes = when {
                                         stateIsCharging -> com.matedroid.R.drawable.ic_bolt
                                         isAsleep -> com.matedroid.R.drawable.ic_bedtime
