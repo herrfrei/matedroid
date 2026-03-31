@@ -156,7 +156,7 @@ import com.matedroid.ui.theme.StatusSuccess
 import com.matedroid.ui.theme.StatusWarning
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun DashboardScreen(
     intent: Intent? = null,
@@ -197,7 +197,19 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(uiState.selectedCarName ?: "MateDroid")
+                    Text(
+                        text = uiState.selectedCarName ?: "MateDroid",
+                        modifier = if (BuildConfig.DEBUG) {
+                            Modifier.combinedClickable(
+                                onClick = {},
+                                onDoubleClick = {
+                                    uiState.selectedCarId?.let { carId ->
+                                        onNavigateToSentryHistory(carId, uiState.selectedCarExterior?.exteriorColor)
+                                    }
+                                }
+                            )
+                        } else Modifier
+                    )
                 },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
