@@ -232,7 +232,7 @@ private fun AlertRow(
             Box(
                 modifier = Modifier
                     .size(16.dp)
-                    .border(1.5.dp, palette.onSurfaceVariant.copy(alpha = 0.35f), CircleShape),
+                    .border(2.dp, palette.onSurfaceVariant.copy(alpha = 0.35f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
