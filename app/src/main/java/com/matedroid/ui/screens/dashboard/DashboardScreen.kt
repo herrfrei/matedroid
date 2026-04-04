@@ -270,6 +270,7 @@ fun DashboardScreen(
                         totalCharges = uiState.totalCharges,
                         totalDrives = uiState.totalDrives,
                         imageOverride = uiState.carImageOverride,
+                        isCurrentChargeAvailable = uiState.isCurrentChargeAvailable,
                         onNavigateToCharges = {
                             uiState.selectedCarId?.let { carId ->
                                 onNavigateToCharges(carId, uiState.selectedCarExterior?.exteriorColor)
@@ -451,6 +452,7 @@ private fun DashboardContent(
     totalCharges: Int? = null,
     totalDrives: Int? = null,
     imageOverride: CarImageOverride? = null,
+    isCurrentChargeAvailable: Boolean = false,
     onNavigateToCharges: () -> Unit = {},
     onNavigateToDrives: () -> Unit = {},
     onNavigateToBattery: () -> Unit = {},
@@ -500,6 +502,7 @@ private fun DashboardContent(
             carTrimBadging = carTrimBadging,
             carExterior = carExterior,
             imageOverride = imageOverride,
+            isCurrentChargeAvailable = isCurrentChargeAvailable,
             onNavigateToBattery = onNavigateToBattery,
             onNavigateToStats = onNavigateToStats,
             onNavigateToCurrentCharge = onNavigateToCurrentCharge,
@@ -1041,6 +1044,7 @@ private fun BatteryCard(
     carTrimBadging: String? = null,
     carExterior: CarExterior? = null,
     imageOverride: CarImageOverride? = null,
+    isCurrentChargeAvailable: Boolean = false,
     onNavigateToBattery: () -> Unit = {},
     onNavigateToStats: () -> Unit = {},
     onNavigateToCurrentCharge: () -> Unit = {},
@@ -1121,8 +1125,8 @@ private fun BatteryCard(
                     )
                     if (status.isCharging) {
                         Spacer(modifier = Modifier.width(8.dp))
-                        // Mini charging gauge with AC/DC badge - tappable to open live charge
-                        Box(modifier = Modifier.clickable(onClick = onNavigateToCurrentCharge)) {
+                        // Mini charging gauge with AC/DC badge - tappable to open live charge if API available
+                        Box(modifier = if (isCurrentChargeAvailable) Modifier.clickable(onClick = onNavigateToCurrentCharge) else Modifier) {
                             ChargingPowerGaugeCompact(
                                 status = status,
                                 carTrimBadging = carTrimBadging
@@ -1180,11 +1184,11 @@ private fun BatteryCard(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Charging info row - shows details when charging, tappable to open live charge
+            // Charging info row - shows details when charging, tappable to open live charge if API available
             if (status.isCharging) {
                 Box(modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onNavigateToCurrentCharge)
+                    .then(if (isCurrentChargeAvailable) Modifier.clickable(onClick = onNavigateToCurrentCharge) else Modifier)
                 ) {
                     ChargingDetailsRow(
                         status = status,

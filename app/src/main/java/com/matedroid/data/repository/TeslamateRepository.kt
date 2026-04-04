@@ -71,6 +71,22 @@ class TeslamateRepository @Inject constructor(
         private const val TAG = "TeslamateRepository"
     }
 
+    // Cache: true = endpoint exists (API 1.24+), false = 404 (older API)
+    private val currentChargeApiAvailable = mutableMapOf<Int, Boolean>()
+
+    /**
+     * Check whether the current charge endpoint is available for the given car.
+     * Returns true if the API supports it (HTTP 200), false on 404 (old API).
+     * Result is cached for the app session since the API version doesn't change at runtime.
+     */
+    suspend fun isCurrentChargeAvailable(carId: Int): Boolean {
+        currentChargeApiAvailable[carId]?.let { return it }
+        val result = getCurrentCharge(carId)
+        val available = result !is ApiResult.Error || result.code != 404
+        currentChargeApiAvailable[carId] = available
+        return available
+    }
+
     private suspend fun getSettings(): AppSettings = settingsDataStore.settings.first()
 
     private fun getApiForUrl(url: String): TeslamateApi? {

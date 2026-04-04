@@ -1,0 +1,5 @@
+Live charge links now gracefully adapt to your TeslaMate API version.
+
+Fixed:
+- Dashboard charging gauge and details row only navigate to the live charge screen when TeslaMate API 1.24+ is detected
+- Charging notification only deep-links to live charge when the endpoint is available; otherwise opens the app normally

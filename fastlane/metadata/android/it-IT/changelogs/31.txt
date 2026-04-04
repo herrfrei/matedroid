@@ -1,0 +1,5 @@
+I link alla ricarica live ora si adattano alla versione della tua API TeslaMate.
+
+Corretto:
+- L'indicatore di ricarica e i dettagli nella dashboard aprono la schermata di ricarica live solo quando viene rilevata l'API TeslaMate 1.24+
+- La notifica di ricarica apre la ricarica live solo quando l'endpoint è disponibile; altrimenti apre l'app normalmente

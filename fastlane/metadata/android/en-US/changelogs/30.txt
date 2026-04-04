@@ -1,0 +1,9 @@
+Live charge screen gets a redesigned header with prominent SoC display, and the V/A chart now uses distinct colors for better readability.
+
+Changed:
+- Redesigned live charge header with prominent current SoC
+
+Fixed:
+- Charging notification 3-segment progress bar with bolt tracker
+- Distinct amber/blue colors for Voltage and Current chart lines
+- Stats: missing avg cost/kWh and temperatures when filtering by year

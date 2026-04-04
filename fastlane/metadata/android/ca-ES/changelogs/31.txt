@@ -1,0 +1,5 @@
+Els enllaços a la càrrega en viu ara s'adapten a la versió de la teva API de TeslaMate.
+
+Corregit:
+- L'indicador de càrrega i els detalls al tauler només naveguen a la pantalla de càrrega en viu quan es detecta l'API TeslaMate 1.24+
+- La notificació de càrrega només obre la càrrega en viu quan l'endpoint està disponible; altrament obre l'app normalment

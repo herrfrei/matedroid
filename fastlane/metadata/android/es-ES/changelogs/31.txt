@@ -1,0 +1,5 @@
+Los enlaces a la carga en vivo ahora se adaptan a tu versión de la API de TeslaMate.
+
+Corregido:
+- El indicador de carga y los detalles en el panel solo navegan a la pantalla de carga en vivo cuando se detecta la API TeslaMate 1.24+
+- La notificación de carga solo abre la carga en vivo cuando el endpoint está disponible; de lo contrario, abre la app normalmente

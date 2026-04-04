@@ -219,9 +219,11 @@ class ChargingMonitorService : Service() {
                     activeNotificationCarIds.add(car.carId)
                     Log.d(TAG, "Car ${car.carId} charging at ${status.batteryLevel}%")
 
+                    val liveChargeAvailable = teslamateRepository.isCurrentChargeAvailable(car.carId)
+
                     // Update notification with real data
                     val notificationId = ChargingNotificationManager.NOTIFICATION_ID_BASE + car.carId
-                    val notification = chargingNotificationManager.buildNotification(car, status)
+                    val notification = chargingNotificationManager.buildNotification(car, status, liveChargeAvailable)
 
                     // Switch to the real notification ID (replaces placeholder)
                     try {
@@ -237,7 +239,7 @@ class ChargingMonitorService : Service() {
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to update foreground notification", e)
                         // Fall back to just showing the notification
-                        chargingNotificationManager.showChargingNotification(car, status)
+                        chargingNotificationManager.showChargingNotification(car, status, liveChargeAvailable)
                     }
                 } else {
                     // Cancel notification for this car if not charging

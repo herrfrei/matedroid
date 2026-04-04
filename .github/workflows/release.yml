@@ -57,49 +57,18 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew bundleRelease
 
-      - name: Rename Release APK
+      - name: Stage release artifacts
         run: |
+          mkdir -p staging
           VERSION=$(grep 'versionName' app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/matedroid-${VERSION}.apk
-          echo "APK_NAME=matedroid-${VERSION}.apk" >> $GITHUB_ENV
+          cp app/build/outputs/apk/release/app-release.apk staging/matedroid-${VERSION}.apk
+          cp app/build/outputs/bundle/release/app-release.aab staging/app-release.aab
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-outputs
-          path: |
-            app/build/outputs/apk/release/${{ env.APK_NAME }}
-            app/build/outputs/bundle/release/app-release.aab
-
-      - name: Prepare changelog for Google Play
-        if: github.event_name == 'release'
-        run: ./scripts/prepare-play-store-changelog.sh
-
-      - name: Upload to Google Play (Closed Testing)
-        if: github.event_name == 'release' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
-        env:
-          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.matedroid
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          track: alpha
-          status: completed
-          whatsNewDirectory: fastlane/metadata/android
-
-      - name: Upload to Google Play (Production)
-        if: github.event_name == 'release' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' && !contains(github.event.release.tag_name, '-beta')
-        env:
-          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.matedroid
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          track: production
-          status: completed
-          whatsNewDirectory: fastlane/metadata/android
+          path: staging/
 
   build-debug:
     runs-on: ubuntu-latest
@@ -132,8 +101,9 @@ jobs:
           name: debug-outputs
           path: app/build/outputs/apk/debug/${{ env.APK_NAME_DEBUG }}
 
-  publish:
+  publish-github:
     needs: [build-release, build-debug]
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
@@ -150,9 +120,95 @@ jobs:
           path: debug
 
       - name: Upload APKs to GitHub release
-        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/app/build/outputs/apk/release/*.apk
+            release/*.apk
             debug/*.apk
+
+  publish-play:
+    needs: [build-release]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-outputs
+          path: release
+
+      - name: Prepare changelog for Google Play
+        run: ./scripts/prepare-play-store-changelog.sh
+
+      - name: Determine Google Play track
+        id: play-track
+        run: |
+          if [[ "${{ github.event.release.tag_name }}" == *"-beta"* ]]; then
+            echo "track=beta" >> $GITHUB_OUTPUT
+          else
+            echo "track=production" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract version code
+        id: version
+        run: |
+          VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | sed 's/[^0-9]*//g')
+          echo "code=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+      - name: Upload to Google Play
+        id: play-upload
+        continue-on-error: true
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        if: env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != ''
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.matedroid
+          releaseFiles: release/app-release.aab
+          track: ${{ steps.play-track.outputs.track }}
+          status: completed
+          whatsNewDirectory: fastlane/metadata/android
+
+      - name: Assign to track (if bundle already uploaded)
+        if: steps.play-upload.outcome == 'failure'
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACK: ${{ steps.play-track.outputs.track }}
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "No Google Play service account JSON found, skipping"
+            exit 0
+          fi
+          pip install -q google-auth google-api-python-client
+          python3 << 'PYEOF'
+          import json, os
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+
+          creds = service_account.Credentials.from_service_account_info(
+              json.loads(os.environ['GOOGLE_PLAY_SERVICE_ACCOUNT_JSON']),
+              scopes=['https://www.googleapis.com/auth/androidpublisher']
+          )
+          service = build('androidpublisher', 'v3', credentials=creds)
+          pkg = 'com.matedroid'
+          track = os.environ['TRACK']
+          version_code = os.environ['VERSION_CODE']
+
+          edit = service.edits().insert(packageName=pkg).execute()
+          edit_id = edit['id']
+          service.edits().tracks().update(
+              packageName=pkg, editId=edit_id, track=track,
+              body={'track': track, 'releases': [{
+                  'versionCodes': [version_code],
+                  'status': 'completed'
+              }]}
+          ).execute()
+          service.edits().commit(packageName=pkg, editId=edit_id).execute()
+          print(f'Assigned version code {version_code} to {track} track')
+          PYEOF

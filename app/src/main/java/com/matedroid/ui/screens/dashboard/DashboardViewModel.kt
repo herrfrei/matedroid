@@ -35,7 +35,8 @@ data class DashboardUiState(
     val totalDrives: Int? = null,
     val error: String? = null,
     val errorDetails: String? = null,
-    val carImageOverride: CarImageOverride? = null
+    val carImageOverride: CarImageOverride? = null,
+    val isCurrentChargeAvailable: Boolean = false
 ) {
     private val selectedCar: CarData?
         get() = cars.find { it.carId == selectedCarId }
@@ -148,7 +149,8 @@ class DashboardViewModel @Inject constructor(
                 resolvedAddress = null,
                 totalCharges = null,
                 totalDrives = null,
-                carImageOverride = currentOverrides[carId]
+                carImageOverride = currentOverrides[carId],
+                isCurrentChargeAvailable = false
             )
         }
         // Save the selected car for next app launch
@@ -199,6 +201,7 @@ class DashboardViewModel @Inject constructor(
                     }
                     // Fetch address if no geofence but coordinates are available
                     fetchAddressIfNeeded(status)
+                    checkCurrentChargeAvailability(carId, status)
                 }
                 is ApiResult.Error -> {
                     _uiState.update { it.copy(error = result.message) }
@@ -265,11 +268,21 @@ class DashboardViewModel @Inject constructor(
                         }
                         // Update address if location changed
                         fetchAddressIfNeeded(status)
+                        checkCurrentChargeAvailability(carId, status)
                     }
                     is ApiResult.Error -> {
                         // Silently ignore errors during auto-refresh
                     }
                 }
+            }
+        }
+    }
+
+    private fun checkCurrentChargeAvailability(carId: Int, status: CarStatus) {
+        if (status.isCharging && !_uiState.value.isCurrentChargeAvailable) {
+            viewModelScope.launch {
+                val available = repository.isCurrentChargeAvailable(carId)
+                _uiState.update { it.copy(isCurrentChargeAvailable = available) }
             }
         }
     }

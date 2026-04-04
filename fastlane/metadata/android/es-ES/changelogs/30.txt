@@ -1,0 +1,9 @@
+La pantalla de carga en vivo tiene un encabezado rediseñado con SoC destacado, y el gráfico V/A ahora usa colores distintos para mejor legibilidad.
+
+Cambios:
+- Encabezado de carga en vivo rediseñado con SoC prominente
+
+Correcciones:
+- Barra de progreso de 3 segmentos en la notificación de carga con indicador bolt
+- Colores ámbar/azul distintos para las líneas de Voltaje y Corriente en el gráfico
+- Estadísticas: valores faltantes (coste medio/kWh y temperaturas) al filtrar por año

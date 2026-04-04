@@ -1,0 +1,9 @@
+La schermata di ricarica live ha un header ridisegnato con SoC in primo piano, e il grafico V/A ora usa colori distinti per una migliore leggibilità.
+
+Modifiche:
+- Header della ricarica live ridisegnato con SoC prominente
+
+Correzioni:
+- Barra di progresso a 3 segmenti nella notifica di ricarica con indicatore bolt
+- Colori ambra/blu distinti per le linee di Voltaggio e Corrente nel grafico
+- Statistiche: valori mancanti (costo medio/kWh e temperature) filtrando per anno

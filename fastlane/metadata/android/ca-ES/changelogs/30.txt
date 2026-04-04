@@ -1,0 +1,9 @@
+La pantalla de càrrega en viu té una capçalera redissenyada amb SoC destacat, i el gràfic V/A ara usa colors diferents per a una millor llegibilitat.
+
+Canvis:
+- Capçalera de càrrega en viu redissenyada amb SoC prominent
+
+Correccions:
+- Barra de progrés de 3 segments a la notificació de càrrega amb indicador bolt
+- Colors ambre/blau diferents per a les línies de Voltatge i Corrent al gràfic
+- Estadístiques: valors que faltaven (cost mitjà/kWh i temperatures) en filtrar per any

@@ -4,11 +4,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.matedroid.data.sync.ChargingNotificationWorker
 import com.matedroid.data.sync.TpmsPressureWorker
 
 /**
  * BroadcastReceiver that reschedules periodic workers after device reboot.
- * Ensures TPMS pressure monitoring continues after the device restarts.
+ * Ensures TPMS pressure monitoring and charging notifications continue after the device restarts.
  */
 class BootReceiver : BroadcastReceiver() {
 
@@ -22,6 +23,9 @@ class BootReceiver : BroadcastReceiver() {
 
             // Reschedule TPMS pressure monitoring
             TpmsPressureWorker.schedulePeriodicWork(context)
+
+            // Reschedule charging notification monitoring
+            ChargingNotificationWorker.schedulePeriodicWork(context)
         }
     }
 }
