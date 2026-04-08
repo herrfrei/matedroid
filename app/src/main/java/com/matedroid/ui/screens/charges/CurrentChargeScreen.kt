@@ -278,10 +278,17 @@ private fun CurrentChargeContent(
             icon = Icons.Default.Bolt
         ) {
             if (powers.size >= 2) {
+                var yMin = (kotlin.math.floor(powers.min() ) ).toFloat()
+                var yMax = (kotlin.math.ceil(powers.max() ) ).toFloat()
+                if (yMin == yMax) {
+                    yMin -= 1
+                    yMax += 1
+                }
                 FullscreenLineChart(
                     data = powers,
                     color = Color(0xFF4CAF50),
                     unit = "kW",
+                    fixedMinMax = Pair(yMin, yMax),
                     timeLabels = timeLabels,
                     externalSelectedFraction = sharedXFraction,
                     onXSelected = { sharedXFraction = it },

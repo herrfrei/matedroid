@@ -87,6 +87,10 @@ class CurrentChargeViewModel @Inject constructor(
             is ApiResult.Success -> statusResult.data.status.chargeLimitSoc
             is ApiResult.Error -> _uiState.value.chargeLimitSoc
         }
+        val isDcChargeFromStatus = when (statusResult) {
+            is ApiResult.Success -> statusResult.data.status.isDcCharging
+            is ApiResult.Error -> null  // No status data available -> assume AC
+        }
 
         when (chargeResult) {
             is ApiResult.Success -> {
@@ -97,7 +101,8 @@ class CurrentChargeViewModel @Inject constructor(
                 val detailWithChronoPoints = detail.copy(chargePoints = chronoPoints)
 
                 val stats = ChargeStatsCalculator.calculateStats(detailWithChronoPoints)
-                val isDcCharge = ChargeStatsCalculator.detectDcCharge(detailWithChronoPoints)
+                //val isDcCharge = ChargeStatsCalculator.detectDcCharge(detailWithChronoPoints)
+                val isDcCharge = isDcChargeFromStatus ?: ChargeStatsCalculator.detectDcCharge(detailWithChronoPoints)
 
                 _uiState.update {
                     it.copy(
