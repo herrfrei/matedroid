@@ -23,6 +23,7 @@ import copy
 import json
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -269,6 +270,16 @@ def _build_charging_status_response(car_id: int) -> dict:
     is_charging = current_soc_int < limit_soc
     charging_state = "Charging" if is_charging else "Complete"
 
+    # Dynamic state_since: charge start time when charging, completion time when done
+    if is_charging:
+        state_since_iso = datetime.fromtimestamp(charging_cfg["start_time"], tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    else:
+        # Estimate when the charge completed based on energy needed
+        total_kwh = (limit_soc - start_soc) / 100 * BATTERY_CAPACITY_KWH
+        completion_seconds = (total_kwh / power_kw) * 3600 if power_kw > 0 else 0
+        completion_time = charging_cfg["start_time"] + completion_seconds
+        state_since_iso = datetime.fromtimestamp(completion_time, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
     remaining_kwh = max((limit_soc - current_soc) / 100 * BATTERY_CAPACITY_KWH, 0.0)
     time_to_full = round(remaining_kwh / power_kw, 2) if is_charging else 0.0
 
@@ -295,7 +306,7 @@ def _build_charging_status_response(car_id: int) -> dict:
             "status": {
                 "display_name": "Mock Tesla",
                 "state": "charging" if is_charging else "online",
-                "state_since": "2024-01-01T00:00:00Z",
+                "state_since": state_since_iso,
                 "odometer": 12345.0,
                 "car_status": {
                     "healthy": True,

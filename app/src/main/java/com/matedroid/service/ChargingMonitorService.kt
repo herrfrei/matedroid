@@ -62,6 +62,8 @@ class ChargingMonitorService : Service() {
     private val maxConsecutiveFailures = 3
     private var isMonitoring = false
     private val activeNotificationCarIds = mutableSetOf<Int>()
+    // Track which cars were DC charging (safety net for isDcCharging after completion)
+    private val dcChargingCarIds = mutableSetOf<Int>()
 
     override fun onCreate() {
         super.onCreate()
@@ -180,6 +182,35 @@ class ChargingMonitorService : Service() {
     }
 
     /**
+     * Update the foreground notification, falling back to direct notification on failure.
+     */
+    private fun updateForegroundNotification(
+        notificationId: Int,
+        notification: Notification,
+        car: com.matedroid.data.api.models.CarData,
+        status: com.matedroid.data.api.models.CarStatus,
+        liveChargeAvailable: Boolean
+    ) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    notificationId,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                )
+            } else {
+                startForeground(notificationId, notification)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update foreground notification", e)
+            chargingNotificationManager.showChargingNotification(
+                car, status, liveChargeAvailable,
+                chronometerBaseMs = status.stateSinceEpochMs
+            )
+        }
+    }
+
+    /**
      * Check charging status and update notification.
      * Returns true if any car is charging, false otherwise.
      */
@@ -214,37 +245,42 @@ class ChargingMonitorService : Service() {
 
                 val status = statusData.status ?: continue
 
-                if (status.isCharging) {
-                    anyCharging = true
-                    activeNotificationCarIds.add(car.carId)
-                    Log.d(TAG, "Car ${car.carId} charging at ${status.batteryLevel}%")
+                val notificationId = ChargingNotificationManager.NOTIFICATION_ID_BASE + car.carId
 
-                    val liveChargeAvailable = teslamateRepository.isCurrentChargeAvailable(car.carId)
+                when {
+                    status.isCharging -> {
+                        anyCharging = true
+                        activeNotificationCarIds.add(car.carId)
+                        if (status.isDcCharging) dcChargingCarIds.add(car.carId) else dcChargingCarIds.remove(car.carId)
+                        Log.d(TAG, "Car ${car.carId} charging at ${status.batteryLevel}%")
 
-                    // Update notification with real data
-                    val notificationId = ChargingNotificationManager.NOTIFICATION_ID_BASE + car.carId
-                    val notification = chargingNotificationManager.buildNotification(car, status, liveChargeAvailable)
-
-                    // Switch to the real notification ID (replaces placeholder)
-                    try {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                            startForeground(
-                                notificationId,
-                                notification,
-                                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                            )
-                        } else {
-                            startForeground(notificationId, notification)
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to update foreground notification", e)
-                        // Fall back to just showing the notification
-                        chargingNotificationManager.showChargingNotification(car, status, liveChargeAvailable)
+                        val liveChargeAvailable = teslamateRepository.isCurrentChargeAvailable(car.carId)
+                        val notification = chargingNotificationManager.buildNotification(
+                            car, status, liveChargeAvailable,
+                            chronometerBaseMs = status.stateSinceEpochMs
+                        )
+                        updateForegroundNotification(notificationId, notification, car, status, liveChargeAvailable)
                     }
-                } else {
-                    // Cancel notification for this car if not charging
-                    activeNotificationCarIds.remove(car.carId)
-                    chargingNotificationManager.cancelNotification(car.carId)
+
+                    status.isDcFinishedPluggedIn || (status.pluggedIn == true && status.isChargeComplete && dcChargingCarIds.contains(car.carId)) -> {
+                        // DC charge finished but cable still plugged — keep notification alive
+                        anyCharging = true
+                        activeNotificationCarIds.add(car.carId)
+                        Log.d(TAG, "Car ${car.carId} DC charge finished but still plugged in")
+
+                        val notification = chargingNotificationManager.buildNotification(
+                            car, status,
+                            dcFinishedPluggedIn = true,
+                            chronometerBaseMs = status.stateSinceEpochMs
+                        )
+                        updateForegroundNotification(notificationId, notification, car, status, liveChargeAvailable = false)
+                    }
+
+                    else -> {
+                        activeNotificationCarIds.remove(car.carId)
+                        dcChargingCarIds.remove(car.carId)
+                        chargingNotificationManager.cancelNotification(car.carId)
+                    }
                 }
             }
 

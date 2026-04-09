@@ -1001,6 +1001,14 @@
     <!-- Notification title during charging. %s is car name -->
     <string name="charging_notification_title">%s - Cargando</string>
     <string name="charging_notification_loading">Comprobando estado de carga…</string>
+    <!-- Notification title when DC charge is complete but cable still plugged. %s is car name -->
+    <string name="charging_notification_dc_finished_title">%s — Carga completada</string>
+    <!-- Notification content when DC charge is complete but cable still plugged -->
+    <string name="charging_notification_dc_finished_content">Desconecta para liberar el punto DC</string>
+    <!-- Warning banner title on the live charge screen when DC charge finished but still plugged -->
+    <string name="dc_unplug_warning_title">Carga completada</string>
+    <!-- Warning banner message on the live charge screen -->
+    <string name="dc_unplug_warning_message">Desconecta para liberar este punto de carga DC para otros</string>
 
     <!-- ==================== Sentry Notifications ==================== -->
     <!-- Notification channel name for sentry mode alerts -->
