@@ -1002,6 +1002,14 @@
     <!-- Notification title during charging. %s is car name -->
     <string name="charging_notification_title">%s - 充电中</string>
     <string name="charging_notification_loading">正在检查充电状态…</string>
+    <!-- Notification title when DC charge is complete but cable still plugged. %s is car name -->
+    <string name="charging_notification_dc_finished_title">%s — 充电完成</string>
+    <!-- Notification content when DC charge is complete but cable still plugged -->
+    <string name="charging_notification_dc_finished_content">请拔出充电枪以释放直流充电位</string>
+    <!-- Warning banner title on the live charge screen when DC charge finished but still plugged -->
+    <string name="dc_unplug_warning_title">充电完成</string>
+    <!-- Warning banner message on the live charge screen -->
+    <string name="dc_unplug_warning_message">请拔出充电枪以便其他人使用此直流充电位</string>
 
     <!-- ==================== Sentry Notifications ==================== -->
     <!-- Notification channel name for sentry mode alerts -->

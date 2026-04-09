@@ -50,10 +50,16 @@ class ChargingNotificationManager @Inject constructor(
      * @param car The car data (for name and image)
      * @param status The current car status with charging details
      */
-    fun showChargingNotification(car: CarData, status: CarStatus, liveChargeAvailable: Boolean = false) {
+    fun showChargingNotification(
+        car: CarData,
+        status: CarStatus,
+        liveChargeAvailable: Boolean = false,
+        dcFinishedPluggedIn: Boolean = false,
+        chronometerBaseMs: Long? = null
+    ) {
         createNotificationChannel()
         val notificationId = NOTIFICATION_ID_BASE + car.carId
-        val notification = buildNotification(car, status, liveChargeAvailable)
+        val notification = buildNotification(car, status, liveChargeAvailable, dcFinishedPluggedIn, chronometerBaseMs)
         notificationManager.notify(notificationId, notification)
         Log.d(TAG, "Showed charging notification for car ${car.carId}: ${status.batteryLevel}% -> ${status.chargeLimitSoc}%")
     }
@@ -62,7 +68,13 @@ class ChargingNotificationManager @Inject constructor(
      * Build a charging notification for a car (without showing it).
      * Used by ChargingMonitorService for foreground notification.
      */
-    fun buildNotification(car: CarData, status: CarStatus, liveChargeAvailable: Boolean = false): Notification {
+    fun buildNotification(
+        car: CarData,
+        status: CarStatus,
+        liveChargeAvailable: Boolean = false,
+        dcFinishedPluggedIn: Boolean = false,
+        chronometerBaseMs: Long? = null
+    ): Notification {
         createNotificationChannel()
 
         val carName = car.displayName
@@ -72,12 +84,26 @@ class ChargingNotificationManager @Inject constructor(
         val isDcCharging = status.isDcCharging
         val timeToFullCharge = status.timeToFullCharge
 
-        val title = buildTitle(carName, chargerPower, isDcCharging)
-        val contentText = buildContentText(
-            batteryLevel = batteryLevel,
-            chargeLimit = chargeLimit,
-            timeToFullCharge = timeToFullCharge
-        )
+        val title: String
+        val contentText: String
+        val smallIconRes: Int
+        val effectiveLiveCharge: Boolean
+
+        if (dcFinishedPluggedIn) {
+            title = context.getString(R.string.charging_notification_dc_finished_title, carName)
+            contentText = context.getString(R.string.charging_notification_dc_finished_content)
+            smallIconRes = R.drawable.ic_notification_warning
+            effectiveLiveCharge = false // Navigate to main dashboard, not charge screen
+        } else {
+            title = buildTitle(carName, chargerPower, isDcCharging)
+            contentText = buildContentText(
+                batteryLevel = batteryLevel,
+                chargeLimit = chargeLimit,
+                timeToFullCharge = timeToFullCharge
+            )
+            smallIconRes = R.drawable.ic_notification
+            effectiveLiveCharge = liveChargeAvailable
+        }
 
         return if (Build.VERSION.SDK_INT >= 36) {
             buildProgressStyleNotification(
@@ -86,7 +112,10 @@ class ChargingNotificationManager @Inject constructor(
                 contentText = contentText,
                 batteryLevel = batteryLevel,
                 chargeLimit = chargeLimit,
-                liveChargeAvailable = liveChargeAvailable
+                liveChargeAvailable = effectiveLiveCharge,
+                smallIconRes = smallIconRes,
+                chronometerBaseMs = chronometerBaseMs,
+                dcFinishedPluggedIn = dcFinishedPluggedIn
             )
         } else {
             buildFallbackNotification(
@@ -94,7 +123,9 @@ class ChargingNotificationManager @Inject constructor(
                 title = title,
                 contentText = contentText,
                 batteryLevel = batteryLevel,
-                liveChargeAvailable = liveChargeAvailable
+                liveChargeAvailable = effectiveLiveCharge,
+                smallIconRes = smallIconRes,
+                chronometerBaseMs = chronometerBaseMs
             )
         }
     }
@@ -175,7 +206,10 @@ class ChargingNotificationManager @Inject constructor(
         contentText: String,
         batteryLevel: Int,
         chargeLimit: Int,
-        liveChargeAvailable: Boolean
+        liveChargeAvailable: Boolean,
+        smallIconRes: Int = R.drawable.ic_notification,
+        chronometerBaseMs: Long? = null,
+        dcFinishedPluggedIn: Boolean = false
     ): Notification {
         // Get car palette accent color
         val palette = CarColorPalettes.forExteriorColor(
@@ -213,13 +247,20 @@ class ChargingNotificationManager @Inject constructor(
         val builder = Notification.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(contentText)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(smallIconRes)
             .setProgress(100, soc, false)
             .setStyle(progressStyle)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setContentIntent(createContentIntent(car.carId, liveChargeAvailable))
+
+        // Show live elapsed timer in the status bar
+        if (chronometerBaseMs != null) {
+            builder.setUsesChronometer(true)
+            builder.setShowWhen(true)
+            builder.setWhen(chronometerBaseMs)
+        }
 
         // Add car image as large icon if available
         carBitmap?.let { bitmap ->
@@ -240,19 +281,29 @@ class ChargingNotificationManager @Inject constructor(
         title: String,
         contentText: String,
         batteryLevel: Int,
-        liveChargeAvailable: Boolean
+        liveChargeAvailable: Boolean,
+        smallIconRes: Int = R.drawable.ic_notification,
+        chronometerBaseMs: Long? = null
     ): Notification {
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(contentText)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(smallIconRes)
             .setProgress(100, batteryLevel, false)
             .setOngoing(false)  // Dismissable on older Android
             .setOnlyAlertOnce(true)
             .setAutoCancel(false)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)  // Show on lock screen
             .setContentIntent(createContentIntent(carId, liveChargeAvailable))
-            .build()
+
+        // Show live elapsed timer in the status bar
+        if (chronometerBaseMs != null) {
+            builder.setUsesChronometer(true)
+            builder.setShowWhen(true)
+            builder.setWhen(chronometerBaseMs)
+        }
+
+        return builder.build()
     }
 
     /**

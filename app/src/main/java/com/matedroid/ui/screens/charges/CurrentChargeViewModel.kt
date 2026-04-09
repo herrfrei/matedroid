@@ -28,6 +28,8 @@ data class CurrentChargeUiState(
     val isDcCharge: Boolean = false,
     val isUnsupportedApi: Boolean = false,
     val isNotCharging: Boolean = false,
+    val isDcFinishedPluggedIn: Boolean = false,
+    val dcFinishedSince: String? = null,
     val timeToFullCharge: Double? = null,
     val chargeLimitSoc: Int? = null,
     /** Charge points in chronological order (reversed from API's newest-first) */
@@ -91,6 +93,14 @@ class CurrentChargeViewModel @Inject constructor(
             is ApiResult.Success -> statusResult.data.status.isDcCharging
             is ApiResult.Error -> null  // No status data available -> assume AC
         }
+        val isDcFinishedPluggedIn = when (statusResult) {
+            is ApiResult.Success -> statusResult.data.status.isDcFinishedPluggedIn
+            is ApiResult.Error -> false
+        }
+        val stateSince = when (statusResult) {
+            is ApiResult.Success -> statusResult.data.status.stateSince
+            is ApiResult.Error -> null
+        }
 
         when (chargeResult) {
             is ApiResult.Success -> {
@@ -111,7 +121,9 @@ class CurrentChargeViewModel @Inject constructor(
                         stats = stats,
                         isDcCharge = isDcCharge,
                         isUnsupportedApi = false,
-                        isNotCharging = detail.isCharging == false,
+                        isNotCharging = detail.isCharging == false && !isDcFinishedPluggedIn,
+                        isDcFinishedPluggedIn = isDcFinishedPluggedIn,
+                        dcFinishedSince = if (isDcFinishedPluggedIn) stateSince else null,
                         timeToFullCharge = timeToFullCharge,
                         chargeLimitSoc = chargeLimitSoc,
                         chronologicalPoints = chronoPoints,
@@ -128,11 +140,25 @@ class CurrentChargeViewModel @Inject constructor(
                         refreshJob?.cancel()
                     }
                     null -> {
-                        // No HTTP code means 200 with no charge data — charging has stopped
-                        _uiState.update {
-                            it.copy(isLoading = false, isNotCharging = true, error = null)
+                        if (isDcFinishedPluggedIn) {
+                            // DC charge finished but still plugged — keep showing last data with warning
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isNotCharging = false,
+                                    isDcFinishedPluggedIn = true,
+                                    dcFinishedSince = stateSince,
+                                    error = null
+                                )
+                            }
+                            // Keep refresh loop running to detect unplug
+                        } else {
+                            // Charging has stopped and cable unplugged
+                            _uiState.update {
+                                it.copy(isLoading = false, isNotCharging = true, isDcFinishedPluggedIn = false, error = null)
+                            }
+                            refreshJob?.cancel()
                         }
-                        refreshJob?.cancel()
                     }
                     else -> {
                         _uiState.update {

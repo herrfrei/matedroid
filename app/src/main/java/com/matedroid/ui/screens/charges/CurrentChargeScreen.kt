@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ElectricalServices
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -102,8 +103,8 @@ fun CurrentChargeScreen(
         }
     }
 
-    LaunchedEffect(uiState.isNotCharging) {
-        if (uiState.isNotCharging) {
+    LaunchedEffect(uiState.isNotCharging, uiState.isDcFinishedPluggedIn) {
+        if (uiState.isNotCharging && !uiState.isDcFinishedPluggedIn) {
             onNavigateBack()
         }
     }
@@ -114,7 +115,7 @@ fun CurrentChargeScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.current_charge_title))
-                        if (uiState.chargeDetail != null && !uiState.isNotCharging) {
+                        if (uiState.chargeDetail != null && !uiState.isNotCharging && !uiState.isDcFinishedPluggedIn) {
                             Spacer(modifier = Modifier.width(8.dp))
                             LiveBadge()
                         }
@@ -158,10 +159,24 @@ fun CurrentChargeScreen(
                     modifier = Modifier.padding(padding)
                 )
             }
+            uiState.isDcFinishedPluggedIn && uiState.chargeDetail == null -> {
+                // DC charge finished but no charge data available — show warning only
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    DcUnplugWarningBanner(dcFinishedSince = uiState.dcFinishedSince)
+                }
+            }
             uiState.chargeDetail != null -> {
                 CurrentChargeContent(
                     detail = uiState.chargeDetail!!,
                     isDcCharge = uiState.isDcCharge,
+                    isDcFinishedPluggedIn = uiState.isDcFinishedPluggedIn,
+                    dcFinishedSince = uiState.dcFinishedSince,
                     timeToFullCharge = uiState.timeToFullCharge,
                     chargeLimitSoc = uiState.chargeLimitSoc,
                     chronologicalPoints = uiState.chronologicalPoints,
@@ -221,6 +236,8 @@ private fun FallbackMessage(message: String, modifier: Modifier = Modifier) {
 private fun CurrentChargeContent(
     detail: ChargeDetail,
     isDcCharge: Boolean,
+    isDcFinishedPluggedIn: Boolean = false,
+    dcFinishedSince: String? = null,
     timeToFullCharge: Double?,
     chargeLimitSoc: Int?,
     chronologicalPoints: List<ChargePoint>,
@@ -250,6 +267,11 @@ private fun CurrentChargeContent(
             chargeLimitSoc = chargeLimitSoc,
             chronologicalPoints = chronologicalPoints
         )
+
+        // DC unplug warning banner
+        if (isDcFinishedPluggedIn) {
+            DcUnplugWarningBanner(dcFinishedSince = dcFinishedSince)
+        }
 
         // Charts - always show cards, even with few data points
         val timeLabels = extractChronoTimeLabels(chronologicalPoints)
@@ -679,7 +701,8 @@ private fun LiveSocProgressBar(
 @Composable
 private fun ElapsedTimeCounter(
     startDate: String?,
-    unknownLabel: String
+    unknownLabel: String,
+    textColor: Color? = null
 ) {
     val startEpochMs = remember(startDate) {
         if (startDate == null) return@remember null
@@ -723,8 +746,52 @@ private fun ElapsedTimeCounter(
         text = displayText,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onPrimaryContainer
+        color = textColor ?: MaterialTheme.colorScheme.onPrimaryContainer
     )
+}
+
+@Composable
+private fun DcUnplugWarningBanner(dcFinishedSince: String?) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = com.matedroid.ui.theme.StatusWarning
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.dc_unplug_warning_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = stringResource(R.string.dc_unplug_warning_message),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
+            if (dcFinishedSince != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                ElapsedTimeCounter(
+                    startDate = dcFinishedSince,
+                    unknownLabel = "",
+                    textColor = Color.White
+                )
+            }
+        }
+    }
 }
 
 @Composable

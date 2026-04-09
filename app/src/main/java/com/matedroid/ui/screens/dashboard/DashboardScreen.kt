@@ -516,6 +516,11 @@ private fun DashboardContent(
             onNavigateToSentryHistory = onNavigateToSentryHistory
         )
 
+        // DC charge finished but still plugged in warning
+        if (status.isDcFinishedPluggedIn) {
+            DcUnplugWarningBanner(dcFinishedSince = status.stateSince)
+        }
+
         // Location Section - show if we have coordinates
         if (status.latitude != null && status.longitude != null) {
             LocationCard(
@@ -1566,6 +1571,74 @@ private fun ChargingDetailsRow(
                     text = status.timeToFullCharge?.let { formatHoursMinutes(it) } ?: "--",
                     style = MaterialTheme.typography.labelSmall,
                     color = palette.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DcUnplugWarningBanner(dcFinishedSince: String?) {
+    val startEpochMs = remember(dcFinishedSince) {
+        if (dcFinishedSince == null) return@remember null
+        try {
+            val odt = try {
+                java.time.OffsetDateTime.parse(dcFinishedSince)
+            } catch (_: java.time.format.DateTimeParseException) {
+                java.time.OffsetDateTime.parse(dcFinishedSince.replace("Z", "+00:00"))
+            }
+            odt.toInstant().toEpochMilli()
+        } catch (_: Exception) { null }
+    }
+    val elapsedMs = remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    LaunchedEffect(startEpochMs) {
+        if (startEpochMs == null) return@LaunchedEffect
+        while (true) {
+            elapsedMs.longValue = System.currentTimeMillis() - startEpochMs
+            kotlinx.coroutines.delay(1000L)
+        }
+    }
+    val elapsedText = if (startEpochMs != null) {
+        val totalSeconds = elapsedMs.longValue / 1000
+        val h = totalSeconds / 3600; val m = (totalSeconds % 3600) / 60; val s = totalSeconds % 60
+        if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
+    } else null
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = StatusWarning)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.dc_unplug_warning_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = stringResource(R.string.dc_unplug_warning_message),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
+            if (elapsedText != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = elapsedText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
                 )
             }
         }

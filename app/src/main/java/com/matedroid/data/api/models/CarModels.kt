@@ -102,7 +102,23 @@ data class CarStatus(
     val chargerActualCurrent: Int? get() = chargingDetails?.chargerActualCurrent
     val chargeCurrentRequestMax: Int? get() = chargingDetails?.chargeCurrentRequestMax
     val isDcCharging: Boolean get() = chargingDetails?.isDcCharging ?: false
+    val isChargeComplete: Boolean get() = chargingState?.lowercase() == "complete"
+    val isDcFinishedPluggedIn: Boolean get() = isChargeComplete && pluggedIn == true && isDcCharging
     val timeToFullCharge: Double? get() = chargingDetails?.timeToFullCharge
+
+    /** Parse stateSince ISO timestamp to epoch milliseconds. */
+    val stateSinceEpochMs: Long?
+        get() = stateSince?.let { ts ->
+            try {
+                java.time.OffsetDateTime.parse(ts).toInstant().toEpochMilli()
+            } catch (_: Exception) {
+                try {
+                    java.time.OffsetDateTime.parse(ts.replace("Z", "+00:00")).toInstant().toEpochMilli()
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
 
     val isClimateOn: Boolean? get() = climateDetails?.isClimateOn
     val insideTemp: Double? get() = climateDetails?.insideTemp
