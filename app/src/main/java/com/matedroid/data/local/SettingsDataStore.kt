@@ -153,6 +153,12 @@ class SettingsDataStore @Inject constructor(
         }
     }
 
+    suspend fun saveServerUrl(url: String) {
+        context.dataStore.edit { preferences ->
+            preferences[serverUrlKey] = url
+        }
+    }
+
     suspend fun saveCurrency(currencyCode: String) {
         context.dataStore.edit { preferences ->
             preferences[currencyCodeKey] = currencyCode
