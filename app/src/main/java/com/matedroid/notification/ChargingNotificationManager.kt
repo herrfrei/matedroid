@@ -93,7 +93,7 @@ class ChargingNotificationManager @Inject constructor(
             title = context.getString(R.string.charging_notification_dc_finished_title, carName)
             contentText = context.getString(R.string.charging_notification_dc_finished_content)
             smallIconRes = R.drawable.ic_notification_warning
-            effectiveLiveCharge = true // Always navigate to charge screen
+            effectiveLiveCharge = false // Navigate to main dashboard, not charge screen
         } else {
             title = buildTitle(carName, chargerPower, isDcCharging)
             contentText = buildContentText(
