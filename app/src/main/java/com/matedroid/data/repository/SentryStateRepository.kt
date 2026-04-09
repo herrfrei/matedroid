@@ -25,10 +25,11 @@ sealed class SentryEvent {
 /**
  * Business logic layer over [SentryStateDataStore].
  *
- * Every poll where center_display_state == "7" increments the event counter.
+ * Every poll where center_display_state == "7" increments the event counter
+ * and logs to persistent history.
  * A 65-second debounce window (just over the 1-minute screen-on duration per
  * sentry event) controls whether the notification should alert (sound + heads-up)
- * or just update silently.
+ * or just update silently; history logging is not affected by the debounce.
  */
 @Singleton
 class SentryStateRepository @Inject constructor(
@@ -88,19 +89,17 @@ class SentryStateRepository @Inject constructor(
             val timeSinceLastEvent = now - state.lastEventAt
             val shouldNotify = timeSinceLastEvent >= NOTIFY_DEBOUNCE_MS
 
-            // Log to persistent history using the same dedup rules as notifications
-            if (shouldNotify) {
-                alertLogDao.insert(
-                    SentryAlertLog(
-                        carId = carId,
-                        detectedAt = now,
-                        sessionStartedAt = sessionStartedAt,
-                        latitude = latitude,
-                        longitude = longitude,
-                        address = geofence?.ifBlank { null }
-                    )
+            // Always log to persistent history — every increment is a real detected event
+            alertLogDao.insert(
+                SentryAlertLog(
+                    carId = carId,
+                    detectedAt = now,
+                    sessionStartedAt = sessionStartedAt,
+                    latitude = latitude,
+                    longitude = longitude,
+                    address = geofence?.ifBlank { null }
                 )
-            }
+            )
 
             return SentryEvent.AlertDetected(updated.eventCount, shouldNotify)
         }
