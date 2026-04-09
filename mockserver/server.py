@@ -209,9 +209,18 @@ def current_charge(car_id: int):
     energy_added = elapsed_hours * power_kw
     current_soc = min(start_soc + (energy_added / BATTERY_CAPACITY_KWH) * 100, limit_soc)
 
+    is_charging = current_soc < limit_soc
+
     charger_phases = None if is_dc else 3
     charger_voltage = 400 if is_dc else 230
     charger_current = round(power_kw * 1000 / charger_voltage)
+
+    start_date_iso = datetime.fromtimestamp(charging_cfg["start_time"], tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    if not is_charging:
+        # Charge complete — return 204 (no active charge)
+        return Response(status=204, content_type="application/json")
 
     return Response(
         json.dumps({
@@ -222,7 +231,7 @@ def current_charge(car_id: int):
                 },
                 "charge": {
                     "charge_id": 1,
-                    "start_date": "2026-04-07T00:00:00Z",
+                    "start_date": start_date_iso,
                     "end_date": None,
                     "is_charging": True,
                     "charge_energy_added": round(energy_added, 2),
@@ -234,7 +243,7 @@ def current_charge(car_id: int):
                     },
                     "charge_details": [
                         {
-                            "date": "2026-04-07T00:00:00Z",
+                            "date": now_iso,
                             "battery_level": int(current_soc),
                             "charge_energy_added": round(energy_added, 2),
                             "outside_temp": 15.0,

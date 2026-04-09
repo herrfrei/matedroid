@@ -159,6 +159,18 @@ fun CurrentChargeScreen(
                     modifier = Modifier.padding(padding)
                 )
             }
+            uiState.isDcFinishedPluggedIn && uiState.chargeDetail == null -> {
+                // DC charge finished but no charge data available — show warning only
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    DcUnplugWarningBanner(dcFinishedSince = uiState.dcFinishedSince)
+                }
+            }
             uiState.chargeDetail != null -> {
                 CurrentChargeContent(
                     detail = uiState.chargeDetail!!,
