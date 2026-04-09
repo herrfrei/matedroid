@@ -101,7 +101,6 @@ class CurrentChargeViewModel @Inject constructor(
                 val detailWithChronoPoints = detail.copy(chargePoints = chronoPoints)
 
                 val stats = ChargeStatsCalculator.calculateStats(detailWithChronoPoints)
-                //val isDcCharge = ChargeStatsCalculator.detectDcCharge(detailWithChronoPoints)
                 val isDcCharge = isDcChargeFromStatus ?: ChargeStatsCalculator.detectDcCharge(detailWithChronoPoints)
 
                 _uiState.update {
