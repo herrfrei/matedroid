@@ -63,10 +63,10 @@
             </intent-filter>
         </receiver>
 
-        <!-- Debug-only: switch API endpoint via ADB broadcast -->
+        <!-- Switch API endpoint via ADB broadcast (guarded by BuildConfig.DEBUG in code) -->
         <receiver
             android:name=".receiver.DebugEndpointReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="com.matedroid.SET_ENDPOINT" />
             </intent-filter>

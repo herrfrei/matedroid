@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
  * Debug-only receiver for switching the Teslamate API endpoint via ADB.
  *
  * Usage:
- *   adb shell am broadcast -a com.matedroid.SET_ENDPOINT --es url "http://host:port"
+ *   adb shell am broadcast -n com.matedroid/.receiver.DebugEndpointReceiver -a com.matedroid.SET_ENDPOINT --es url "http://host:port"
  *
  * Silently ignored in release builds.
  */

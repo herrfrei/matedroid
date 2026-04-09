@@ -224,20 +224,22 @@ In debug builds, the Teslamate API endpoint can be changed via ADB broadcast wit
 
 ```bash
 # Switch to mock server
-adb shell am broadcast -a com.matedroid.SET_ENDPOINT --es url "http://192.168.x.x:4001"
+adb shell am broadcast -n com.matedroid/.receiver.DebugEndpointReceiver \
+  -a com.matedroid.SET_ENDPOINT --es url "http://192.168.x.x:4001"
 
 # Switch back to your real server (from .env)
-adb shell am broadcast -a com.matedroid.SET_ENDPOINT --es url "$TESLAMATE_API_URL"  # from .env
+adb shell am broadcast -n com.matedroid/.receiver.DebugEndpointReceiver \
+  -a com.matedroid.SET_ENDPOINT --es url "$TESLAMATE_API_URL"  # from .env
 ```
 
-The change takes effect immediately for the next API call (no app restart needed). The receiver is guarded by `BuildConfig.DEBUG` and is silently ignored in release builds.
+The `-n` flag (explicit component) is required on Android 14+ since implicit broadcasts to manifest receivers are restricted. The change takes effect immediately for the next API call (no app restart needed). The receiver is guarded by `BuildConfig.DEBUG` and is silently ignored in release builds.
 
 **Typical testing workflow:**
 
 1. Start the mock server: `./mockserver/server.py -u http://your-api:4000 -c modely_juniper_grey_19`
-2. Switch the app to mock: `adb shell am broadcast -a com.matedroid.SET_ENDPOINT --es url "http://<your-ip>:4001"`
+2. Switch the app to mock: `adb shell am broadcast -n com.matedroid/.receiver.DebugEndpointReceiver -a com.matedroid.SET_ENDPOINT --es url "http://<your-ip>:4001"`
 3. Test your changes
-4. Switch back: `adb shell am broadcast -a com.matedroid.SET_ENDPOINT --es url "$TESLAMATE_API_URL"  # from .env`
+4. Switch back: `adb shell am broadcast -n com.matedroid/.receiver.DebugEndpointReceiver -a com.matedroid.SET_ENDPOINT --es url "$TESLAMATE_API_URL"`
 
 ### Running Tests
 
