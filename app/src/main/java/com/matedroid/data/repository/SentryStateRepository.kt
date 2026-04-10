@@ -25,10 +25,9 @@ sealed class SentryEvent {
 /**
  * Business logic layer over [SentryStateDataStore].
  *
- * Every poll where center_display_state == "7" increments the event counter.
  * A 65-second debounce window (just over the 1-minute screen-on duration per
- * sentry event) controls whether the notification should alert (sound + heads-up)
- * or just update silently.
+ * sentry event) gates all side effects: counter increment, history logging,
+ * and notification alerting. Duplicate polls within the window are ignored.
  */
 @Singleton
 class SentryStateRepository @Inject constructor(
@@ -36,7 +35,7 @@ class SentryStateRepository @Inject constructor(
     private val alertLogDao: SentryAlertLogDao
 ) {
     companion object {
-        /** Debounce window for notification alerting (not counting).
+        /** Debounce window for all event processing (counting, logging, alerting).
          *  Slightly over 60s because the car screen stays on for exactly 1 minute per event. */
         private const val NOTIFY_DEBOUNCE_MS = 65_000L
     }
@@ -80,16 +79,13 @@ class SentryStateRepository @Inject constructor(
 
         // Check for a sentry alert event
         if (isSentryAlerted) {
-            // Always increment the counter
-            val updated = dataStore.incrementEventCount(carId)
-
-            // Debounce only controls whether the notification should alert with sound
             val now = System.currentTimeMillis()
             val timeSinceLastEvent = now - state.lastEventAt
             val shouldNotify = timeSinceLastEvent >= NOTIFY_DEBOUNCE_MS
 
-            // Log to persistent history using the same dedup rules as notifications
             if (shouldNotify) {
+                // Increment counter and log to history only when we actually notify
+                val updated = dataStore.incrementEventCount(carId)
                 alertLogDao.insert(
                     SentryAlertLog(
                         carId = carId,
@@ -100,9 +96,9 @@ class SentryStateRepository @Inject constructor(
                         address = geofence?.ifBlank { null }
                     )
                 )
+                return SentryEvent.AlertDetected(updated.eventCount, true)
             }
-
-            return SentryEvent.AlertDetected(updated.eventCount, shouldNotify)
+            // Within debounce window — duplicate poll for the same event, ignore
         }
 
         return null
