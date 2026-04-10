@@ -81,27 +81,26 @@ class SentryStateRepository @Inject constructor(
 
         // Check for a sentry alert event
         if (isSentryAlerted) {
-            // Always increment the counter
-            val updated = dataStore.incrementEventCount(carId)
-
-            // Debounce only controls whether the notification should alert with sound
             val now = System.currentTimeMillis()
             val timeSinceLastEvent = now - state.lastEventAt
             val shouldNotify = timeSinceLastEvent >= NOTIFY_DEBOUNCE_MS
 
-            // Always log to persistent history — every increment is a real detected event
-            alertLogDao.insert(
-                SentryAlertLog(
-                    carId = carId,
-                    detectedAt = now,
-                    sessionStartedAt = sessionStartedAt,
-                    latitude = latitude,
-                    longitude = longitude,
-                    address = geofence?.ifBlank { null }
+            if (shouldNotify) {
+                // Increment counter and log to history only when we actually notify the user
+                val updated = dataStore.incrementEventCount(carId)
+                alertLogDao.insert(
+                    SentryAlertLog(
+                        carId = carId,
+                        detectedAt = now,
+                        sessionStartedAt = sessionStartedAt,
+                        latitude = latitude,
+                        longitude = longitude,
+                        address = geofence?.ifBlank { null }
+                    )
                 )
-            )
-
-            return SentryEvent.AlertDetected(updated.eventCount, shouldNotify)
+                return SentryEvent.AlertDetected(updated.eventCount, true)
+            }
+            // Within debounce window — ignore duplicate polls for the same event
         }
 
         return null
