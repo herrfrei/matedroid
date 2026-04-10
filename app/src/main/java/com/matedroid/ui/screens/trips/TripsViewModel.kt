@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
@@ -28,6 +29,9 @@ data class TripsUiState(
     val totalEnergyCharged: Double = 0.0,
     val availableYears: List<Int> = emptyList(),
     val selectedYear: Int? = null,
+    val isCustomDateFilter: Boolean = false,
+    val customStartDate: LocalDate? = null,
+    val customEndDate: LocalDate? = null,
     val units: Units? = null
 )
 
@@ -59,7 +63,22 @@ class TripsViewModel @Inject constructor(
     }
 
     fun setYear(year: Int?) {
-        _uiState.update { it.copy(selectedYear = year) }
+        _uiState.update { it.copy(
+            selectedYear = year,
+            isCustomDateFilter = false,
+            customStartDate = null,
+            customEndDate = null
+        )}
+        applyFilter()
+    }
+
+    fun setCustomDateRange(start: LocalDate, end: LocalDate) {
+        _uiState.update { it.copy(
+            selectedYear = null,
+            isCustomDateFilter = true,
+            customStartDate = start,
+            customEndDate = end
+        )}
         applyFilter()
     }
 
@@ -88,11 +107,16 @@ class TripsViewModel @Inject constructor(
     }
 
     private fun applyFilter() {
-        val year = _uiState.value.selectedYear
-        val filtered = if (year == null) {
-            allTrips
+        val state = _uiState.value
+        val filtered = if (state.isCustomDateFilter && state.customStartDate != null && state.customEndDate != null) {
+            allTrips.filter { trip ->
+                val tripDate = parseLocalDate(trip.startDate)
+                tripDate != null && !tripDate.isBefore(state.customStartDate) && !tripDate.isAfter(state.customEndDate)
+            }
+        } else if (state.selectedYear != null) {
+            allTrips.filter { parseYear(it.startDate) == state.selectedYear }
         } else {
-            allTrips.filter { parseYear(it.startDate) == year }
+            allTrips
         }
 
         _uiState.update {
@@ -106,11 +130,15 @@ class TripsViewModel @Inject constructor(
     }
 
     private fun parseYear(dateStr: String): Int? {
+        return parseLocalDate(dateStr)?.year
+    }
+
+    private fun parseLocalDate(dateStr: String): LocalDate? {
         return try {
-            OffsetDateTime.parse(dateStr).year
+            OffsetDateTime.parse(dateStr).toLocalDate()
         } catch (e: DateTimeParseException) {
             try {
-                LocalDateTime.parse(dateStr.replace("Z", "")).year
+                LocalDateTime.parse(dateStr.replace("Z", "")).toLocalDate()
             } catch (e2: Exception) {
                 null
             }

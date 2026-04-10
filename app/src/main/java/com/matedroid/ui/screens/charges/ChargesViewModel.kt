@@ -36,7 +36,8 @@ enum class DateFilter(@get:StringRes val labelRes: Int, val days: Long?) {
     LAST_30_DAYS(R.string.filter_last_30_days, 30),
     LAST_90_DAYS(R.string.filter_last_90_days, 90),
     LAST_YEAR(R.string.filter_last_year, 365),
-    ALL_TIME(R.string.filter_all_time, null)
+    ALL_TIME(R.string.filter_all_time, null),
+    CUSTOM(R.string.filter_custom, -1)
 }
 
 enum class ChargeTypeFilter(val label: String) {
@@ -76,6 +77,8 @@ data class ChargesUiState(
     val endDate: LocalDate? = null,
     val selectedFilter: DateFilter = DateFilter.LAST_7_DAYS,  // Preserve filter in ViewModel
     val chargeTypeFilter: ChargeTypeFilter = ChargeTypeFilter.ALL,
+    val customStartDate: LocalDate? = null,
+    val customEndDate: LocalDate? = null,
     val scrollPosition: Int = 0,  // First visible item index
     val scrollOffset: Int = 0,    // Scroll offset within first item
     val summary: ChargesSummary = ChargesSummary(),
@@ -136,6 +139,7 @@ class ChargesViewModel @Inject constructor(
     }
 
     fun setDateFilter(filter: DateFilter) {
+        if (filter == DateFilter.CUSTOM) return
         val endDate = LocalDate.now()
         val startDate = filter.days?.let { days ->
             if (days > 0) endDate.minusDays(days - 1) else endDate
@@ -143,9 +147,22 @@ class ChargesViewModel @Inject constructor(
         _uiState.update { it.copy(
             selectedFilter = filter,
             startDate = startDate,
-            endDate = if (filter.days != null) endDate else null
+            endDate = if (filter.days != null) endDate else null,
+            customStartDate = null,
+            customEndDate = null
         )}
         loadCharges(startDate, if (filter.days != null) endDate else null)
+    }
+
+    fun setCustomDateRange(start: LocalDate, end: LocalDate) {
+        _uiState.update { it.copy(
+            selectedFilter = DateFilter.CUSTOM,
+            startDate = start,
+            endDate = end,
+            customStartDate = start,
+            customEndDate = end
+        )}
+        loadCharges(start, end)
     }
 
     fun refresh() {

@@ -270,6 +270,9 @@
     <string name="filter_last_90_days">Últims 90 dies</string>
     <string name="filter_last_year">Últim any</string>
     <string name="filter_all_time">Tot</string>
+    <string name="filter_custom">Personalitzat</string>
+    <string name="filter_custom_from">Des de</string>
+    <string name="filter_custom_to">Fins a</string>
 
     <!-- Distance filter chips (metric) -->
     <string name="filter_all">Tots</string>

@@ -270,6 +270,9 @@
     <string name="filter_last_90_days">Ultimi 90 giorni</string>
     <string name="filter_last_year">Ultimo anno</string>
     <string name="filter_all_time">Tutto</string>
+    <string name="filter_custom">Personalizzato</string>
+    <string name="filter_custom_from">Da</string>
+    <string name="filter_custom_to">A</string>
 
     <!-- Distance filter chips (metric) -->
     <string name="filter_all">Tutti</string>

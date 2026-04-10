@@ -270,6 +270,10 @@
     <string name="filter_last_90_days">Last 90 days</string>
     <string name="filter_last_year">Last year</string>
     <string name="filter_all_time">All time</string>
+    <!-- Custom date range filter -->
+    <string name="filter_custom">Custom</string>
+    <string name="filter_custom_from">From</string>
+    <string name="filter_custom_to">To</string>
 
     <!-- Distance filter chips (metric) -->
     <string name="filter_all">All</string>

@@ -69,9 +69,12 @@ import com.matedroid.data.api.models.DriveData
 import com.matedroid.data.api.models.Units
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.BarChartData
+import com.matedroid.ui.components.DateRangePickerDialog
 import com.matedroid.ui.components.InteractiveBarChart
+import com.matedroid.ui.components.formatShortDate
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -156,10 +159,13 @@ fun DrivesScreen(
                     summary = uiState.summary,
                     selectedDateFilter = uiState.dateFilter,
                     selectedDistanceFilter = uiState.distanceFilter,
+                    customStartDate = uiState.customStartDate,
+                    customEndDate = uiState.customEndDate,
                     units = uiState.units,
                     palette = palette,
                     listState = listState,
                     onDateFilterSelected = { viewModel.setDateFilter(it) },
+                    onCustomRangeSelected = { start, end -> viewModel.setCustomDateRange(start, end) },
                     onDistanceFilterSelected = { viewModel.setDistanceFilter(it) },
                     onDriveClick = onNavigateToDriveDetail
                 )
@@ -177,10 +183,13 @@ private fun DrivesContent(
     summary: DrivesSummary,
     selectedDateFilter: DriveDateFilter,
     selectedDistanceFilter: DriveDistanceFilter,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     units: Units?,
     palette: CarColorPalette,
     listState: androidx.compose.foundation.lazy.LazyListState,
     onDateFilterSelected: (DriveDateFilter) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit,
     onDistanceFilterSelected: (DriveDistanceFilter) -> Unit,
     onDriveClick: (driveId: Int) -> Unit
 ) {
@@ -193,8 +202,11 @@ private fun DrivesContent(
         item {
             DateFilterChips(
                 selectedFilter = selectedDateFilter,
+                customStartDate = customStartDate,
+                customEndDate = customEndDate,
                 palette = palette,
-                onFilterSelected = onDateFilterSelected
+                onFilterSelected = onDateFilterSelected,
+                onCustomRangeSelected = onCustomRangeSelected
             )
         }
 
@@ -270,13 +282,18 @@ private fun DrivesContent(
 @Composable
 private fun DateFilterChips(
     selectedFilter: DriveDateFilter,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     palette: CarColorPalette,
-    onFilterSelected: (DriveDateFilter) -> Unit
+    onFilterSelected: (DriveDateFilter) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(DriveDateFilter.entries.toList()) { filter ->
+        items(DriveDateFilter.entries.filter { it != DriveDateFilter.CUSTOM }) { filter ->
             FilterChip(
                 selected = filter == selectedFilter,
                 onClick = { onFilterSelected(filter) },
@@ -287,6 +304,34 @@ private fun DateFilterChips(
                 )
             )
         }
+        item {
+            val label = if (selectedFilter == DriveDateFilter.CUSTOM && customStartDate != null && customEndDate != null) {
+                "${formatShortDate(customStartDate)} – ${formatShortDate(customEndDate)}"
+            } else {
+                stringResource(R.string.filter_custom)
+            }
+            FilterChip(
+                selected = selectedFilter == DriveDateFilter.CUSTOM,
+                onClick = { showDatePicker = true },
+                label = { Text(label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = palette.surface,
+                    selectedLabelColor = palette.onSurface
+                )
+            )
+        }
+    }
+
+    if (showDatePicker) {
+        DateRangePickerDialog(
+            onDismiss = { showDatePicker = false },
+            onRangeSelected = { start, end ->
+                showDatePicker = false
+                onCustomRangeSelected(start, end)
+            },
+            initialStart = customStartDate,
+            initialEnd = customEndDate
+        )
     }
 }
 

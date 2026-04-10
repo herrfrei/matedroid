@@ -79,9 +79,12 @@ import com.matedroid.R
 import com.matedroid.data.api.models.ChargeData
 import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.BarSegment
+import com.matedroid.ui.components.DateRangePickerDialog
 import com.matedroid.ui.components.InteractiveBarChart
+import com.matedroid.ui.components.formatShortDate
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -154,10 +157,13 @@ fun ChargesScreen(
                     teslamateBaseUrl = uiState.teslamateBaseUrl,
                     selectedDateFilter = uiState.selectedFilter,
                     selectedChargeTypeFilter = uiState.chargeTypeFilter,
+                    customStartDate = uiState.customStartDate,
+                    customEndDate = uiState.customEndDate,
                     initialScrollPosition = uiState.scrollPosition,
                     initialScrollOffset = uiState.scrollOffset,
                     palette = palette,
                     onDateFilterSelected = { viewModel.setDateFilter(it) },
+                    onCustomRangeSelected = { start, end -> viewModel.setCustomDateRange(start, end) },
                     availableLocations = uiState.availableLocations,
                     selectedLocations = uiState.selectedLocations,
                     onLocationFilterToggled = { viewModel.setLocationFilter(it) },
@@ -185,6 +191,8 @@ private fun ChargesContent(
     teslamateBaseUrl: String,
     selectedDateFilter: DateFilter,
     selectedChargeTypeFilter: ChargeTypeFilter,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     availableLocations: List<String>,
     selectedLocations: Set<String>,
     onLocationFilterToggled: (String) -> Unit,
@@ -193,6 +201,7 @@ private fun ChargesContent(
     initialScrollOffset: Int,
     palette: CarColorPalette,
     onDateFilterSelected: (DateFilter) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit,
     onChargeTypeFilterSelected: (ChargeTypeFilter) -> Unit,
     onChargeClick: (chargeId: Int, scrollIndex: Int, scrollOffset: Int) -> Unit
 ) {
@@ -211,8 +220,11 @@ private fun ChargesContent(
         item {
             DateFilterChips(
                 selectedFilter = selectedDateFilter,
+                customStartDate = customStartDate,
+                customEndDate = customEndDate,
                 palette = palette,
-                onFilterSelected = onDateFilterSelected
+                onFilterSelected = onDateFilterSelected,
+                onCustomRangeSelected = onCustomRangeSelected
             )
         }
 
@@ -318,13 +330,18 @@ private fun ChargesContent(
 @Composable
 private fun DateFilterChips(
     selectedFilter: DateFilter,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     palette: CarColorPalette,
-    onFilterSelected: (DateFilter) -> Unit
+    onFilterSelected: (DateFilter) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(DateFilter.entries.toList()) { filter ->
+        items(DateFilter.entries.filter { it != DateFilter.CUSTOM }) { filter ->
             FilterChip(
                 selected = filter == selectedFilter,
                 onClick = { onFilterSelected(filter) },
@@ -335,6 +352,34 @@ private fun DateFilterChips(
                 )
             )
         }
+        item {
+            val label = if (selectedFilter == DateFilter.CUSTOM && customStartDate != null && customEndDate != null) {
+                "${formatShortDate(customStartDate)} – ${formatShortDate(customEndDate)}"
+            } else {
+                stringResource(R.string.filter_custom)
+            }
+            FilterChip(
+                selected = selectedFilter == DateFilter.CUSTOM,
+                onClick = { showDatePicker = true },
+                label = { Text(label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = palette.surface,
+                    selectedLabelColor = palette.onSurface
+                )
+            )
+        }
+    }
+
+    if (showDatePicker) {
+        DateRangePickerDialog(
+            onDismiss = { showDatePicker = false },
+            onRangeSelected = { start, end ->
+                showDatePicker = false
+                onCustomRangeSelected(start, end)
+            },
+            initialStart = customStartDate,
+            initialEnd = customEndDate
+        )
     }
 }
 

@@ -270,6 +270,9 @@
     <string name="filter_last_90_days">近 90 天</string>
     <string name="filter_last_year">近一年</string>
     <string name="filter_all_time">全部</string>
+    <string name="filter_custom">自定义</string>
+    <string name="filter_custom_from">从</string>
+    <string name="filter_custom_to">到</string>
 
     <!-- Distance filter chips (metric) -->
     <string name="filter_all">全部</string>
