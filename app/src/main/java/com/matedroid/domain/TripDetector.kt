@@ -19,9 +19,9 @@ import javax.inject.Singleton
  *
  * Gap thresholds:
  * - drive → charge: max 15 min
- * - charge → drive: max 45 min
+ * - charge → drive: max 3 hours
  * - drive → drive:  max 30 min (e.g. highway rest stop without charging)
- * - charge → charge: max 45 min (charger hop at same location)
+ * - charge → charge: max 3 hours (charger hop at same location)
  *
  * Minimum: 2 real drives + 1 DC charge.
  */
@@ -32,7 +32,7 @@ class TripDetector @Inject constructor() {
         private const val MICRO_DRIVE_THRESHOLD_KM = 1.0
         private const val MIN_TRIP_DISTANCE_KM = 300.0
         private const val MAX_DRIVE_TO_CHARGE_GAP_MIN = 15L
-        private const val MAX_CHARGE_TO_DRIVE_GAP_MIN = 45L
+        private const val MAX_CHARGE_TO_DRIVE_GAP_MIN = 180L
         private const val MAX_DRIVE_TO_DRIVE_GAP_MIN = 30L
     }
 
@@ -79,7 +79,7 @@ class TripDetector @Inject constructor() {
                     lastEventEnd = parseDateTime(event.endDate)
                     lastWasDrive = false
                 }
-                // charge → drive: max 45min gap
+                // charge → drive: max 3h gap
                 !lastWasDrive && event is Event.Drive && gapMin <= MAX_CHARGE_TO_DRIVE_GAP_MIN -> {
                     currentDrives.add(event.drive)
                     lastEventEnd = parseDateTime(event.endDate)
@@ -91,7 +91,7 @@ class TripDetector @Inject constructor() {
                     lastEventEnd = parseDateTime(event.endDate)
                     lastWasDrive = true
                 }
-                // charge → charge: max 45min gap (charger hop at same location)
+                // charge → charge: max 3h gap (charger hop at same location)
                 !lastWasDrive && event is Event.Charge && gapMin <= MAX_CHARGE_TO_DRIVE_GAP_MIN -> {
                     currentCharges.add(event.charge)
                     lastEventEnd = parseDateTime(event.endDate)
