@@ -64,7 +64,8 @@ enum class DriveDateFilter(@get:StringRes val labelRes: Int, val days: Long?) {
     LAST_30_DAYS(R.string.filter_last_30_days, 30),
     LAST_90_DAYS(R.string.filter_last_90_days, 90),
     LAST_YEAR(R.string.filter_last_year, 365),
-    ALL_TIME(R.string.filter_all_time, null)
+    ALL_TIME(R.string.filter_all_time, null),
+    CUSTOM(R.string.filter_custom, -1)
 }
 
 data class DrivesUiState(
@@ -80,6 +81,8 @@ data class DrivesUiState(
     val units: Units? = null,
     val distanceFilter: DriveDistanceFilter = DriveDistanceFilter.ALL,
     val dateFilter: DriveDateFilter = DriveDateFilter.LAST_7_DAYS,
+    val customStartDate: LocalDate? = null,
+    val customEndDate: LocalDate? = null,
     val scrollPosition: Int = 0,
     val scrollOffset: Int = 0
 )
@@ -128,6 +131,7 @@ class DrivesViewModel @Inject constructor(
     }
 
     fun setDateFilter(filter: DriveDateFilter) {
+        if (filter == DriveDateFilter.CUSTOM) return
         val endDate = LocalDate.now()
         val startDate = filter.days?.let { days ->
             if (days > 0) endDate.minusDays(days - 1) else endDate
@@ -135,9 +139,22 @@ class DrivesViewModel @Inject constructor(
         _uiState.update { it.copy(
             dateFilter = filter,
             startDate = startDate,
-            endDate = if (filter.days != null) endDate else null
+            endDate = if (filter.days != null) endDate else null,
+            customStartDate = null,
+            customEndDate = null
         )}
         loadDrives(startDate, if (filter.days != null) endDate else null)
+    }
+
+    fun setCustomDateRange(start: LocalDate, end: LocalDate) {
+        _uiState.update { it.copy(
+            dateFilter = DriveDateFilter.CUSTOM,
+            startDate = start,
+            endDate = end,
+            customStartDate = start,
+            customEndDate = end
+        )}
+        loadDrives(start, end)
     }
 
     fun saveScrollPosition(index: Int, offset: Int) {

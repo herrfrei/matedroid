@@ -139,6 +139,35 @@ class TripDetectorTest {
     }
 
     @Test
+    fun `drive within 3h of DC charge is part of trip`() {
+        val drives = listOf(
+            drive(1, "2024-01-01T08:00:00Z", "2024-01-01T10:00:00Z"),
+            // 2h55m after charge ends — within 3h window
+            drive(2, "2024-01-01T13:30:00Z", "2024-01-01T15:30:00Z")
+        )
+        val charges = listOf(
+            charge(1, "2024-01-01T10:05:00Z", "2024-01-01T10:35:00Z")
+        )
+        val result = detector.detectTrips(drives, charges)
+        assertEquals(1, result.size)
+        assertEquals(2, result[0].drives.size)
+    }
+
+    @Test
+    fun `drive over 3h after DC charge breaks trip`() {
+        val drives = listOf(
+            drive(1, "2024-01-01T08:00:00Z", "2024-01-01T10:00:00Z"),
+            // 3h25m after charge ends — over 3h window
+            drive(2, "2024-01-01T14:00:00Z", "2024-01-01T16:00:00Z")
+        )
+        val charges = listOf(
+            charge(1, "2024-01-01T10:05:00Z", "2024-01-01T10:35:00Z")
+        )
+        val result = detector.detectTrips(drives, charges)
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
     fun `micro drives are filtered out`() {
         val drives = listOf(
             drive(1, "2024-01-01T08:00:00Z", "2024-01-01T10:00:00Z", distance = 200.0),

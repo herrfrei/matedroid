@@ -45,6 +45,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -57,8 +60,11 @@ import com.matedroid.R
 import com.matedroid.data.api.models.Units
 import com.matedroid.domain.model.Trip
 import com.matedroid.domain.model.UnitFormatter
+import com.matedroid.ui.components.DateRangePickerDialog
+import com.matedroid.ui.components.formatShortDate
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -140,7 +146,11 @@ fun TripsScreen(
                         totalEnergyCharged = uiState.totalEnergyCharged,
                         availableYears = uiState.availableYears,
                         selectedYear = uiState.selectedYear,
+                        isCustomDateFilter = uiState.isCustomDateFilter,
+                        customStartDate = uiState.customStartDate,
+                        customEndDate = uiState.customEndDate,
                         onYearSelected = { viewModel.setYear(it) },
+                        onCustomRangeSelected = { start, end -> viewModel.setCustomDateRange(start, end) },
                         units = uiState.units,
                         palette = palette,
                         onTripClick = { trip ->
@@ -162,7 +172,11 @@ private fun TripsContent(
     totalEnergyCharged: Double,
     availableYears: List<Int>,
     selectedYear: Int?,
+    isCustomDateFilter: Boolean,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     onYearSelected: (Int?) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit,
     units: Units?,
     palette: CarColorPalette,
     onTripClick: (Trip) -> Unit
@@ -178,8 +192,12 @@ private fun TripsContent(
                 YearFilterChips(
                     years = availableYears,
                     selectedYear = selectedYear,
+                    isCustomDateFilter = isCustomDateFilter,
+                    customStartDate = customStartDate,
+                    customEndDate = customEndDate,
                     palette = palette,
-                    onYearSelected = onYearSelected
+                    onYearSelected = onYearSelected,
+                    onCustomRangeSelected = onCustomRangeSelected
                 )
             }
         }
@@ -464,15 +482,21 @@ private fun TripStatCard(
 private fun YearFilterChips(
     years: List<Int>,
     selectedYear: Int?,
+    isCustomDateFilter: Boolean,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     palette: CarColorPalette,
-    onYearSelected: (Int?) -> Unit
+    onYearSelected: (Int?) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
             FilterChip(
-                selected = selectedYear == null,
+                selected = selectedYear == null && !isCustomDateFilter,
                 onClick = { onYearSelected(null) },
                 label = { Text(stringResource(R.string.filter_all_time)) },
                 colors = FilterChipDefaults.filterChipColors(
@@ -483,7 +507,7 @@ private fun YearFilterChips(
         }
         items(years) { year ->
             FilterChip(
-                selected = year == selectedYear,
+                selected = year == selectedYear && !isCustomDateFilter,
                 onClick = { onYearSelected(year) },
                 label = { Text(year.toString()) },
                 colors = FilterChipDefaults.filterChipColors(
@@ -492,6 +516,34 @@ private fun YearFilterChips(
                 )
             )
         }
+        item {
+            val label = if (isCustomDateFilter && customStartDate != null && customEndDate != null) {
+                "${formatShortDate(customStartDate)} – ${formatShortDate(customEndDate)}"
+            } else {
+                stringResource(R.string.filter_custom)
+            }
+            FilterChip(
+                selected = isCustomDateFilter,
+                onClick = { showDatePicker = true },
+                label = { Text(label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = palette.surface,
+                    selectedLabelColor = palette.onSurface
+                )
+            )
+        }
+    }
+
+    if (showDatePicker) {
+        DateRangePickerDialog(
+            onDismiss = { showDatePicker = false },
+            onRangeSelected = { start, end ->
+                showDatePicker = false
+                onCustomRangeSelected(start, end)
+            },
+            initialStart = customStartDate,
+            initialEnd = customEndDate
+        )
     }
 }
 
