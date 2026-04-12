@@ -192,7 +192,7 @@
     <string name="settings_http_basic_auth_username_placeholder">用户名</string>
     <string name="settings_http_basic_auth_password_label">HTTP Basic Auth 密码</string>
     <string name="settings_http_basic_auth_password_placeholder">密码</string>
-    <string name="settings_http_basic_auth_hint">如果你的服务器在使用 HTTP Basic 认证的反向代理后面，请设置这些字段。</string>
+    <string name="settings_http_basic_auth_hint">如果你的服务器在使用 HTTP Basic 认证的反向代理后面，请设置这些字段（例如使用 MyTeslaMate 时）。</string>
     <string name="hide_password">隐藏密码</string>
     <string name="show_password">显示密码</string>
 

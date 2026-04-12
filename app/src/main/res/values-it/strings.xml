@@ -192,7 +192,7 @@
     <string name="settings_http_basic_auth_username_placeholder">Nome utente</string>
     <string name="settings_http_basic_auth_password_label">Password HTTP Basic Auth</string>
     <string name="settings_http_basic_auth_password_placeholder">Password</string>
-    <string name="settings_http_basic_auth_hint">Imposta questi campi se il server è dietro un reverse proxy con autenticazione HTTP Basic.</string>
+    <string name="settings_http_basic_auth_hint">Imposta questi campi se il server è dietro un reverse proxy con autenticazione HTTP Basic (ad esempio se usi MyTeslaMate).</string>
     <string name="hide_password">Nascondi password</string>
     <string name="show_password">Mostra password</string>
 
