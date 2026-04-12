@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **HTTP Basic Auth**: Support for HTTP Basic Authentication in the Advanced network settings, for servers behind a reverse proxy requiring credentials.
 - **Custom date range filter**: Drives, charges, and trips pages now have a "Custom" filter chip that opens two date pickers (from/to). The chip label shows the selected range in locale-aware DD/MM or MM/DD format.
 - **Charging elapsed timer in status bar**: Live chronometer displayed next to the notification icon in the Android status bar during active charging sessions (MM:SS, then H:MM:SS after 1 hour).
 - **DC unplug warning**: When a DC charge completes but the cable remains plugged in, the notification icon switches to a warning variant with a chronometer counting time since completion. The live charge screen shows an orange warning banner prompting the user to unplug and free the DC spot. AC charges continue to dismiss the notification as before.

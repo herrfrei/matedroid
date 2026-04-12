@@ -122,6 +122,8 @@ fun SettingsScreen(
                 onServerUrlChange = viewModel::updateServerUrl,
                 onSecondaryServerUrlChange = viewModel::updateSecondaryServerUrl,
                 onApiTokenChange = viewModel::updateApiToken,
+                onHttpBasicAuthUsernameChange = viewModel::updateHttpBasicAuthUsername,
+                onHttpBasicAuthPasswordChange = viewModel::updateHttpBasicAuthPassword,
                 onAcceptInvalidCertsChange = viewModel::updateAcceptInvalidCerts,
                 onCurrencyChange = viewModel::updateCurrency,
                 onShowShortDrivesChargesChange = viewModel::updateShowShortDrivesCharges,
@@ -204,6 +206,8 @@ private fun SettingsContent(
     onServerUrlChange: (String) -> Unit,
     onSecondaryServerUrlChange: (String) -> Unit,
     onApiTokenChange: (String) -> Unit,
+    onHttpBasicAuthUsernameChange: (String) -> Unit,
+    onHttpBasicAuthPasswordChange: (String) -> Unit,
     onAcceptInvalidCertsChange: (Boolean) -> Unit,
     onCurrencyChange: (String) -> Unit,
     onShowShortDrivesChargesChange: (Boolean) -> Unit,
@@ -217,6 +221,7 @@ private fun SettingsContent(
     onSimulateSentryEvent: () -> Unit = {}
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
+    var basicAuthPasswordVisible by remember { mutableStateOf(false) }
     var currencyDropdownExpanded by remember { mutableStateOf(false) }
     var showShortDrivesChargesInfoDialog by remember { mutableStateOf(false) }
     var showResyncConfirmDialog by remember { mutableStateOf(false) }
@@ -326,6 +331,58 @@ private fun SettingsContent(
 
             Text(
                 text = stringResource(R.string.settings_api_token_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // HTTP Basic Auth
+            OutlinedTextField(
+                value = uiState.httpBasicAuthUsername,
+                onValueChange = onHttpBasicAuthUsernameChange,
+                label = { Text(stringResource(R.string.settings_http_basic_auth_username_label)) },
+                placeholder = { Text(stringResource(R.string.settings_http_basic_auth_username_placeholder)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                enabled = !uiState.isTesting && !uiState.isSaving
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = uiState.httpBasicAuthPassword,
+                onValueChange = onHttpBasicAuthPasswordChange,
+                label = { Text(stringResource(R.string.settings_http_basic_auth_password_label)) },
+                placeholder = { Text(stringResource(R.string.settings_http_basic_auth_password_placeholder)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = if (basicAuthPasswordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    IconButton(onClick = { basicAuthPasswordVisible = !basicAuthPasswordVisible }) {
+                        Icon(
+                            imageVector = if (basicAuthPasswordVisible) {
+                                Icons.Filled.VisibilityOff
+                            } else {
+                                Icons.Filled.Visibility
+                            },
+                            contentDescription = stringResource(
+                                if (basicAuthPasswordVisible) R.string.hide_password else R.string.show_password
+                            )
+                        )
+                    }
+                },
+                enabled = !uiState.isTesting && !uiState.isSaving
+            )
+
+            Text(
+                text = stringResource(R.string.settings_http_basic_auth_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -812,6 +869,8 @@ private fun SettingsScreenPreview() {
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onHttpBasicAuthUsernameChange = {},
+            onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
             onCurrencyChange = {},
             onShowShortDrivesChargesChange = {},
@@ -836,6 +895,8 @@ private fun SettingsScreenWithResultPreview() {
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onHttpBasicAuthUsernameChange = {},
+            onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
             onCurrencyChange = {},
             onShowShortDrivesChargesChange = {},
@@ -862,6 +923,8 @@ private fun SettingsScreenWithBothResultsPreview() {
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onHttpBasicAuthUsernameChange = {},
+            onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
             onCurrencyChange = {},
             onShowShortDrivesChargesChange = {},
@@ -884,6 +947,8 @@ private fun SettingsScreenWithWarningPreview() {
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onHttpBasicAuthUsernameChange = {},
+            onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
             onCurrencyChange = {},
             onShowShortDrivesChargesChange = {},

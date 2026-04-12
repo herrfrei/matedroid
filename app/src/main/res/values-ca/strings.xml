@@ -187,6 +187,15 @@
     <string name="hide_token">Amaga el token</string>
     <string name="show_token">Mostra el token</string>
 
+    <!-- HTTP Basic Auth for reverse proxy -->
+    <string name="settings_http_basic_auth_username_label">Usuari HTTP Basic Auth (opcional)</string>
+    <string name="settings_http_basic_auth_username_placeholder">Usuari</string>
+    <string name="settings_http_basic_auth_password_label">Contrasenya HTTP Basic Auth</string>
+    <string name="settings_http_basic_auth_password_placeholder">Contrasenya</string>
+    <string name="settings_http_basic_auth_hint">Configura aquests camps si el servidor està darrere d\'un proxy invers amb autenticació HTTP Basic.</string>
+    <string name="hide_password">Amaga la contrasenya</string>
+    <string name="show_password">Mostra la contrasenya</string>
+
     <!-- Accept invalid certificates toggle -->
     <string name="settings_accept_invalid_certs">Accepta certificats no vàlids</string>
     <string name="settings_accept_invalid_certs_hint">Activa per a certificats autofirmats</string>

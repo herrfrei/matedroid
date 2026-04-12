@@ -187,6 +187,15 @@
     <string name="hide_token">Hide token</string>
     <string name="show_token">Show token</string>
 
+    <!-- HTTP Basic Auth for reverse proxy -->
+    <string name="settings_http_basic_auth_username_label">HTTP Basic Auth username (optional)</string>
+    <string name="settings_http_basic_auth_username_placeholder">Username</string>
+    <string name="settings_http_basic_auth_password_label">HTTP Basic Auth password</string>
+    <string name="settings_http_basic_auth_password_placeholder">Password</string>
+    <string name="settings_http_basic_auth_hint">Set these if your server is behind a reverse proxy with HTTP Basic Authentication.</string>
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+
     <!-- Accept invalid certificates toggle -->
     <string name="settings_accept_invalid_certs">Accept invalid certificates</string>
     <string name="settings_accept_invalid_certs_hint">Enable for self-signed certificates</string>
