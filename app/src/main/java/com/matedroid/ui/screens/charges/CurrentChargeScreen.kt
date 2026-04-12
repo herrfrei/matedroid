@@ -552,57 +552,45 @@ private fun CurrentChargeHeaderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // Energy added with AC/DC badge
+                // Instant power with AC/DC badge
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Bolt,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = solidGreen
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "%.2f kWh".format(detail.chargeEnergyAdded ?: 0.0),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = solidGreen
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            if (instantPower != null) {
+                                Text(
+                                    text = "$instantPower kW",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
                             LiveChargeTypeBadge(isDcCharge = isDcCharge)
                         }
                         Text(
-                            text = stringResource(R.string.soc_energy_added),
+                            text = stringResource(R.string.soc_instant_power),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         )
                     }
                 }
 
-                // Instant power
-                if (instantPower != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                // Energy added as "+NN% (MM,NN kWh)"
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        val socAdded = currentLevel - startLevel
+                        val kwhAdded = detail.chargeEnergyAdded ?: 0.0
+                        Text(
+                            text = "+%d%% (%.2f kWh)".format(socAdded, kwhAdded),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = solidGreen
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "$instantPower kW",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = stringResource(R.string.soc_instant_power),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.soc_energy_added),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
                     }
                 }
             }
