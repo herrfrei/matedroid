@@ -1,0 +1,7 @@
+Nuevas formas de filtrar datos y mejores notificaciones de carga.
+
+Agregado:
+- Soporte HTTP Basic Auth para servidores detrás de un proxy inverso
+- Filtro de rango de fechas personalizado en viajes, cargas y trayectos
+- Temporizador de carga transcurrido en la notificación de la barra de estado
+- Aviso de desconexión DC cuando la carga termina pero el cable sigue conectado

@@ -1,0 +1,7 @@
+Noves maneres de filtrar les dades i notificacions de càrrega millorades.
+
+Afegit:
+- Suport HTTP Basic Auth per a servidors darrere d'un proxy invers
+- Filtre d'interval de dates personalitzat a viatges, càrregues i trajectes
+- Temporitzador de càrrega transcorregut a la notificació de la barra d'estat
+- Avís de desconnexió DC quan la càrrega acaba però el cable segueix connectat

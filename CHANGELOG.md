@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0-beta1] - 2026-04-13
+
 ### Added
 - **HTTP Basic Auth**: Support for HTTP Basic Authentication in the Advanced network settings, for servers behind a reverse proxy requiring credentials.
 - **Custom date range filter**: Drives, charges, and trips pages now have a "Custom" filter chip that opens two date pickers (from/to). The chip label shows the selected range in locale-aware DD/MM or MM/DD format.
@@ -506,7 +508,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.5.0-beta1...HEAD
+[1.5.0-beta1]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0-beta1
 [1.4.1]: https://github.com/vide/matedroid/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/vide/matedroid/compare/v1.3.0...v1.4.0
 [1.4.0-beta2]: https://github.com/vide/matedroid/compare/v1.4.0-beta1...v1.4.0-beta2
