@@ -187,6 +187,15 @@
     <string name="hide_token">Nascondi token</string>
     <string name="show_token">Mostra token</string>
 
+    <!-- HTTP Basic Auth for reverse proxy -->
+    <string name="settings_http_basic_auth_username_label">Nome utente HTTP Basic Auth (opzionale)</string>
+    <string name="settings_http_basic_auth_username_placeholder">Nome utente</string>
+    <string name="settings_http_basic_auth_password_label">Password HTTP Basic Auth</string>
+    <string name="settings_http_basic_auth_password_placeholder">Password</string>
+    <string name="settings_http_basic_auth_hint">Imposta questi campi se il server è dietro un reverse proxy con autenticazione HTTP Basic (ad esempio se usi MyTeslaMate).</string>
+    <string name="hide_password">Nascondi password</string>
+    <string name="show_password">Mostra password</string>
+
     <!-- Accept invalid certificates toggle -->
     <string name="settings_accept_invalid_certs">Accetta certificati non validi</string>
     <string name="settings_accept_invalid_certs_hint">Abilita per certificati autofirmati</string>

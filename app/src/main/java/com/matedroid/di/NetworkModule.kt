@@ -96,7 +96,9 @@ object NetworkModule {
 private data class ApiCacheKey(
     val baseUrl: String,
     val acceptInvalidCerts: Boolean,
-    val apiToken: String
+    val apiToken: String,
+    val httpBasicAuthUsername: String,
+    val httpBasicAuthPassword: String
 )
 
 /**
@@ -124,14 +126,16 @@ class TeslamateApiFactory(
         val settings = runBlocking { settingsDataStore.settings.first() }
         val useInsecure = acceptInvalidCerts ?: settings.acceptInvalidCerts
         val apiToken = settings.apiToken
+        val basicAuthUsername = settings.httpBasicAuthUsername
+        val basicAuthPassword = settings.httpBasicAuthPassword
 
-        val cacheKey = ApiCacheKey(normalizedUrl, useInsecure, apiToken)
+        val cacheKey = ApiCacheKey(normalizedUrl, useInsecure, apiToken, basicAuthUsername, basicAuthPassword)
 
         // Return cached API if available
         apiCache[cacheKey]?.let { return it }
 
         // Create new API instance
-        val okHttpClient = createOkHttpClient(apiToken, useInsecure)
+        val okHttpClient = createOkHttpClient(apiToken, useInsecure, basicAuthUsername, basicAuthPassword)
 
         val api = Retrofit.Builder()
             .baseUrl(normalizedUrl)
@@ -160,11 +164,20 @@ class TeslamateApiFactory(
         apiCache.clear()
     }
 
-    private fun createOkHttpClient(apiToken: String, acceptInvalidCerts: Boolean): OkHttpClient {
+    private fun createOkHttpClient(
+        apiToken: String,
+        acceptInvalidCerts: Boolean,
+        basicAuthUsername: String = "",
+        basicAuthPassword: String = ""
+    ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val requestBuilder = chain.request().newBuilder()
                     .header("User-Agent", "MateDroid/${BuildConfig.VERSION_NAME}")
+                if (basicAuthUsername.isNotBlank() && basicAuthPassword.isNotBlank()) {
+                    requestBuilder.addHeader("Authorization",
+                        okhttp3.Credentials.basic(basicAuthUsername, basicAuthPassword))
+                }
                 if (apiToken.isNotBlank()) {
                     requestBuilder.addHeader("Authorization", "Bearer $apiToken")
                 }

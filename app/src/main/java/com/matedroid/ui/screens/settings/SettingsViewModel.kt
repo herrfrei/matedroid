@@ -37,6 +37,8 @@ data class SettingsUiState(
     val serverUrl: String = "",
     val secondaryServerUrl: String = "",
     val apiToken: String = "",
+    val httpBasicAuthUsername: String = "",
+    val httpBasicAuthPassword: String = "",
     val acceptInvalidCerts: Boolean = false,
     val currencyCode: String = "EUR",
     val showShortDrivesCharges: Boolean = false,
@@ -98,6 +100,8 @@ class SettingsViewModel @Inject constructor(
                 serverUrl = settings.serverUrl,
                 secondaryServerUrl = settings.secondaryServerUrl,
                 apiToken = settings.apiToken,
+                httpBasicAuthUsername = settings.httpBasicAuthUsername,
+                httpBasicAuthPassword = settings.httpBasicAuthPassword,
                 acceptInvalidCerts = settings.acceptInvalidCerts,
                 currencyCode = settings.currencyCode,
                 showShortDrivesCharges = settings.showShortDrivesCharges,
@@ -128,6 +132,30 @@ class SettingsViewModel @Inject constructor(
             testResult = null,
             error = null
         )
+    }
+
+    fun updateHttpBasicAuthUsername(username: String) {
+        _uiState.value = _uiState.value.copy(
+            httpBasicAuthUsername = username,
+            testResult = null,
+            error = null
+        )
+        // Save eagerly so testConnection() picks up the unsaved value
+        viewModelScope.launch {
+            settingsDataStore.saveHttpBasicAuth(username, _uiState.value.httpBasicAuthPassword)
+        }
+    }
+
+    fun updateHttpBasicAuthPassword(password: String) {
+        _uiState.value = _uiState.value.copy(
+            httpBasicAuthPassword = password,
+            testResult = null,
+            error = null
+        )
+        // Save eagerly so testConnection() picks up the unsaved value
+        viewModelScope.launch {
+            settingsDataStore.saveHttpBasicAuth(_uiState.value.httpBasicAuthUsername, password)
+        }
     }
 
     fun updateAcceptInvalidCerts(accept: Boolean) {
@@ -262,6 +290,8 @@ class SettingsViewModel @Inject constructor(
                     serverUrl = url,
                     secondaryServerUrl = secondaryUrl,
                     apiToken = _uiState.value.apiToken,
+                    httpBasicAuthUsername = _uiState.value.httpBasicAuthUsername,
+                    httpBasicAuthPassword = _uiState.value.httpBasicAuthPassword,
                     acceptInvalidCerts = _uiState.value.acceptInvalidCerts,
                     currencyCode = _uiState.value.currencyCode
                 )
