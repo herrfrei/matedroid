@@ -140,6 +140,10 @@ class SettingsViewModel @Inject constructor(
             testResult = null,
             error = null
         )
+        // Save eagerly so testConnection() picks up the unsaved value
+        viewModelScope.launch {
+            settingsDataStore.saveHttpBasicAuth(username, _uiState.value.httpBasicAuthPassword)
+        }
     }
 
     fun updateHttpBasicAuthPassword(password: String) {
@@ -148,6 +152,10 @@ class SettingsViewModel @Inject constructor(
             testResult = null,
             error = null
         )
+        // Save eagerly so testConnection() picks up the unsaved value
+        viewModelScope.launch {
+            settingsDataStore.saveHttpBasicAuth(_uiState.value.httpBasicAuthUsername, password)
+        }
     }
 
     fun updateAcceptInvalidCerts(accept: Boolean) {

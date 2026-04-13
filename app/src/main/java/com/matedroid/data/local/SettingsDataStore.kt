@@ -163,6 +163,13 @@ class SettingsDataStore @Inject constructor(
         }
     }
 
+    suspend fun saveHttpBasicAuth(username: String, password: String) {
+        context.dataStore.edit { preferences ->
+            preferences[httpBasicAuthUsernameKey] = username
+            preferences[httpBasicAuthPasswordKey] = password
+        }
+    }
+
     suspend fun saveServerUrl(url: String) {
         context.dataStore.edit { preferences ->
             preferences[serverUrlKey] = url
