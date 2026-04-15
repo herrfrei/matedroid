@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.5.0-beta1] - 2026-04-13
+## [1.5.0] - 2026-04-15
 
 ### Added
-- **HTTP Basic Auth**: Support for HTTP Basic Authentication in the Advanced network settings, for servers behind a reverse proxy requiring credentials.
+- **HTTP Basic Auth**: Support for HTTP Basic Authentication in the Advanced network settings, for servers behind a reverse proxy requiring credentials. Enables compatibility with MyTeslaMate and other setups using authenticated reverse proxies.
 - **Custom date range filter**: Drives, charges, and trips pages now have a "Custom" filter chip that opens two date pickers (from/to). The chip label shows the selected range in locale-aware DD/MM or MM/DD format.
 - **Charging elapsed timer in status bar**: Live chronometer displayed next to the notification icon in the Android status bar during active charging sessions (MM:SS, then H:MM:SS after 1 hour).
 - **DC unplug warning**: When a DC charge completes but the cable remains plugged in, the notification icon switches to a warning variant with a chronometer counting time since completion. The live charge screen shows an orange warning banner prompting the user to unplug and free the DC spot. AC charges continue to dismiss the notification as before.
@@ -508,7 +508,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.5.0-beta1...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0
 [1.5.0-beta1]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0-beta1
 [1.4.1]: https://github.com/vide/matedroid/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/vide/matedroid/compare/v1.3.0...v1.4.0

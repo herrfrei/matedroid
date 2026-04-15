@@ -1,0 +1,7 @@
+MateDroid ara suporta HTTP Basic Auth, fent facil la connexio a traves de MyTeslaMate i altres proxies inversos autenticats. Tambe pots filtrar viatges, carregues i rutes per interval de dates.
+
+Afegit:
+- Suport HTTP Basic Auth per a servidors darrere de proxies inversos autenticats
+- Filtre d'interval de dates a viatges, carregues i rutes
+- Temporitzador de carrega en curs a la barra d'estat
+- Avis de desconnexio DC quan la carrega finalitza pero el cable segueix connectat

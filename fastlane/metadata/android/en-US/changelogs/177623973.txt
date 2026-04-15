@@ -1,0 +1,7 @@
+MateDroid now supports HTTP Basic Auth, making it easy to connect through MyTeslaMate and other authenticated reverse proxies. You can also filter drives, charges, and trips by custom date ranges.
+
+Added:
+- HTTP Basic Auth support for servers behind authenticated reverse proxies
+- Custom date range filter on drives, charges, and trips
+- Live charging elapsed timer in the status bar
+- DC unplug warning when charge completes but cable stays plugged in
