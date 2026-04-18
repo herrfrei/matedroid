@@ -47,7 +47,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -78,8 +77,8 @@ import com.matedroid.data.api.models.Units
 import com.matedroid.data.repository.WeatherPoint
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
+import com.matedroid.ui.screens.trips.displayName
 import com.matedroid.ui.theme.CarColorPalettes
-import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
@@ -98,6 +97,7 @@ fun DriveDetailScreen(
     driveId: Int,
     exteriorColor: String? = null,
     onNavigateBack: () -> Unit,
+    onNavigateToTripDetail: (tripStartDate: String) -> Unit = {},
     viewModel: DriveDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -153,6 +153,9 @@ fun DriveDetailScreen(
                     routeColor = palette.accent,
                     weatherPoints = uiState.weatherPoints,
                     isLoadingWeather = uiState.isLoadingWeather,
+                    containingTrip = uiState.containingTrip,
+                    onNavigateToTripDetail = onNavigateToTripDetail,
+                    onRemoveFromTrip = viewModel::removeFromTrip,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -168,6 +171,9 @@ private fun DriveDetailContent(
     routeColor: Color,
     weatherPoints: List<WeatherPoint>,
     isLoadingWeather: Boolean,
+    containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
+    onNavigateToTripDetail: (String) -> Unit,
+    onRemoveFromTrip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -188,6 +194,16 @@ private fun DriveDetailContent(
     ) {
         // Route header card
         RouteHeaderCard(detail = detail)
+
+        // Part-of-trip banner: link to the containing saved trip + detach action
+        if (containingTrip != null) {
+            val (_, trip) = containingTrip
+            com.matedroid.ui.components.PartOfTripCard(
+                tripRoute = trip.displayName(),
+                onNavigateToTrip = { onNavigateToTripDetail(trip.startDate) },
+                onConfirmRemove = onRemoveFromTrip
+            )
+        }
 
         // Map showing the route
         if (!detail.positions.isNullOrEmpty()) {
@@ -269,22 +285,25 @@ private fun DriveDetailContent(
 
             // Charts
             if (!detail.positions.isNullOrEmpty() && detail.positions.size > 2) {
-                // Extract time labels for X axis (5 labels: start, 1st quarter, half, 3rd quarter, end)
-                val timeLabels = extractTimeLabels(detail.positions)
                 val positions = detail.positions
-                val timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-                val fractionToTimeLabel: (Float) -> String = { fraction ->
-                    val index = (fraction * positions.lastIndex).roundToInt().coerceIn(0, positions.lastIndex)
-                    positions[index].date?.let { dateStr ->
-                        try {
-                            val dt = try {
-                                java.time.OffsetDateTime.parse(dateStr).toLocalDateTime()
-                            } catch (e: java.time.format.DateTimeParseException) {
-                                java.time.LocalDateTime.parse(dateStr.replace("Z", ""))
-                            }
-                            dt.format(timeFormatter)
-                        } catch (e: Exception) { "" }
-                    } ?: ""
+                // Remember expensive computations so they don't re-run on every
+                // recomposition during tooltip swipe interactions
+                val timeLabels = remember(positions) { extractTimeLabels(positions) }
+                val timeFormatter = remember { java.time.format.DateTimeFormatter.ofPattern("HH:mm") }
+                val fractionToTimeLabel: (Float) -> String = remember(positions) {
+                    { fraction: Float ->
+                        val index = (fraction * positions.lastIndex).roundToInt().coerceIn(0, positions.lastIndex)
+                        positions[index].date?.let { dateStr ->
+                            try {
+                                val dt = try {
+                                    java.time.OffsetDateTime.parse(dateStr).toLocalDateTime()
+                                } catch (e: java.time.format.DateTimeParseException) {
+                                    java.time.LocalDateTime.parse(dateStr.replace("Z", ""))
+                                }
+                                dt.format(timeFormatter)
+                            } catch (e: Exception) { "" }
+                        } ?: ""
+                    }
                 }
 
                 SpeedChartCard(
@@ -509,11 +528,6 @@ private fun DriveMapCard(positions: List<DrivePosition>, routeColor: Color) {
                     .height(250.dp)
                     .clip(RoundedCornerShape(8.dp))
             ) {
-                DisposableEffect(Unit) {
-                    Configuration.getInstance().userAgentValue = "MateDroid/1.0"
-                    onDispose { }
-                }
-
                 AndroidView(
                     factory = { ctx ->
                         MapView(ctx).apply {
@@ -673,8 +687,13 @@ private fun SpeedChartCard(
     onXSelected: ((Float?) -> Unit)? = null,
     fractionToTimeLabel: ((Float) -> String)? = null
 ) {
-    val speeds = positions.mapNotNull { it.speed?.toFloat() }
+    val speeds = remember(positions) { positions.mapNotNull { it.speed?.toFloat() } }
     if (speeds.size < 2) return
+
+    val isImperial = units?.isImperial == true
+    val stableConvertValue: (Float) -> Float = remember(isImperial) {
+        { value: Float -> if (isImperial) (value * 0.621371f) else value }
+    }
 
     ChartCard(
         title = stringResource(R.string.speed_profile),
@@ -686,9 +705,7 @@ private fun SpeedChartCard(
         externalSelectedFraction = externalSelectedFraction,
         onXSelected = onXSelected,
         fractionToTimeLabel = fractionToTimeLabel,
-        convertValue = { value ->
-            if (units?.isImperial == true) (value * 0.621371f) else value
-        }
+        convertValue = stableConvertValue
     )
 }
 
@@ -700,7 +717,7 @@ private fun PowerChartCard(
     onXSelected: ((Float?) -> Unit)? = null,
     fractionToTimeLabel: ((Float) -> String)? = null
 ) {
-    val powers = positions.mapNotNull { it.power?.toFloat() }
+    val powers = remember(positions) { positions.mapNotNull { it.power?.toFloat() } }
     if (powers.size < 2) return
 
     ChartCard(
@@ -725,8 +742,14 @@ private fun BatteryChartCard(
     onXSelected: ((Float?) -> Unit)? = null,
     fractionToTimeLabel: ((Float) -> String)? = null
 ) {
-    val batteryLevels = positions.mapNotNull { it.batteryLevel?.toFloat() }
+    val batteryLevels = remember(positions) { positions.mapNotNull { it.batteryLevel?.toFloat() } }
     if (batteryLevels.size < 2) return
+    val fixedMinMax = remember(batteryLevels) {
+        var yMin = (kotlin.math.floor(batteryLevels.min() / 10.0) * 10).toFloat()
+        var yMax = (kotlin.math.ceil(batteryLevels.max() / 10.0) * 10).toFloat()
+        if (yMin == yMax) { yMin -= 1; yMax += 1 }
+        Pair(yMin, yMax)
+    }
 
     ChartCard(
         title = stringResource(R.string.battery_level),
@@ -734,7 +757,7 @@ private fun BatteryChartCard(
         data = batteryLevels,
         color = MaterialTheme.colorScheme.secondary,
         unit = "%",
-        fixedMinMax = Pair(0f, 100f),
+        fixedMinMax = fixedMinMax,
         timeLabels = timeLabels,
         externalSelectedFraction = externalSelectedFraction,
         onXSelected = onXSelected,
@@ -750,7 +773,7 @@ private fun ElevationChartCard(
     onXSelected: ((Float?) -> Unit)? = null,
     fractionToTimeLabel: ((Float) -> String)? = null
 ) {
-    val elevations = positions.mapNotNull { it.elevation?.toFloat() }
+    val elevations = remember(positions) { positions.mapNotNull { it.elevation?.toFloat() } }
     if (elevations.size < 2) return
 
     ChartCard(

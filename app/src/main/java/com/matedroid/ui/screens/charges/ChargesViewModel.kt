@@ -36,7 +36,8 @@ enum class DateFilter(@get:StringRes val labelRes: Int, val days: Long?) {
     LAST_30_DAYS(R.string.filter_last_30_days, 30),
     LAST_90_DAYS(R.string.filter_last_90_days, 90),
     LAST_YEAR(R.string.filter_last_year, 365),
-    ALL_TIME(R.string.filter_all_time, null)
+    ALL_TIME(R.string.filter_all_time, null),
+    CUSTOM(R.string.filter_custom, -1)
 }
 
 enum class ChargeTypeFilter(val label: String) {
@@ -44,6 +45,8 @@ enum class ChargeTypeFilter(val label: String) {
     AC("AC"),
     DC("DC")
 }
+
+data class LocationFilter(val name: String) // null name = All locations
 
 data class ChargeChartData(
     val label: String,
@@ -64,6 +67,8 @@ data class ChargesUiState(
     val isRefreshing: Boolean = false,
     val charges: List<ChargeData> = emptyList(),
     val dcChargeIds: Set<Int> = emptySet(),
+    val availableLocations: List<String> = emptyList(),
+    val selectedLocations: Set<String> = emptySet(),  // null = All locations
     val processedChargeIds: Set<Int> = emptySet(),  // Charges that have aggregate data
     val chartData: List<ChargeChartData> = emptyList(),
     val chartGranularity: ChartGranularity = ChartGranularity.MONTHLY,
@@ -72,6 +77,8 @@ data class ChargesUiState(
     val endDate: LocalDate? = null,
     val selectedFilter: DateFilter = DateFilter.LAST_7_DAYS,  // Preserve filter in ViewModel
     val chargeTypeFilter: ChargeTypeFilter = ChargeTypeFilter.ALL,
+    val customStartDate: LocalDate? = null,
+    val customEndDate: LocalDate? = null,
     val scrollPosition: Int = 0,  // First visible item index
     val scrollOffset: Int = 0,    // Scroll offset within first item
     val summary: ChargesSummary = ChargesSummary(),
@@ -132,6 +139,7 @@ class ChargesViewModel @Inject constructor(
     }
 
     fun setDateFilter(filter: DateFilter) {
+        if (filter == DateFilter.CUSTOM) return
         val endDate = LocalDate.now()
         val startDate = filter.days?.let { days ->
             if (days > 0) endDate.minusDays(days - 1) else endDate
@@ -139,9 +147,22 @@ class ChargesViewModel @Inject constructor(
         _uiState.update { it.copy(
             selectedFilter = filter,
             startDate = startDate,
-            endDate = if (filter.days != null) endDate else null
+            endDate = if (filter.days != null) endDate else null,
+            customStartDate = null,
+            customEndDate = null
         )}
         loadCharges(startDate, if (filter.days != null) endDate else null)
+    }
+
+    fun setCustomDateRange(start: LocalDate, end: LocalDate) {
+        _uiState.update { it.copy(
+            selectedFilter = DateFilter.CUSTOM,
+            startDate = start,
+            endDate = end,
+            customStartDate = start,
+            customEndDate = end
+        )}
+        loadCharges(start, end)
     }
 
     fun refresh() {
@@ -161,6 +182,18 @@ class ChargesViewModel @Inject constructor(
             filter
         }
         _uiState.update { it.copy(chargeTypeFilter = newFilter) }
+        applyFiltersAndUpdateState()
+    }
+
+    fun setLocationFilter(location: String) {
+        val current = _uiState.value.selectedLocations
+        val updated = if (location in current) current - location else current + location
+        _uiState.update { it.copy(selectedLocations = updated) }
+        applyFiltersAndUpdateState()
+    }
+
+    fun clearLocationFilter() {
+        _uiState.update { it.copy(selectedLocations = emptySet()) }
         applyFiltersAndUpdateState()
     }
 
@@ -259,15 +292,28 @@ class ChargesViewModel @Inject constructor(
             ChargeTypeFilter.AC -> allCharges.filter { it.chargeId !in dcChargeIds }
         }
 
+        // Extract unique locations from the complete set
+        val locations = allCharges.mapNotNull { it.address }.distinct().sorted()
+        // Apply location filter to displayCharges
+        val locationFilter = state.selectedLocations
+        val displayChargesFiltered = if (locationFilter.isNotEmpty())
+            displayCharges.filter {  it.address in locationFilter }
+        else displayCharges
+        // Apply location filter to Stats
+        val chargesForStatsFiltered = if (locationFilter.isNotEmpty())
+            chargesForStats.filter { it.address in locationFilter }
+        else chargesForStats
+
         // Calculate summary and chart data from filtered charges
-        val summary = calculateSummary(chargesForStats)
-        val chartData = calculateChartData(chargesForStats, granularity, state.startDate)
+        val summary = calculateSummary(chargesForStatsFiltered)
+        val chartData = calculateChartData(chargesForStatsFiltered, granularity, state.startDate)
 
         _uiState.update {
             it.copy(
                 isLoading = false,
                 isRefreshing = false,
-                charges = displayCharges,
+                charges = displayChargesFiltered,
+                availableLocations = locations,
                 summary = summary,
                 chartData = chartData
             )

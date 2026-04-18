@@ -23,6 +23,7 @@ import copy
 import json
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -164,6 +165,102 @@ def global_settings():
         content_type="application/json",
     )
 
+@app.route("/api/ping", methods=["GET"])
+def ping():
+    """Mock ping endpoint for app connectivity check."""
+    return Response(
+        json.dumps({"status": "ok"}),
+        status=200,
+        content_type="application/json",
+    )
+
+@app.route("/api/v1/cars", methods=["GET"])
+def cars():
+    """Mock cars list with the configured car profile."""
+    overrides = config["car_overrides"]
+    car = {
+        "car_id": 1,
+        "name": "Mock Tesla",
+        "car_details": overrides.get("car_details", {}),
+        "car_exterior": overrides.get("car_exterior", {}),
+        "teslamate_stats": {
+            "total_charges": 42,
+            "total_drives": 100
+        }
+    }
+    return Response(
+        json.dumps({"data": {"cars": [car]}}),
+        status=200,
+        content_type="application/json",
+    )
+@app.route("/api/v1/cars/<int:car_id>/charges/current", methods=["GET"])
+def current_charge(car_id: int):
+    """Mock current charge endpoint."""
+    if not config["charging"]["enabled"]:
+        return Response(status=204, content_type="application/json")
+
+    charging_cfg = config["charging"]
+    is_dc = charging_cfg["dc"]
+    start_soc = charging_cfg["start_soc"]
+    limit_soc = charging_cfg["limit_soc"]
+    power_kw = charging_cfg["power_kw"] or (150 if is_dc else 11)
+
+    elapsed_hours = (time.time() - charging_cfg["start_time"]) / 3600
+    energy_added = elapsed_hours * power_kw
+    current_soc = min(start_soc + (energy_added / BATTERY_CAPACITY_KWH) * 100, limit_soc)
+
+    is_charging = current_soc < limit_soc
+
+    charger_phases = None if is_dc else 3
+    charger_voltage = 400 if is_dc else 230
+    charger_current = round(power_kw * 1000 / charger_voltage)
+
+    start_date_iso = datetime.fromtimestamp(charging_cfg["start_time"], tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    if not is_charging:
+        # Charge complete — return 204 (no active charge)
+        return Response(status=204, content_type="application/json")
+
+    return Response(
+        json.dumps({
+            "data": {
+                "car": {
+                    "car_id": car_id,
+                    "car_name": "Mock Tesla"
+                },
+                "charge": {
+                    "charge_id": 1,
+                    "start_date": start_date_iso,
+                    "end_date": None,
+                    "is_charging": True,
+                    "charge_energy_added": round(energy_added, 2),
+                    "duration_min": int(elapsed_hours * 60),
+                    "battery_details": {
+                        "start_battery_level": start_soc,
+                        "end_battery_level": int(current_soc),
+                        "current_battery_level": int(current_soc)
+                    },
+                    "charge_details": [
+                        {
+                            "date": now_iso,
+                            "battery_level": int(current_soc),
+                            "charge_energy_added": round(energy_added, 2),
+                            "outside_temp": 15.0,
+                            "charger_details": {
+                                "charger_power": power_kw,
+                                "charger_voltage": charger_voltage,
+                                "charger_actual_current": charger_current,
+                                "charger_phases": charger_phases
+                            }
+                        }
+                    ]
+                }
+            }
+        }),
+        status=200,
+        content_type="application/json",
+    )
 
 def _build_charging_status_response(car_id: int) -> dict:
     """Build a mock /status response simulating an ongoing charge session."""
@@ -181,6 +278,16 @@ def _build_charging_status_response(car_id: int) -> dict:
 
     is_charging = current_soc_int < limit_soc
     charging_state = "Charging" if is_charging else "Complete"
+
+    # Dynamic state_since: charge start time when charging, completion time when done
+    if is_charging:
+        state_since_iso = datetime.fromtimestamp(charging_cfg["start_time"], tz=timezone.utc).isoformat().replace("+00:00", "Z")
+    else:
+        # Estimate when the charge completed based on energy needed
+        total_kwh = (limit_soc - start_soc) / 100 * BATTERY_CAPACITY_KWH
+        completion_seconds = (total_kwh / power_kw) * 3600 if power_kw > 0 else 0
+        completion_time = charging_cfg["start_time"] + completion_seconds
+        state_since_iso = datetime.fromtimestamp(completion_time, tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
     remaining_kwh = max((limit_soc - current_soc) / 100 * BATTERY_CAPACITY_KWH, 0.0)
     time_to_full = round(remaining_kwh / power_kw, 2) if is_charging else 0.0
@@ -208,7 +315,7 @@ def _build_charging_status_response(car_id: int) -> dict:
             "status": {
                 "display_name": "Mock Tesla",
                 "state": "charging" if is_charging else "online",
-                "state_since": "2024-01-01T00:00:00Z",
+                "state_since": state_since_iso,
                 "odometer": 12345.0,
                 "car_status": {
                     "healthy": True,

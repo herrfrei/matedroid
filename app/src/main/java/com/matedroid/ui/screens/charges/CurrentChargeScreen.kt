@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ElectricalServices
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -102,8 +103,8 @@ fun CurrentChargeScreen(
         }
     }
 
-    LaunchedEffect(uiState.isNotCharging) {
-        if (uiState.isNotCharging) {
+    LaunchedEffect(uiState.isNotCharging, uiState.isDcFinishedPluggedIn) {
+        if (uiState.isNotCharging && !uiState.isDcFinishedPluggedIn) {
             onNavigateBack()
         }
     }
@@ -114,7 +115,7 @@ fun CurrentChargeScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(stringResource(R.string.current_charge_title))
-                        if (uiState.chargeDetail != null && !uiState.isNotCharging) {
+                        if (uiState.chargeDetail != null && !uiState.isNotCharging && !uiState.isDcFinishedPluggedIn) {
                             Spacer(modifier = Modifier.width(8.dp))
                             LiveBadge()
                         }
@@ -158,10 +159,24 @@ fun CurrentChargeScreen(
                     modifier = Modifier.padding(padding)
                 )
             }
+            uiState.isDcFinishedPluggedIn && uiState.chargeDetail == null -> {
+                // DC charge finished but no charge data available — show warning only
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    DcUnplugWarningBanner(dcFinishedSince = uiState.dcFinishedSince)
+                }
+            }
             uiState.chargeDetail != null -> {
                 CurrentChargeContent(
                     detail = uiState.chargeDetail!!,
                     isDcCharge = uiState.isDcCharge,
+                    isDcFinishedPluggedIn = uiState.isDcFinishedPluggedIn,
+                    dcFinishedSince = uiState.dcFinishedSince,
                     timeToFullCharge = uiState.timeToFullCharge,
                     chargeLimitSoc = uiState.chargeLimitSoc,
                     chronologicalPoints = uiState.chronologicalPoints,
@@ -221,6 +236,8 @@ private fun FallbackMessage(message: String, modifier: Modifier = Modifier) {
 private fun CurrentChargeContent(
     detail: ChargeDetail,
     isDcCharge: Boolean,
+    isDcFinishedPluggedIn: Boolean = false,
+    dcFinishedSince: String? = null,
     timeToFullCharge: Double?,
     chargeLimitSoc: Int?,
     chronologicalPoints: List<ChargePoint>,
@@ -242,14 +259,22 @@ private fun CurrentChargeContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        val accentColor = if (isDcCharge) Color(0xFFFF9800) else Color(0xFF4CAF50)
+
         // Header card
         CurrentChargeHeaderCard(
             detail = detail,
             isDcCharge = isDcCharge,
+            accentColor = accentColor,
             timeToFullCharge = timeToFullCharge,
             chargeLimitSoc = chargeLimitSoc,
             chronologicalPoints = chronologicalPoints
         )
+
+        // DC unplug warning banner
+        if (isDcFinishedPluggedIn) {
+            DcUnplugWarningBanner(dcFinishedSince = dcFinishedSince)
+        }
 
         // Charts - always show cards, even with few data points
         val timeLabels = extractChronoTimeLabels(chronologicalPoints)
@@ -278,10 +303,17 @@ private fun CurrentChargeContent(
             icon = Icons.Default.Bolt
         ) {
             if (powers.size >= 2) {
+                var yMin = kotlin.math.floor(powers.min()).toFloat()
+                var yMax = kotlin.math.ceil(powers.max()).toFloat()
+                if (yMin == yMax) {
+                    yMin -= 1
+                    yMax += 1
+                }
                 FullscreenLineChart(
                     data = powers,
-                    color = Color(0xFF4CAF50),
+                    color = accentColor,
                     unit = "kW",
+                    fixedMinMax = Pair(yMin, yMax),
                     timeLabels = timeLabels,
                     externalSelectedFraction = sharedXFraction,
                     onXSelected = { sharedXFraction = it },
@@ -326,11 +358,17 @@ private fun CurrentChargeContent(
             icon = Icons.Default.BatteryChargingFull
         ) {
             if (batteryLevels.size >= 2) {
+                var yMin = (kotlin.math.floor(batteryLevels.min() / 10.0) * 10).toFloat()
+                var yMax = (kotlin.math.ceil(batteryLevels.max() / 10.0) * 10).toFloat()
+                if (yMin == yMax) {
+                    yMin -= 1
+                    yMax += 1
+                }
                 FullscreenLineChart(
                     data = batteryLevels,
                     color = MaterialTheme.colorScheme.primary,
                     unit = "%",
-                    fixedMinMax = Pair(0f, 100f),
+                    fixedMinMax = Pair(yMin, yMax),
                     timeLabels = timeLabels,
                     externalSelectedFraction = sharedXFraction,
                     onXSelected = { sharedXFraction = it },
@@ -349,6 +387,7 @@ private fun CurrentChargeContent(
 private fun CurrentChargeHeaderCard(
     detail: ChargeDetail,
     isDcCharge: Boolean,
+    accentColor: Color,
     timeToFullCharge: Double?,
     chargeLimitSoc: Int?,
     chronologicalPoints: List<ChargePoint>
@@ -366,7 +405,6 @@ private fun CurrentChargeHeaderCard(
     val startLevel = detail.startBatteryLevel ?: 0
     val currentLevel = detail.currentOrEndBatteryLevel ?: 0
     val targetLevel = chargeLimitSoc ?: 100
-    val solidGreen = Color(0xFF4CAF50)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -412,19 +450,19 @@ private fun CurrentChargeHeaderCard(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
-                            tint = solidGreen
+                            tint = accentColor
                         )
                         Text(
                             text = "$currentLevel%",
                             style = MaterialTheme.typography.displaySmall,
                             fontWeight = FontWeight.ExtraBold,
-                            color = solidGreen
+                            color = accentColor
                         )
                     }
                     Text(
                         text = stringResource(R.string.soc_now),
                         style = MaterialTheme.typography.labelSmall,
-                        color = solidGreen
+                        color = accentColor
                     )
                 }
 
@@ -452,6 +490,7 @@ private fun CurrentChargeHeaderCard(
                 currentLevel = currentLevel,
                 startLevel = startLevel,
                 targetLevel = targetLevel,
+                accentColor = accentColor,
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -517,57 +556,45 @@ private fun CurrentChargeHeaderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top
             ) {
-                // Energy added with AC/DC badge
+                // Instant power with AC/DC badge
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Bolt,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = solidGreen
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "%.2f kWh".format(detail.chargeEnergyAdded ?: 0.0),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = solidGreen
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            if (instantPower != null) {
+                                Text(
+                                    text = "$instantPower kW",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                            }
                             LiveChargeTypeBadge(isDcCharge = isDcCharge)
                         }
                         Text(
-                            text = stringResource(R.string.soc_energy_added),
+                            text = stringResource(R.string.soc_instant_power),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                         )
                     }
                 }
 
-                // Instant power
-                if (instantPower != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                // Energy added as "+NN% (MM,NN kWh)"
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        val socAdded = currentLevel - startLevel
+                        val kwhAdded = detail.chargeEnergyAdded ?: 0.0
+                        Text(
+                            text = "+%d%% (%.2f kWh)".format(socAdded, kwhAdded),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = accentColor
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "$instantPower kW",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = stringResource(R.string.soc_instant_power),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.soc_energy_added),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
                     }
                 }
             }
@@ -612,13 +639,12 @@ private fun LiveSocProgressBar(
     currentLevel: Int,
     startLevel: Int,
     targetLevel: Int,
+    accentColor: Color,
     modifier: Modifier = Modifier
 ) {
     val currentFraction = currentLevel / 100f
     val startFraction = startLevel / 100f
     val targetFraction = targetLevel / 100f
-    val solidGreen = Color(0xFF4CAF50)
-    val dimmedGreen = Color(0xFF4CAF50).copy(alpha = 0.3f)
     val trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
     val startMarkerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.4f)
 
@@ -633,10 +659,10 @@ private fun LiveSocProgressBar(
         // Background track
         drawRect(color = trackColor, size = size)
 
-        // Dimmed green for target area (from current to target)
+        // Dimmed accent for target area (from current to target)
         if (targetFraction > currentFraction) {
             drawRect(
-                color = dimmedGreen,
+                color = accentColor.copy(alpha = 0.3f),
                 topLeft = androidx.compose.ui.geometry.Offset(width * currentFraction, 0f),
                 size = androidx.compose.ui.geometry.Size(
                     width * (targetFraction - currentFraction), height
@@ -644,9 +670,9 @@ private fun LiveSocProgressBar(
             )
         }
 
-        // Solid green for current charge level
+        // Solid accent for current charge level
         drawRect(
-            color = solidGreen,
+            color = accentColor,
             size = androidx.compose.ui.geometry.Size(width * currentFraction, height)
         )
 
@@ -666,7 +692,8 @@ private fun LiveSocProgressBar(
 @Composable
 private fun ElapsedTimeCounter(
     startDate: String?,
-    unknownLabel: String
+    unknownLabel: String,
+    textColor: Color? = null
 ) {
     val startEpochMs = remember(startDate) {
         if (startDate == null) return@remember null
@@ -710,8 +737,52 @@ private fun ElapsedTimeCounter(
         text = displayText,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onPrimaryContainer
+        color = textColor ?: MaterialTheme.colorScheme.onPrimaryContainer
     )
+}
+
+@Composable
+private fun DcUnplugWarningBanner(dcFinishedSince: String?) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = com.matedroid.ui.theme.StatusWarning
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.dc_unplug_warning_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = stringResource(R.string.dc_unplug_warning_message),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
+            if (dcFinishedSince != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                ElapsedTimeCounter(
+                    startDate = dcFinishedSince,
+                    unknownLabel = "",
+                    textColor = Color.White
+                )
+            }
+        }
+    }
 }
 
 @Composable

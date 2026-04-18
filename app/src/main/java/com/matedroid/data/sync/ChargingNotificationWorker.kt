@@ -208,7 +208,18 @@ class ChargingNotificationWorker @AssistedInject constructor(
                 // Fall back to showing notification directly (won't update in real-time)
                 Log.w(TAG, "Cannot start foreground service, showing notification directly: ${e.message}")
                 val liveChargeAvailable = teslamateRepository.isCurrentChargeAvailable(carId)
-                chargingNotificationManager.showChargingNotification(car, status, liveChargeAvailable)
+                chargingNotificationManager.showChargingNotification(
+                    car, status, liveChargeAvailable,
+                    chronometerBaseMs = status.stateSinceEpochMs
+                )
+            }
+        } else if (status.isDcFinishedPluggedIn) {
+            // DC charge finished but cable still plugged — keep service alive
+            Log.d(TAG, "Car $carId DC charge finished but still plugged in")
+            try {
+                ChargingMonitorService.start(appContext)
+            } catch (e: Exception) {
+                Log.w(TAG, "Cannot start foreground service for DC-finished state: ${e.message}")
             }
         } else {
             Log.d(TAG, "Car $carId is not charging, stopping monitor service")
@@ -220,7 +231,7 @@ class ChargingNotificationWorker @AssistedInject constructor(
         val sentryMode = status.sentryMode ?: false
         val isSentryAlerted = status.isSentryAlerted
 
-        when (val event = sentryStateRepository.processStatus(carId, sentryMode, isSentryAlerted)) {
+        when (val event = sentryStateRepository.processStatus(carId, sentryMode, isSentryAlerted, status.latitude, status.longitude, status.geofence)) {
             is SentryEvent.AlertDetected -> {
                 Log.d(TAG, "Sentry alert #${event.count} for car $carId (notify=${event.shouldNotify})")
                 sentryNotificationManager.showSentryAlert(

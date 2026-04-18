@@ -1,0 +1,7 @@
+MateDroid ora supporta HTTP Basic Auth, per connettersi facilmente tramite MyTeslaMate e altri reverse proxy autenticati. Puoi anche filtrare viaggi, ricariche e percorsi per intervallo di date.
+
+Aggiunto:
+- Supporto HTTP Basic Auth per server dietro reverse proxy autenticati
+- Filtro per intervallo di date su viaggi, ricariche e percorsi
+- Timer di ricarica in corso nella barra di stato
+- Avviso di scollegamento DC quando la ricarica termina ma il cavo resta collegato

@@ -1,0 +1,7 @@
+New ways to filter your data and better charging notifications.
+
+Added:
+- HTTP Basic Auth support for servers behind a reverse proxy
+- Custom date range filter on drives, charges, and trips
+- Charging elapsed timer in the status bar notification
+- DC unplug warning when charge completes but cable stays plugged in

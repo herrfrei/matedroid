@@ -1,0 +1,7 @@
+Nuovi modi per filtrare i dati e notifiche di ricarica migliorate.
+
+Aggiunto:
+- Supporto HTTP Basic Auth per server dietro un reverse proxy
+- Filtro per intervallo di date personalizzato su viaggi, ricariche e percorsi
+- Timer di ricarica trascorso nella notifica della barra di stato
+- Avviso di scollegamento DC quando la ricarica termina ma il cavo resta collegato

@@ -45,7 +45,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,7 +73,8 @@ import com.matedroid.data.api.models.ChargePoint
 import com.matedroid.data.api.models.Units
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
-import org.osmdroid.config.Configuration
+import com.matedroid.ui.components.createPinMarkerDrawable
+import com.matedroid.ui.screens.trips.displayName
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -92,6 +92,7 @@ fun ChargeDetailScreen(
     chargeId: Int,
     exteriorColor: String? = null,
     onNavigateBack: () -> Unit,
+    onNavigateToTripDetail: (tripStartDate: String) -> Unit = {},
     viewModel: ChargeDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -144,6 +145,9 @@ fun ChargeDetailScreen(
                     units = uiState.units,
                     currencySymbol = uiState.currencySymbol,
                     isDcCharge = uiState.isDcCharge,
+                    containingTrip = uiState.containingTrip,
+                    onNavigateToTripDetail = onNavigateToTripDetail,
+                    onRemoveFromTrip = viewModel::removeFromTrip,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -158,6 +162,9 @@ private fun ChargeDetailContent(
     units: Units?,
     currencySymbol: String,
     isDcCharge: Boolean,
+    containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
+    onNavigateToTripDetail: (String) -> Unit,
+    onRemoveFromTrip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -178,6 +185,16 @@ private fun ChargeDetailContent(
     ) {
         // Location header card
         LocationHeaderCard(detail = detail, currencySymbol = currencySymbol, isDcCharge = isDcCharge)
+
+        // Part-of-trip banner
+        if (containingTrip != null) {
+            val (_, trip) = containingTrip
+            com.matedroid.ui.components.PartOfTripCard(
+                tripRoute = trip.displayName(),
+                onNavigateToTrip = { onNavigateToTripDetail(trip.startDate) },
+                onConfirmRemove = onRemoveFromTrip
+            )
+        }
 
         // Map showing charge location
         if (detail.latitude != null && detail.longitude != null) {
@@ -591,11 +608,6 @@ private fun ChargeMapCard(latitude: Double, longitude: Double) {
             ) {
                 val primaryColor = MaterialTheme.colorScheme.primary.toArgb()
 
-                DisposableEffect(Unit) {
-                    Configuration.getInstance().userAgentValue = "MateDroid/1.0"
-                    onDispose { }
-                }
-
                 AndroidView(
                     factory = { ctx ->
                         MapView(ctx).apply {
@@ -609,6 +621,7 @@ private fun ChargeMapCard(latitude: Double, longitude: Double) {
                                 position = geoPoint
                                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                                 title = chargeLocationMarker
+                                icon = createPinMarkerDrawable(ctx.resources, primaryColor)
                             }
                             overlays.add(marker)
 
@@ -810,7 +823,12 @@ private fun TemperatureChartCard(
 ) {
     val temps = chargePoints.mapNotNull { it.outsideTemp?.toFloat() }
     if (temps.size < 2) return
-
+    var yMin = (kotlin.math.floor(temps.min() ) ).toFloat()
+    var yMax = (kotlin.math.ceil(temps.max() ) ).toFloat()
+    if (yMin == yMax) {
+        yMin -= 1
+        yMax += 1
+    }
     ChartCard(
         title = title,
         icon = Icons.Default.DeviceThermostat,
@@ -818,12 +836,10 @@ private fun TemperatureChartCard(
         color = Color(0xFFFF9800),
         unit = UnitFormatter.getTemperatureUnit(units),
         timeLabels = timeLabels,
+        fixedMinMax = Pair(yMin, yMax),
         externalSelectedFraction = externalSelectedFraction,
         onXSelected = onXSelected,
-        fractionToTimeLabel = fractionToTimeLabel,
-        convertValue = { value ->
-            if (units?.unitOfTemperature == "F") (value * 9f / 5f + 32f) else value
-        }
+        fractionToTimeLabel = fractionToTimeLabel
     )
 }
 
@@ -838,6 +854,12 @@ private fun BatteryChartCard(
 ) {
     val batteryLevels = chargePoints.mapNotNull { it.batteryLevel?.toFloat() }
     if (batteryLevels.size < 2) return
+    var yMin = (kotlin.math.floor(batteryLevels.min() / 10.0) * 10).toFloat()
+    var yMax = (kotlin.math.ceil(batteryLevels.max() / 10.0) * 10).toFloat()
+    if (yMin == yMax) {
+        yMin -= 1
+        yMax += 1
+    }
 
     ChartCard(
         title = title,
@@ -845,7 +867,7 @@ private fun BatteryChartCard(
         data = batteryLevels,
         color = MaterialTheme.colorScheme.primary,
         unit = "%",
-        fixedMinMax = Pair(0f, 100f),
+        fixedMinMax = Pair(yMin, yMax),
         timeLabels = timeLabels,
         externalSelectedFraction = externalSelectedFraction,
         onXSelected = onXSelected,

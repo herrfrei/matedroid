@@ -45,6 +45,7 @@ Create `fastlane/metadata/android/en-US/changelogs/{versionCode}.txt` with the r
 **Important — stable vs beta scope:**
 - **Beta release** (e.g. `1.1.0-beta2`): the changelog covers only the changes since the previous release (beta or stable).
 - **Stable (production) release** (e.g. `1.1.0`): the changelog must cover **all changes since the previous stable release** (e.g. `1.0.0`), NOT just what changed since the last beta. Collect entries from every intermediate beta and the `[Unreleased]` section, then write a single consolidated changelog. This is what end-users on the production track will see — they never saw the beta changelogs.
+  - **Stable changelog should only include**: new features, behavioural changes, and bugfixes relative to the previous *stable* release. Do NOT mention fixes for bugs that were introduced during the beta cycle itself — those never existed for stable users. For example, if beta1 introduced a feature with a broken tooltip and beta2 fixed it, the stable changelog should describe the feature as working correctly, without mentioning the intermediate fix.
 
 Format (max 500 chars for Play Store):
 ```
@@ -71,6 +72,7 @@ Automatically translate the English changelog and write the translations to:
 - `fastlane/metadata/android/it-IT/changelogs/{versionCode}.txt` (Italian)
 - `fastlane/metadata/android/es-ES/changelogs/{versionCode}.txt` (Spanish)
 - `fastlane/metadata/android/ca-ES/changelogs/{versionCode}.txt` (Catalan)
+- `fastlane/metadata/android/zh-CN/changelogs/{versionCode}.txt` (Chinese Simplified)
 
 Do this immediately after creating the English changelog - no user interaction needed.
 
@@ -80,6 +82,7 @@ Translation guidelines:
 - Keep proper nouns unchanged: MateDroid, Teslamate, Tesla, GitHub, etc.
 - Maintain the same tone: engaging but concise
 - Each translation must also respect the 500 character limit
+- For Chinese: keep all unit symbols in Latin alphabet (kWh, kW, km/h, °C, bar) per GB 3100-1993 standard and Tesla China convention. Do NOT use Chinese character equivalents (千瓦时, 公里 etc.)
 
 All the changelogs in fastlane, for any language, MUST BE LESS THAN 500 characters. ALWAYS check with `wc` how long they are.
 

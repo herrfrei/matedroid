@@ -187,6 +187,15 @@
     <string name="hide_token">Hide token</string>
     <string name="show_token">Show token</string>
 
+    <!-- HTTP Basic Auth for reverse proxy -->
+    <string name="settings_http_basic_auth_username_label">HTTP Basic Auth username (optional)</string>
+    <string name="settings_http_basic_auth_username_placeholder">Username</string>
+    <string name="settings_http_basic_auth_password_label">HTTP Basic Auth password</string>
+    <string name="settings_http_basic_auth_password_placeholder">Password</string>
+    <string name="settings_http_basic_auth_hint">Set these if your server is behind a reverse proxy with HTTP Basic Authentication (i.e. if you are using MyTeslaMate).</string>
+    <string name="hide_password">Hide password</string>
+    <string name="show_password">Show password</string>
+
     <!-- Accept invalid certificates toggle -->
     <string name="settings_accept_invalid_certs">Accept invalid certificates</string>
     <string name="settings_accept_invalid_certs_hint">Enable for self-signed certificates</string>
@@ -270,6 +279,10 @@
     <string name="filter_last_90_days">Last 90 days</string>
     <string name="filter_last_year">Last year</string>
     <string name="filter_all_time">All time</string>
+    <!-- Custom date range filter -->
+    <string name="filter_custom">Custom</string>
+    <string name="filter_custom_from">From</string>
+    <string name="filter_custom_to">To</string>
 
     <!-- Distance filter chips (metric) -->
     <string name="filter_all">All</string>
@@ -346,6 +359,8 @@
     <string name="power_profile">Power Profile</string>
     <string name="battery_level">Battery Level</string>
     <string name="elevation_profile">Elevation Profile</string>
+    <!-- Title for the speed distribution histogram in drive details -->
+    <string name="speed_distribution">Speed Distribution</string>
 
     <!-- Weather section -->
     <string name="weather_along_way">Weather along the way</string>
@@ -356,6 +371,12 @@
 
     <!-- Section title for charge history list -->
     <string name="charge_history">Charge History</string>
+
+    <!-- Filter location -->
+    <string name="filter_location">Location</string>
+    <string name="search">Search</string>
+    <string name="select_all">Select all</string>
+    <string name="deselect_all">Deselect all</string>
 
     <!-- Empty state when no charges match filters -->
     <string name="no_charges_found">No charges found for selected period</string>
@@ -994,6 +1015,14 @@
     <!-- Notification title during charging. %s is car name -->
     <string name="charging_notification_title">%s - Charging</string>
     <string name="charging_notification_loading">Checking charging status…</string>
+    <!-- Notification title when DC charge is complete but cable still plugged. %s is car name -->
+    <string name="charging_notification_dc_finished_title">%s — Charge complete</string>
+    <!-- Notification content when DC charge is complete but cable still plugged -->
+    <string name="charging_notification_dc_finished_content">Unplug to free the DC spot</string>
+    <!-- Warning banner title on the live charge screen when DC charge finished but still plugged -->
+    <string name="dc_unplug_warning_title">Charge complete</string>
+    <!-- Warning banner message on the live charge screen -->
+    <string name="dc_unplug_warning_message">Please unplug to free this DC charging spot for others</string>
 
     <!-- ==================== Sentry Notifications ==================== -->
     <!-- Notification channel name for sentry mode alerts -->
@@ -1013,6 +1042,148 @@
 
     <!-- Notification action button to open the Tesla app -->
     <string name="sentry_action_open_tesla">Open Tesla app</string>
+
+    <!-- ==================== Sentry History Screen ==================== -->
+    <!-- Title for the sentry alert history screen -->
+    <string name="sentry_history_title">Sentry History</string>
+    <!-- Header for the current sentry session section -->
+    <string name="sentry_history_current_session">Current Session</string>
+    <!-- Message shown when no alerts were detected in the current session -->
+    <string name="sentry_history_no_alerts">No alerts detected so far</string>
+    <!-- Header for past alert history -->
+    <string name="sentry_history_past">Past Alerts</string>
+    <!-- Label for a single sentry alert row, showing the time -->
+    <string name="sentry_alert_detected">Alert detected</string>
+    <!-- Message shown when there is no history at all -->
+    <string name="sentry_history_empty">No sentry alert history</string>
+    <!-- Relative date label for today -->
+    <string name="sentry_history_today">Today</string>
+    <!-- Relative date label for yesterday -->
+    <string name="sentry_history_yesterday">Yesterday</string>
+
+    <!-- ==================== Trips ==================== -->
+    <!-- Navigation button label -->
+    <string name="nav_trips">Trips</string>
+    <!-- Trips list screen title -->
+    <string name="trips_title">Trips</string>
+    <!-- Empty state when no trips detected -->
+    <string name="trips_empty">No road trips detected yet.\nA trip requires at least 2 drives connected by a DC charge stop.</string>
+    <!-- Warning when deep sync is incomplete -->
+    <string name="trips_sync_warning">Sync in progress — some trips may not appear until charge data is fully processed.</string>
+    <!-- Trip detail screen title -->
+    <string name="trip_detail_title">Trip Details</string>
+    <!-- Trip summary section header -->
+    <string name="trip_summary">Trip Summary</string>
+    <!-- Trip legs section header -->
+    <string name="trip_legs">Trip Legs</string>
+    <!-- Trip route map header -->
+    <string name="trip_route_map">Route Map</string>
+    <!-- Number of charge stops -->
+    <string name="trip_charge_stops">Charge stops</string>
+    <!-- Driving time label -->
+    <string name="trip_driving_time">Driving time</string>
+    <!-- Total time (wall clock) label -->
+    <string name="trip_total_time">Total time</string>
+    <!-- Energy consumed label -->
+    <string name="trip_energy_consumed">Energy used</string>
+    <!-- Energy charged label -->
+    <string name="trip_energy_charged">Energy charged</string>
+    <!-- Charge cost label -->
+    <string name="trip_charge_cost">Charge cost</string>
+    <!-- Drive leg label with number -->
+    <string name="trip_leg_drive">Drive %1$d</string>
+    <!-- Charge leg label with number -->
+    <string name="trip_leg_charge">Charge %1$d</string>
+
+    <!-- Section title for the horizontal trip timeline bar under the map, visualizes durations of drive/charge/parking segments -->
+    <string name="trip_timeline_title">Timeline</string>
+
+    <!-- Tooltip label for a drive segment on the trip timeline -->
+    <string name="trip_timeline_driving">Driving</string>
+
+    <!-- Tooltip label for a DC fast-charge segment on the trip timeline. DC is a technical unit and MUST NOT be translated. -->
+    <string name="trip_timeline_charging_dc">DC Charging</string>
+
+    <!-- Tooltip label for an AC charge segment on the trip timeline. AC is a technical unit and MUST NOT be translated. -->
+    <string name="trip_timeline_charging_ac">AC Charging</string>
+
+    <!-- Tooltip label for a parking gap segment on the trip timeline (time between legs when the car is idle) -->
+    <string name="trip_timeline_parked">Parked</string>
+
+    <!-- Button label: opens a bottom sheet to add a drive or charge to this trip -->
+    <string name="trip_edit_add_leg">Add leg</string>
+
+    <!-- Button label: opens a bottom sheet to merge another trip into this one -->
+    <string name="trip_edit_merge_trip">Merge trip</string>
+
+    <!-- Bottom sheet title for picking a drive or charge to add -->
+    <string name="trip_edit_add_leg_title">Add to this trip</string>
+
+    <!-- Empty-state message when no eligible drives or charges are nearby -->
+    <string name="trip_edit_add_leg_empty">No nearby drives or charges</string>
+
+    <!-- Bottom sheet title for picking another trip to merge with -->
+    <string name="trip_edit_merge_title">Merge another trip</string>
+
+    <!-- Empty-state message when no adjacent trips exist within the 2-week window -->
+    <string name="trip_edit_merge_empty">No trips within 2 weeks</string>
+
+    <!-- Confirmation dialog title before merging two trips -->
+    <string name="trip_edit_merge_confirm_title">Merge trips?</string>
+
+    <!-- Confirmation dialog body — explains that the user can undo by deleting the merged trip -->
+    <string name="trip_edit_merge_confirm_body">Combine these trips into one. You can undo by deleting the merged trip.</string>
+
+    <!-- Primary action label on the merge confirmation dialog -->
+    <string name="trip_edit_merge_confirm">Merge</string>
+
+    <!-- Overflow menu action: delete the currently viewed trip -->
+    <string name="trip_edit_delete">Delete trip</string>
+
+    <!-- Confirmation dialog title before deleting a saved trip -->
+    <string name="trip_edit_delete_confirm_title">Delete this trip?</string>
+
+    <!-- Confirmation dialog body — explains that auto-detected originals will come back -->
+    <string name="trip_edit_delete_confirm_body">This removes your edits. Auto-detected trips inside will reappear.</string>
+
+    <!-- Generic delete button label -->
+    <string name="delete">Delete</string>
+
+    <!-- Card on drive/charge detail: informs the user this leg belongs to a saved trip. %s is the trip route like "Rome → Paris". -->
+    <string name="part_of_trip">Part of %s</string>
+
+    <!-- Button on the part-of-trip card: detach this leg from the trip -->
+    <string name="part_of_trip_remove">Remove</string>
+
+    <!-- Dialog title when the user taps Remove on the part-of-trip card -->
+    <string name="part_of_trip_remove_confirm_title">Remove from trip?</string>
+
+    <!-- Dialog body explaining the consequence. %s is the trip route. -->
+    <string name="part_of_trip_remove_confirm_body">This leg will no longer be part of %s.</string>
+
+    <!-- Content description and tooltip for the pencil icon that opens the rename dialog -->
+    <string name="trip_rename_action">Rename</string>
+
+    <!-- Title of the rename dialog -->
+    <string name="trip_rename_dialog_title">Rename trip</string>
+
+    <!-- Label/placeholder for the text field inside the rename dialog -->
+    <string name="trip_rename_field_label">Trip name</string>
+
+    <!-- Hint text below the rename text field explaining that clearing it restores the default label -->
+    <string name="trip_rename_field_hint">Leave empty to use the default name</string>
+
+    <!-- Generic Save button label used in dialogs -->
+    <string name="save">Save</string>
+
+    <!-- Generic Add button label used in selection UIs -->
+    <string name="add">Add</string>
+
+    <!-- Content description of the icon in the Add-leg sheet header that switches to multi-select mode -->
+    <string name="trip_edit_select_multiple">Select multiple</string>
+
+    <!-- Title shown in multi-select mode indicating how many legs are currently selected -->
+    <string name="trip_edit_selected_count">%d selected</string>
 
     <!-- ==================== Car Image Picker ==================== -->
     <!-- Dialog title for selecting car appearance (long-press on car image) -->
@@ -1094,4 +1265,34 @@
     <string name="notification_permission_message">MateDroid can notify you about sentry mode events, tyre pressure warnings, and charging status. Enable notifications to stay informed about your car.</string>
     <!-- Confirm button to trigger the system notification permission prompt -->
     <string name="notification_permission_grant">Enable notifications</string>
+
+    <!-- ==================== Where Was I Screen ==================== -->
+    <!-- Title of the "Where was I that day?" feature card on dashboard -->
+    <string name="where_was_i_title">Where was I that day?</string>
+    <!-- Hint text on the tappable chip to pick a date -->
+    <string name="where_was_i_hint">Pick a date</string>
+    <!-- Screen title for the Where Was I result screen -->
+    <string name="where_was_i_screen_title">Where was I?</string>
+    <!-- Label when the car was driving -->
+    <string name="where_was_i_driving">Driving</string>
+    <!-- Label when the car was charging -->
+    <string name="where_was_i_charging">Charging</string>
+    <!-- Label when the car was parked -->
+    <string name="where_was_i_parked">Parked</string>
+    <!-- Button to confirm date/time selection -->
+    <string name="where_was_i_go">Go!</string>
+    <!-- Date picker dialog title -->
+    <string name="where_was_i_pick_date">Pick a date</string>
+    <!-- Time picker dialog title -->
+    <string name="where_was_i_pick_time">Pick a time</string>
+    <!-- Tap hint on driving/charging state cards -->
+    <string name="where_was_i_tap_details">Tap for details</string>
+    <!-- Error when no data available for the selected date -->
+    <string name="where_was_i_no_data">No data available for this date</string>
+    <!-- Tooltip shown when tapping the map pin on the Where Was I screen -->
+    <string name="you_were_here">You were here!</string>
+    <!-- Parked duration shown on the Where Was I screen, e.g. "Parked for 2 days, 4h" -->
+    <string name="parked_for">Parked for %s</string>
+    <!-- "Since" date of last activity, e.g. "since 22 Mar 2026, 11:52" -->
+    <string name="parked_since">since %s</string>
 </resources>

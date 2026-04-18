@@ -1,7 +1,8 @@
 package com.matedroid.data.repository
 
-import com.matedroid.data.local.SentryState
 import com.matedroid.data.local.SentryStateDataStore
+import com.matedroid.data.local.dao.SentryAlertLogDao
+import com.matedroid.data.local.entity.SentryAlertLog
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,17 +25,17 @@ sealed class SentryEvent {
 /**
  * Business logic layer over [SentryStateDataStore].
  *
- * Every poll where center_display_state == "7" increments the event counter.
  * A 65-second debounce window (just over the 1-minute screen-on duration per
- * sentry event) controls whether the notification should alert (sound + heads-up)
- * or just update silently.
+ * sentry event) gates all side effects: counter increment, history logging,
+ * and notification alerting. Duplicate polls within the window are ignored.
  */
 @Singleton
 class SentryStateRepository @Inject constructor(
-    private val dataStore: SentryStateDataStore
+    private val dataStore: SentryStateDataStore,
+    private val alertLogDao: SentryAlertLogDao
 ) {
     companion object {
-        /** Debounce window for notification alerting (not counting).
+        /** Debounce window for all event processing (counting, logging, alerting).
          *  Slightly over 60s because the car screen stays on for exactly 1 minute per event. */
         private const val NOTIFY_DEBOUNCE_MS = 65_000L
     }
@@ -50,7 +51,10 @@ class SentryStateRepository @Inject constructor(
     suspend fun processStatus(
         carId: Int,
         sentryMode: Boolean,
-        isSentryAlerted: Boolean
+        isSentryAlerted: Boolean,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        geofence: String? = null
     ): SentryEvent? {
         val state = dataStore.getState(carId)
 
@@ -63,22 +67,38 @@ class SentryStateRepository @Inject constructor(
         // Sentry mode is off and was already off — nothing to do
         if (!sentryMode) return null
 
-        // Mark sentry as active if not already
+        // Mark sentry as active if not already, recording session start time
+        val sessionStartedAt: Long
         if (!state.sentryActive) {
-            dataStore.saveState(carId, state.copy(sentryActive = true))
+            val now = System.currentTimeMillis()
+            sessionStartedAt = now
+            dataStore.saveState(carId, state.copy(sentryActive = true, sessionStartedAt = now))
+        } else {
+            sessionStartedAt = state.sessionStartedAt
         }
 
         // Check for a sentry alert event
         if (isSentryAlerted) {
-            // Always increment the counter
-            val updated = dataStore.incrementEventCount(carId)
-
-            // Debounce only controls whether the notification should alert with sound
             val now = System.currentTimeMillis()
             val timeSinceLastEvent = now - state.lastEventAt
             val shouldNotify = timeSinceLastEvent >= NOTIFY_DEBOUNCE_MS
 
-            return SentryEvent.AlertDetected(updated.eventCount, shouldNotify)
+            if (shouldNotify) {
+                // Increment counter and log to history only when we actually notify
+                val updated = dataStore.incrementEventCount(carId)
+                alertLogDao.insert(
+                    SentryAlertLog(
+                        carId = carId,
+                        detectedAt = now,
+                        sessionStartedAt = sessionStartedAt,
+                        latitude = latitude,
+                        longitude = longitude,
+                        address = geofence?.ifBlank { null }
+                    )
+                )
+                return SentryEvent.AlertDetected(updated.eventCount, true)
+            }
+            // Within debounce window — duplicate poll for the same event, ignore
         }
 
         return null
@@ -95,12 +115,29 @@ class SentryStateRepository @Inject constructor(
      * Force-increment the event count, bypassing debounce.
      * Used for debug simulation only.
      */
-    suspend fun forceIncrementEventCount(carId: Int): Int {
-        // Ensure sentry is marked active
+    suspend fun forceIncrementEventCount(carId: Int, latitude: Double? = null, longitude: Double? = null, geofence: String? = null): Int {
+        // Ensure sentry is marked active with a session start time
         val state = dataStore.getState(carId)
+        val sessionStartedAt: Long
         if (!state.sentryActive) {
-            dataStore.saveState(carId, state.copy(sentryActive = true))
+            val now = System.currentTimeMillis()
+            sessionStartedAt = now
+            dataStore.saveState(carId, state.copy(sentryActive = true, sessionStartedAt = now))
+        } else {
+            sessionStartedAt = state.sessionStartedAt
         }
-        return dataStore.incrementEventCount(carId).eventCount
+        val updated = dataStore.incrementEventCount(carId)
+        // Always log for debug simulation (bypasses debounce like the notification does)
+        alertLogDao.insert(
+            SentryAlertLog(
+                carId = carId,
+                detectedAt = System.currentTimeMillis(),
+                sessionStartedAt = sessionStartedAt,
+                latitude = latitude,
+                longitude = longitude,
+                address = geofence
+            )
+        )
+        return updated.eventCount
     }
 }

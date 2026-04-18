@@ -19,8 +19,8 @@ android {
         applicationId = "com.matedroid"
         minSdk = 28
         targetSdk = 36
-        versionCode = 177295425
-        versionName = "1.2.3"
+        versionCode = 177623973
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -156,10 +156,6 @@ dependencies {
     // Glance (home screen widgets)
     implementation(libs.glance.appwidget)
     implementation(libs.glance.material3)
-
-    // Charts
-    implementation(libs.vico.compose.m3)
-
     // Maps
     implementation(libs.osmdroid)
 

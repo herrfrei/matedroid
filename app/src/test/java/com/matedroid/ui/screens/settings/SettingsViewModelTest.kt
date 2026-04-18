@@ -243,7 +243,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `saveSettings calls datastore with all fields and triggers callback`() = runTest {
-        coEvery { settingsDataStore.saveSettings(any(), any(), any(), any(), any()) } returns Unit
+        coEvery { settingsDataStore.saveSettings(any(), any(), any(), any(), any(), any(), any()) } returns Unit
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -262,6 +262,8 @@ class SettingsViewModelTest {
                 "https://saved.com",
                 "https://backup.com",
                 "saved-token",
+                "",
+                "",
                 true,
                 "EUR"
             )

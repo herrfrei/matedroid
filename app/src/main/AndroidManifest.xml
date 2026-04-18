@@ -63,6 +63,15 @@
             </intent-filter>
         </receiver>
 
+        <!-- Switch API endpoint via ADB broadcast (guarded by BuildConfig.DEBUG in code) -->
+        <receiver
+            android:name=".receiver.DebugEndpointReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.matedroid.SET_ENDPOINT" />
+            </intent-filter>
+        </receiver>
+
         <!-- Foreground service for live charging notification updates -->
         <service
             android:name=".service.ChargingMonitorService"

@@ -13,6 +13,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -28,6 +29,15 @@ import javax.net.ssl.X509TrustManager
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
+    private const val USER_AGENT = "MateDroid/${BuildConfig.VERSION_NAME}"
+
+    private val userAgentInterceptor = Interceptor { chain ->
+        val request = chain.request().newBuilder()
+            .header("User-Agent", USER_AGENT)
+            .build()
+        chain.proceed(request)
+    }
 
     @Provides
     @Singleton
@@ -49,6 +59,7 @@ object NetworkModule {
     @Singleton
     fun provideNominatimApi(moshi: Moshi): NominatimApi {
         val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(userAgentInterceptor)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(10, TimeUnit.SECONDS)
             .build()
@@ -65,6 +76,7 @@ object NetworkModule {
     @Singleton
     fun provideOpenMeteoApi(moshi: Moshi): OpenMeteoApi {
         val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(userAgentInterceptor)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .build()
@@ -84,7 +96,9 @@ object NetworkModule {
 private data class ApiCacheKey(
     val baseUrl: String,
     val acceptInvalidCerts: Boolean,
-    val apiToken: String
+    val apiToken: String,
+    val httpBasicAuthUsername: String,
+    val httpBasicAuthPassword: String
 )
 
 /**
@@ -112,14 +126,16 @@ class TeslamateApiFactory(
         val settings = runBlocking { settingsDataStore.settings.first() }
         val useInsecure = acceptInvalidCerts ?: settings.acceptInvalidCerts
         val apiToken = settings.apiToken
+        val basicAuthUsername = settings.httpBasicAuthUsername
+        val basicAuthPassword = settings.httpBasicAuthPassword
 
-        val cacheKey = ApiCacheKey(normalizedUrl, useInsecure, apiToken)
+        val cacheKey = ApiCacheKey(normalizedUrl, useInsecure, apiToken, basicAuthUsername, basicAuthPassword)
 
         // Return cached API if available
         apiCache[cacheKey]?.let { return it }
 
         // Create new API instance
-        val okHttpClient = createOkHttpClient(apiToken, useInsecure)
+        val okHttpClient = createOkHttpClient(apiToken, useInsecure, basicAuthUsername, basicAuthPassword)
 
         val api = Retrofit.Builder()
             .baseUrl(normalizedUrl)
@@ -148,17 +164,24 @@ class TeslamateApiFactory(
         apiCache.clear()
     }
 
-    private fun createOkHttpClient(apiToken: String, acceptInvalidCerts: Boolean): OkHttpClient {
+    private fun createOkHttpClient(
+        apiToken: String,
+        acceptInvalidCerts: Boolean,
+        basicAuthUsername: String = "",
+        basicAuthPassword: String = ""
+    ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .addInterceptor { chain ->
-                val request = if (apiToken.isNotBlank()) {
-                    chain.request().newBuilder()
-                        .addHeader("Authorization", "Bearer $apiToken")
-                        .build()
-                } else {
-                    chain.request()
+                val requestBuilder = chain.request().newBuilder()
+                    .header("User-Agent", "MateDroid/${BuildConfig.VERSION_NAME}")
+                if (basicAuthUsername.isNotBlank() && basicAuthPassword.isNotBlank()) {
+                    requestBuilder.addHeader("Authorization",
+                        okhttp3.Credentials.basic(basicAuthUsername, basicAuthPassword))
                 }
-                chain.proceed(request)
+                if (apiToken.isNotBlank()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $apiToken")
+                }
+                chain.proceed(requestBuilder.build())
             }
             .connectTimeout(1, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

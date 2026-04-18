@@ -187,6 +187,15 @@
     <string name="hide_token">Nascondi token</string>
     <string name="show_token">Mostra token</string>
 
+    <!-- HTTP Basic Auth for reverse proxy -->
+    <string name="settings_http_basic_auth_username_label">Nome utente HTTP Basic Auth (opzionale)</string>
+    <string name="settings_http_basic_auth_username_placeholder">Nome utente</string>
+    <string name="settings_http_basic_auth_password_label">Password HTTP Basic Auth</string>
+    <string name="settings_http_basic_auth_password_placeholder">Password</string>
+    <string name="settings_http_basic_auth_hint">Imposta questi campi se il server è dietro un reverse proxy con autenticazione HTTP Basic (ad esempio se usi MyTeslaMate).</string>
+    <string name="hide_password">Nascondi password</string>
+    <string name="show_password">Mostra password</string>
+
     <!-- Accept invalid certificates toggle -->
     <string name="settings_accept_invalid_certs">Accetta certificati non validi</string>
     <string name="settings_accept_invalid_certs_hint">Abilita per certificati autofirmati</string>
@@ -270,6 +279,9 @@
     <string name="filter_last_90_days">Ultimi 90 giorni</string>
     <string name="filter_last_year">Ultimo anno</string>
     <string name="filter_all_time">Tutto</string>
+    <string name="filter_custom">Personalizzato</string>
+    <string name="filter_custom_from">Da</string>
+    <string name="filter_custom_to">A</string>
 
     <!-- Distance filter chips (metric) -->
     <string name="filter_all">Tutti</string>
@@ -346,6 +358,8 @@
     <string name="power_profile">Profilo potenza</string>
     <string name="battery_level">Livello batteria</string>
     <string name="elevation_profile">Profilo altitudine</string>
+    <!-- Title for the speed distribution histogram in drive details -->
+    <string name="speed_distribution">Distribuzione velocità</string>
 
     <!-- Weather section -->
     <string name="weather_along_way">Meteo lungo il percorso</string>
@@ -356,6 +370,12 @@
 
     <!-- Section title for charge history list -->
     <string name="charge_history">Cronologia ricariche</string>
+
+    <!-- Filter location -->
+    <string name="filter_location">Posizione</string>
+    <string name="search">Ricerca</string>
+    <string name="select_all">Seleziona tutto</string>
+    <string name="deselect_all">Deseleziona tutto</string>
 
     <!-- Empty state when no charges match filters -->
     <string name="no_charges_found">Nessuna ricarica trovata per il periodo selezionato</string>
@@ -993,6 +1013,14 @@
     <!-- Notification title during charging. %s is car name -->
     <string name="charging_notification_title">%s - In ricarica</string>
     <string name="charging_notification_loading">Verificando stato di ricarica…</string>
+    <!-- Notification title when DC charge is complete but cable still plugged. %s is car name -->
+    <string name="charging_notification_dc_finished_title">%s — Ricarica completata</string>
+    <!-- Notification content when DC charge is complete but cable still plugged -->
+    <string name="charging_notification_dc_finished_content">Scollega per liberare il posto DC</string>
+    <!-- Warning banner title on the live charge screen when DC charge finished but still plugged -->
+    <string name="dc_unplug_warning_title">Ricarica completata</string>
+    <!-- Warning banner message on the live charge screen -->
+    <string name="dc_unplug_warning_message">Scollega per liberare questo posto di ricarica DC per altri</string>
 
     <!-- ==================== Sentry Notifications ==================== -->
     <!-- Notification channel name for sentry mode alerts -->
@@ -1012,6 +1040,67 @@
 
     <!-- Notification action button to open the Tesla app -->
     <string name="sentry_action_open_tesla">Apri app Tesla</string>
+
+    <!-- ==================== Sentry History Screen ==================== -->
+    <string name="sentry_history_title">Cronologia Sentinella</string>
+    <string name="sentry_history_current_session">Sessione corrente</string>
+    <string name="sentry_history_no_alerts">Nessun allarme rilevato finora</string>
+    <string name="sentry_history_past">Allarmi passati</string>
+    <string name="sentry_alert_detected">Allarme rilevato</string>
+    <string name="sentry_history_empty">Nessuno storico allarmi sentinella</string>
+    <string name="sentry_history_today">Oggi</string>
+    <string name="sentry_history_yesterday">Ieri</string>
+
+    <string name="nav_trips">Viaggi</string>
+    <string name="trips_title">Viaggi</string>
+    <string name="trips_empty">Nessun viaggio rilevato.\nUn viaggio richiede almeno 2 tratte collegate da una ricarica DC.</string>
+    <string name="trips_sync_warning">Sincronizzazione in corso — alcuni viaggi potrebbero non apparire fino al completamento dei dati di ricarica.</string>
+    <string name="trip_detail_title">Dettagli viaggio</string>
+    <string name="trip_summary">Riepilogo viaggio</string>
+    <string name="trip_legs">Tappe del viaggio</string>
+    <string name="trip_route_map">Mappa del percorso</string>
+    <string name="trip_charge_stops">Soste di ricarica</string>
+    <string name="trip_driving_time">Tempo di guida</string>
+    <string name="trip_total_time">Tempo totale</string>
+    <string name="trip_energy_consumed">Energia consumata</string>
+    <string name="trip_energy_charged">Energia ricaricata</string>
+    <string name="trip_charge_cost">Costo ricarica</string>
+    <string name="trip_leg_drive">Tratta %1$d</string>
+    <string name="trip_leg_charge">Ricarica %1$d</string>
+
+    <string name="trip_timeline_title">Cronologia</string>
+    <string name="trip_timeline_driving">In marcia</string>
+    <string name="trip_timeline_charging_dc">Ricarica DC</string>
+    <string name="trip_timeline_charging_ac">Ricarica AC</string>
+    <string name="trip_timeline_parked">In sosta</string>
+
+    <string name="trip_edit_add_leg">Aggiungi tratta</string>
+    <string name="trip_edit_merge_trip">Unisci viaggio</string>
+    <string name="trip_edit_add_leg_title">Aggiungi a questo viaggio</string>
+    <string name="trip_edit_add_leg_empty">Nessuna tratta o ricarica nelle vicinanze</string>
+    <string name="trip_edit_merge_title">Unisci un altro viaggio</string>
+    <string name="trip_edit_merge_empty">Nessun viaggio entro 2 settimane</string>
+    <string name="trip_edit_merge_confirm_title">Unire i viaggi?</string>
+    <string name="trip_edit_merge_confirm_body">Unisce questi viaggi in uno solo. Puoi annullare eliminando il viaggio unito.</string>
+    <string name="trip_edit_merge_confirm">Unisci</string>
+    <string name="trip_edit_delete">Elimina viaggio</string>
+    <string name="trip_edit_delete_confirm_title">Eliminare questo viaggio?</string>
+    <string name="trip_edit_delete_confirm_body">Questo annulla le modifiche. I viaggi rilevati automaticamente al suo interno riappariranno.</string>
+    <string name="delete">Elimina</string>
+
+    <string name="part_of_trip">Parte di %s</string>
+    <string name="part_of_trip_remove">Rimuovi</string>
+    <string name="part_of_trip_remove_confirm_title">Rimuovere dal viaggio?</string>
+    <string name="part_of_trip_remove_confirm_body">Questa tratta non farà più parte di %s.</string>
+
+    <string name="trip_rename_action">Rinomina</string>
+    <string name="trip_rename_dialog_title">Rinomina viaggio</string>
+    <string name="trip_rename_field_label">Nome viaggio</string>
+    <string name="trip_rename_field_hint">Lascia vuoto per usare il nome predefinito</string>
+    <string name="save">Salva</string>
+    <string name="add">Aggiungi</string>
+    <string name="trip_edit_select_multiple">Seleziona più tratte</string>
+    <string name="trip_edit_selected_count">%d selezionate</string>
 
     <!-- ==================== Car Image Picker ==================== -->
     <!-- Dialog title for selecting car appearance (long-press on car image) -->
@@ -1080,4 +1169,22 @@
     <string name="notification_permission_title">Resta informato</string>
     <string name="notification_permission_message">MateDroid può avvisarti su eventi della modalità sentinella, avvisi di pressione pneumatici e stato di ricarica. Abilita le notifiche per restare aggiornato sulla tua auto.</string>
     <string name="notification_permission_grant">Abilita notifiche</string>
+
+    <!-- ==================== Where Was I Screen ==================== -->
+    <string name="where_was_i_title">Dove ero quel giorno?</string>
+    <string name="where_was_i_hint">Scegli una data</string>
+    <string name="where_was_i_screen_title">Dove ero?</string>
+    <string name="where_was_i_driving">In marcia</string>
+    <string name="where_was_i_charging">In ricarica</string>
+    <string name="where_was_i_parked">Parcheggiato</string>
+    <string name="where_was_i_go">Vai!</string>
+    <string name="where_was_i_pick_date">Scegli una data</string>
+    <string name="where_was_i_pick_time">Scegli un orario</string>
+    <string name="where_was_i_tap_details">Tocca per dettagli</string>
+    <string name="where_was_i_no_data">Nessun dato disponibile per questa data</string>
+    <!-- Tooltip shown when tapping the map pin on the Where Was I screen -->
+    <string name="you_were_here">Eri qui!</string>
+    <!-- Parked duration shown on the Where Was I screen -->
+    <string name="parked_for">Parcheggiato da %s</string>
+    <string name="parked_since">dalle %s</string>
 </resources>

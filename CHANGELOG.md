@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Trip timeline**: Horizontal timeline bar on the trip detail screen, under the map, visualizing each drive, charge, and parking gap as a colored segment proportional to its duration. Drives use the car's accent color, charges use the established AC/DC palette (green/orange, harmonized with the car's theme), parking gaps use a muted neutral. Tap any segment to see its details; multi-day parking stretches are compressed with a sqrt curve so driving and charging stay readable.
+- **Edit trips**: Two new buttons below the trip legs — "Add leg" and "Merge trip". "Add leg" opens a bottom sheet listing drives and charges within ±2 days of the trip that aren't already in another saved trip. "Merge trip" opens a bottom sheet listing adjacent trips within ±14 days and, after confirmation, combines them into one trip — automatically rolling in all drives and charges (AC included) between them. Dashed line on the map connects legs that are geographically far apart (e.g., when the car was transported). Delete a trip via the top-bar overflow menu: the underlying auto-detected trips reappear automatically, which is the built-in way to undo a merge or edit.
+
+### Changed
+- **Trip persistence**: Trips are now stored as first-class database entities. Auto-detected trips are silently persisted on first detection, unlocking the ability to edit and merge trips in a future update. No visible change for users.
+
+## [1.5.0] - 2026-04-15
+
+### Added
+- **HTTP Basic Auth**: Support for HTTP Basic Authentication in the Advanced network settings, for servers behind a reverse proxy requiring credentials. Enables compatibility with MyTeslaMate and other setups using authenticated reverse proxies.
+- **Custom date range filter**: Drives, charges, and trips pages now have a "Custom" filter chip that opens two date pickers (from/to). The chip label shows the selected range in locale-aware DD/MM or MM/DD format.
+- **Charging elapsed timer in status bar**: Live chronometer displayed next to the notification icon in the Android status bar during active charging sessions (MM:SS, then H:MM:SS after 1 hour).
+- **DC unplug warning**: When a DC charge completes but the cable remains plugged in, the notification icon switches to a warning variant with a chronometer counting time since completion. The live charge screen shows an orange warning banner prompting the user to unplug and free the DC spot. AC charges continue to dismiss the notification as before.
+
+## [1.4.1] - 2026-04-07
+
+### Fixed
+- **Sentry alert addresses**: Fixed empty geofence string from the API causing blank address display instead of showing the reverse-geocoded location or "Alert detected" fallback.
+
+## [1.4.0] - 2026-04-06
+
+### Added
+- **Trip grouping**: Automatically detects highway/road trips (drives connected by DC charging stops) and groups them into unified trips. Dedicated Trips screen with list and detail view including route map, country flags, summary stats, and per-leg breakdown.
+- **Sentry alert history**: Persistent on-device log of sentry alert events with 6-day activity heatmap and location-aware alerts showing geofence name or address. Tap the red sentry dot on the dashboard or widget to view current session and past alerts.
+- **Widget charging power**: Home screen widget now shows charging power in the status bar icons.
+- **Mileage screen**: Added energy cost, total energy consumption, and average efficiency (Wh/km) to all levels (lifetime, year, month, day).
+- **Charges screen**: "Select all / Deselect all" toggle in the location filter dropdown, respects the current search query.
+
+### Changed
+- **Trip detail map**: Map tiles now load in parallel with route data for faster display. Route points are simplified with Douglas-Peucker for smoother rendering.
+- **Trip route caching**: GPS route data and country sequence are cached in Room for instant reload on subsequent views.
+- **Chart Y-axis**: Labels now show meaningful, non-repeating values with automatic decimal precision. Battery charts auto-fit to actual data range instead of fixed 0-100%.
+- **OSMDroid tile cache**: Centralized tile cache configuration across all map screens.
+
+### Fixed
+- **Temperature charts**: Removed double-conversion on charge detail temperature chart (values already pre-converted by API).
+- **Weather Along the Way**: Fixed missing °C→°F conversion for Open-Meteo weather data when using imperial units.
+- **Drives screen**: Removed hardcoded imperial unit conversions on max speed, distance chart, and top speed chart (values already pre-converted by API).
+- **Spelling**: Minor spelling and translation corrections.
+
+## [1.4.0-beta2] - 2026-04-04
+
+### Added
+- **Sentry event heatmap**: 6-day activity heatmap (12x6 grid, 2-hour blocks) at the top of the Sentry History screen. Color intensity from palette empty to red indicates event density (0–20+ events). Tapping a cell shows a tooltip with date, time range, and event count; tapping the tooltip scrolls to matching alerts. Future hours are transparent.
+- **Sentry alert addresses**: Alert rows now show the TeslaMate geofence name or reverse-geocoded address instead of repeating "Alert detected". Coordinates are captured at detection time; addresses are resolved lazily from the geocode cache or Nominatim.
+
+### Fixed
+- **Sentry History theme**: Screen now follows the system light/dark theme instead of being always dark.
+
+## [1.4.0-beta1] - 2026-04-02
+
+### Added
+- **Trip grouping**: Automatically detects highway/road trips (drives connected by DC charging stops) and groups them into unified trips. Dedicated Trips screen with list and detail view including route map, country flags, summary stats, and per-leg breakdown.
+- **Sentry alert history**: Persistent on-device log of sentry alert events. Tap the red sentry dot on the dashboard or widget to view current session alerts and past alerts grouped by day. Sentry notifications also deep-link to the history screen.
+- **Widget charging power**: Home screen widget now shows charging power in the status bar icons.
+- **Mileage screen**: Added energy cost, total energy consumption, and average efficiency (Wh/km) to all levels (lifetime, year, month, day).
+- **Charges screen**: "Select all / Deselect all" toggle in the location filter dropdown, respects the current search query.
+
+### Changed
+- **Trip detail map**: Map tiles now load in parallel with route data for faster display. Route points are simplified with Douglas-Peucker for smoother rendering.
+- **Trip route caching**: GPS route data and country sequence are cached in Room for instant reload on subsequent views.
+- **Chart Y-axis**: Labels now show meaningful, non-repeating values with automatic decimal precision. Battery charts auto-fit to actual data range instead of fixed 0-100%.
+- **OSMDroid tile cache**: Centralized tile cache configuration across all map screens.
+
+### Fixed
+- **Temperature charts**: Removed double-conversion on charge detail temperature chart (values already pre-converted by API).
+- **Weather Along the Way**: Fixed missing °C→°F conversion for Open-Meteo weather data when using imperial units.
+- **Drives screen**: Removed hardcoded imperial unit conversions on max speed, distance chart, and top speed chart (values already pre-converted by API).
+- **Spelling**: Minor spelling and translation corrections.
+
+## [1.3.0] - 2026-03-30
+
+### Added
+- **Where was I that day?**: New feature on the dashboard to look up the car's position and activity at any past date and time. Shows map, location breadcrumb (country/region/city), car state (driving/charging/parked), state-specific details, and weather. Tapping a card navigates to the corresponding detail screen. When the car was parked/sleeping all day, it finds the last known location and shows how long the car has been parked with a "since" timestamp.
+- **Line chart visual revamp**: Smooth cubic Bezier curves, gradient fills, dashed grid lines, vertical crosshair, glowing indicators, animated entrance, and theme-aware tooltips.
+- **Battery heater overlay**: Grafana-style orange annotation bands on drive detail Power and Battery charts highlighting battery pre-heating periods.
+- **Speed distribution histogram**: Drive details now include a speed histogram showing the percentage of time spent in each speed bucket (10 km/h or 5 mph).
+- **Chinese language support**: Added Simplified Chinese (简体中文) as the 5th supported language.
+
+### Changed
+- **Map markers**: Replaced default OSMDroid markers with custom pin-needle markers (accent-colored circle head with thin needle) across all map screens (dashboard, Where was I?, charge details).
+- **HTTP requests**: All HTTP requests now include a `MateDroid/<version>` User-Agent header.
+
 ## [1.2.3] - 2026-03-08
 
 ### Added
@@ -431,7 +515,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0
+[1.5.0-beta1]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0-beta1
+[1.4.1]: https://github.com/vide/matedroid/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/vide/matedroid/compare/v1.3.0...v1.4.0
+[1.4.0-beta2]: https://github.com/vide/matedroid/compare/v1.4.0-beta1...v1.4.0-beta2
+[1.4.0-beta1]: https://github.com/vide/matedroid/compare/v1.3.0...v1.4.0-beta1
+[1.3.0]: https://github.com/vide/matedroid/compare/v1.2.3...v1.3.0
+[1.3.0-beta2]: https://github.com/vide/matedroid/compare/v1.3.0-beta1...v1.3.0-beta2
+[1.3.0-beta1]: https://github.com/vide/matedroid/compare/v1.2.3...v1.3.0-beta1
 [1.2.3]: https://github.com/vide/matedroid/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/vide/matedroid/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/vide/matedroid/compare/v1.2.0...v1.2.1

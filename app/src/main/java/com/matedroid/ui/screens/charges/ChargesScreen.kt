@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.ElectricBolt
@@ -39,12 +40,16 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -74,9 +79,12 @@ import com.matedroid.R
 import com.matedroid.data.api.models.ChargeData
 import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.BarSegment
+import com.matedroid.ui.components.DateRangePickerDialog
 import com.matedroid.ui.components.InteractiveBarChart
+import com.matedroid.ui.components.formatShortDate
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -149,10 +157,17 @@ fun ChargesScreen(
                     teslamateBaseUrl = uiState.teslamateBaseUrl,
                     selectedDateFilter = uiState.selectedFilter,
                     selectedChargeTypeFilter = uiState.chargeTypeFilter,
+                    customStartDate = uiState.customStartDate,
+                    customEndDate = uiState.customEndDate,
                     initialScrollPosition = uiState.scrollPosition,
                     initialScrollOffset = uiState.scrollOffset,
                     palette = palette,
                     onDateFilterSelected = { viewModel.setDateFilter(it) },
+                    onCustomRangeSelected = { start, end -> viewModel.setCustomDateRange(start, end) },
+                    availableLocations = uiState.availableLocations,
+                    selectedLocations = uiState.selectedLocations,
+                    onLocationFilterToggled = { viewModel.setLocationFilter(it) },
+                    onLocationFilterCleared = { viewModel.clearLocationFilter() },
                     onChargeTypeFilterSelected = { viewModel.setChargeTypeFilter(it) },
                     onChargeClick = { chargeId, scrollIndex, scrollOffset ->
                         viewModel.saveScrollPosition(scrollIndex, scrollOffset)
@@ -176,10 +191,17 @@ private fun ChargesContent(
     teslamateBaseUrl: String,
     selectedDateFilter: DateFilter,
     selectedChargeTypeFilter: ChargeTypeFilter,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
+    availableLocations: List<String>,
+    selectedLocations: Set<String>,
+    onLocationFilterToggled: (String) -> Unit,
+    onLocationFilterCleared: () -> Unit,
     initialScrollPosition: Int,
     initialScrollOffset: Int,
     palette: CarColorPalette,
     onDateFilterSelected: (DateFilter) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit,
     onChargeTypeFilterSelected: (ChargeTypeFilter) -> Unit,
     onChargeClick: (chargeId: Int, scrollIndex: Int, scrollOffset: Int) -> Unit
 ) {
@@ -198,17 +220,34 @@ private fun ChargesContent(
         item {
             DateFilterChips(
                 selectedFilter = selectedDateFilter,
+                customStartDate = customStartDate,
+                customEndDate = customEndDate,
                 palette = palette,
-                onFilterSelected = onDateFilterSelected
+                onFilterSelected = onDateFilterSelected,
+                onCustomRangeSelected = onCustomRangeSelected
             )
         }
 
         item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
             ChargeTypeFilterChips(
                 selectedFilter = selectedChargeTypeFilter,
-                palette = palette,
-                onFilterSelected = onChargeTypeFilterSelected
-            )
+                onFilterSelected = onChargeTypeFilterSelected,
+                modifier = Modifier.weight(1f),
+                palette = palette
+                )
+            LocationFilterDropdown(
+                availableLocations = availableLocations,
+                selectedLocations = selectedLocations,
+                onLocationToggled = onLocationFilterToggled,
+                onClearAll = onLocationFilterCleared,
+                palette = palette
+                )
+            }
         }
 
         item {
@@ -291,13 +330,18 @@ private fun ChargesContent(
 @Composable
 private fun DateFilterChips(
     selectedFilter: DateFilter,
+    customStartDate: LocalDate?,
+    customEndDate: LocalDate?,
     palette: CarColorPalette,
-    onFilterSelected: (DateFilter) -> Unit
+    onFilterSelected: (DateFilter) -> Unit,
+    onCustomRangeSelected: (LocalDate, LocalDate) -> Unit
 ) {
+    var showDatePicker by remember { mutableStateOf(false) }
+
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(DateFilter.entries.toList()) { filter ->
+        items(DateFilter.entries.filter { it != DateFilter.CUSTOM }) { filter ->
             FilterChip(
                 selected = filter == selectedFilter,
                 onClick = { onFilterSelected(filter) },
@@ -308,6 +352,34 @@ private fun DateFilterChips(
                 )
             )
         }
+        item {
+            val label = if (selectedFilter == DateFilter.CUSTOM && customStartDate != null && customEndDate != null) {
+                "${formatShortDate(customStartDate)} – ${formatShortDate(customEndDate)}"
+            } else {
+                stringResource(R.string.filter_custom)
+            }
+            FilterChip(
+                selected = selectedFilter == DateFilter.CUSTOM,
+                onClick = { showDatePicker = true },
+                label = { Text(label) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = palette.surface,
+                    selectedLabelColor = palette.onSurface
+                )
+            )
+        }
+    }
+
+    if (showDatePicker) {
+        DateRangePickerDialog(
+            onDismiss = { showDatePicker = false },
+            onRangeSelected = { start, end ->
+                showDatePicker = false
+                onCustomRangeSelected(start, end)
+            },
+            initialStart = customStartDate,
+            initialEnd = customEndDate
+        )
     }
 }
 
@@ -316,9 +388,11 @@ private fun DateFilterChips(
 private fun ChargeTypeFilterChips(
     selectedFilter: ChargeTypeFilter,
     palette: CarColorPalette,
+    modifier: Modifier = Modifier,
     onFilterSelected: (ChargeTypeFilter) -> Unit
 ) {
     LazyRow(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(ChargeTypeFilter.entries.toList()) { filter ->
@@ -877,39 +951,99 @@ private fun ChargesChartPage(
     }
 }
 
-/*
 @Composable
-private fun ChartLegend(
-    palette: CarColorPalette
+private fun LocationFilterDropdown(
+    availableLocations: List<String>,
+    selectedLocations: Set<String>,
+    palette: CarColorPalette,
+    onLocationToggled: (String) -> Unit,
+    onClearAll: () -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        LegendItem(color = Color(0xFF4CAF50) , label = stringResource(R.string.charging_ac))
-        Spacer(modifier = Modifier.width(24.dp))
-        LegendItem(color = Color(0xFFFF9800), label = stringResource(R.string.charging_dc))
-    }
-}
+    var expanded by remember { mutableStateOf(false) }
+    var searchText by remember { mutableStateOf("") }
+    val hasSelection = selectedLocations.isNotEmpty()
 
-@Composable
-private fun LegendItem(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(12.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(color)
+    Box {
+        FilterChip(
+            selected = hasSelection,
+            onClick = { expanded = true },
+            label = {
+                Text(
+                    if (hasSelection && selectedLocations.size == 1)
+                        selectedLocations.first()
+                    else if (hasSelection)
+                        "${selectedLocations.size} ubicaciones"
+                    else
+                        stringResource(R.string.filter_location)
+                )
+            },
+            leadingIcon = { Icon(Icons.Default.LocationOn, null, Modifier.size(16.dp)) },
+            trailingIcon = if (hasSelection) {
+                {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp).clickable { onClearAll() }
+                    )
+                }
+            } else null
         )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false; searchText = "" }
+        ) {
+            OutlinedTextField(
+                value = searchText,
+                onValueChange = { searchText = it },
+                placeholder = { Text(stringResource(R.string.search)) },
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                singleLine = true
+            )
+            val filtered = availableLocations.filter {
+                it.contains(searchText, ignoreCase = true)
+            }
+            val allFilteredSelected = filtered.isNotEmpty() && filtered.all { it in selectedLocations }
+
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (allFilteredSelected)
+                            stringResource(R.string.deselect_all)
+                        else
+                            stringResource(R.string.select_all),
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        if (allFilteredSelected) Icons.Default.Clear
+                        else Icons.Default.Check,
+                        contentDescription = null,
+                        tint = palette.accent
+                    )
+                },
+                onClick = {
+                    if (allFilteredSelected) {
+                        filtered.forEach { onLocationToggled(it) }
+                    } else {
+                        filtered.filter { it !in selectedLocations }.forEach { onLocationToggled(it) }
+                    }
+                }
+            )
+            HorizontalDivider()
+            filtered.forEach { location ->
+                val isSelected = location in selectedLocations
+                DropdownMenuItem(
+                    text = { Text(location) },
+                    leadingIcon = {
+                        if (isSelected)
+                            Icon(Icons.Default.Check, null, tint = palette.accent)
+                        else
+                            Spacer(Modifier.size(24.dp))
+                    },
+                    onClick = { onLocationToggled(location) }
+                )
+            }
+        }
     }
 }
-*/
