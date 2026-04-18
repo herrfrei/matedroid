@@ -25,6 +25,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Route
@@ -45,6 +47,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,6 +55,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +76,7 @@ import com.matedroid.data.api.models.Units
 import com.matedroid.domain.model.Trip
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.icons.CustomIcons
+import com.matedroid.ui.components.TripEditActions
 import com.matedroid.ui.components.TripTimeline
 import com.matedroid.ui.components.TripTimelineCountry
 import com.matedroid.ui.components.createPinMarkerDrawable
@@ -103,16 +110,68 @@ fun TripDetailScreen(
 
     LaunchedEffect(carId, tripStartDate) { viewModel.loadTrip(carId, tripStartDate) }
 
+    LaunchedEffect(uiState.justDeleted) {
+        if (uiState.justDeleted) onNavigateBack()
+    }
+
+    // When the user returns from a child screen (e.g. a drive/charge detail where they may have
+    // removed a leg), reload so the trip reflects the current DB state. The ViewModel ignores the
+    // first ON_RESUME (on initial composition) by only reloading after at least one ON_PAUSE.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> viewModel.onScreenPaused()
+                Lifecycle.Event.ON_RESUME -> viewModel.onScreenResumed()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    val displayTitle = run {
+        val trip = uiState.trip
+        val customName = uiState.savedTripName?.takeIf { it.isNotBlank() }
+        when {
+            customName != null -> customName
+            trip != null -> trip.displayName()
+            else -> stringResource(R.string.trip_detail_title)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.trip_detail_title)) },
+                title = {
+                    Text(
+                        text = displayTitle,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.back)
                         )
+                    }
+                },
+                actions = {
+                    if (uiState.savedTripId != null) {
+                        IconButton(onClick = viewModel::openRenameDialog) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = stringResource(R.string.trip_rename_action)
+                            )
+                        }
+                        IconButton(onClick = viewModel::openDeleteConfirm) {
+                            Icon(
+                                Icons.Filled.DeleteOutline,
+                                contentDescription = stringResource(R.string.trip_edit_delete)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -149,14 +208,57 @@ fun TripDetailScreen(
                         countries = uiState.countries,
                         units = uiState.units,
                         palette = palette,
+                        dcChargeIds = uiState.dcChargeIds,
+                        canEdit = uiState.savedTripId != null,
                         onDriveClick = onNavigateToDriveDetail,
                         onChargeClick = onNavigateToChargeDetail,
                         onCountryClick = onNavigateToCountryStats,
+                        onAddLeg = viewModel::openAddLegSheet,
+                        onMergeTrip = viewModel::openMergeSheet,
                         currencySymbol = uiState.currencySymbol
                     )
                 }
             }
         }
+    }
+
+    // Sheets and dialogs — rendered at top level so they overlay regardless of scroll position
+    if (uiState.showAddLegSheet && uiState.eligibleLegs != null) {
+        AddLegSheet(
+            eligible = uiState.eligibleLegs!!,
+            dcChargeIds = uiState.dcChargeIds,
+            palette = palette,
+            onPickLegs = viewModel::pickLegs,
+            onDismiss = viewModel::closeAddLegSheet
+        )
+    }
+    if (uiState.showMergeSheet) {
+        MergeTripSheet(
+            adjacentTrips = uiState.adjacentTrips,
+            palette = palette,
+            onPick = viewModel::pickMergeTarget,
+            onDismiss = viewModel::closeMergeSheet
+        )
+    }
+    if (uiState.pendingMergeTarget != null) {
+        MergeConfirmDialog(
+            onConfirm = viewModel::confirmMergeTarget,
+            onDismiss = viewModel::cancelMergeTarget
+        )
+    }
+    if (uiState.showDeleteConfirm) {
+        DeleteTripConfirmDialog(
+            onConfirm = viewModel::confirmDelete,
+            onDismiss = viewModel::closeDeleteConfirm
+        )
+    }
+    if (uiState.showRenameDialog) {
+        RenameTripDialog(
+            value = uiState.renameDraft,
+            onValueChange = viewModel::updateRenameDraft,
+            onConfirm = viewModel::confirmRename,
+            onDismiss = viewModel::closeRenameDialog
+        )
     }
 }
 
@@ -169,9 +271,13 @@ private fun TripDetailContent(
     countries: List<TripCountry>,
     units: Units?,
     palette: CarColorPalette,
+    dcChargeIds: Set<Int>,
+    canEdit: Boolean,
     onDriveClick: (driveId: Int) -> Unit,
     onChargeClick: (chargeId: Int) -> Unit,
     onCountryClick: (countryCode: String) -> Unit,
+    onAddLeg: () -> Unit,
+    onMergeTrip: () -> Unit,
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
@@ -191,7 +297,7 @@ private fun TripDetailContent(
         )
 
         TripTimeline(
-            segments = remember(trip) { buildTimelineSegments(trip) },
+            segments = remember(trip, dcChargeIds) { buildTimelineSegments(trip, dcChargeIds) },
             startDate = trip.startDate,
             endDate = trip.endDate,
             startCity = extractCity(trip.startAddress),
@@ -243,10 +349,21 @@ private fun TripDetailContent(
                 is TripLeg.Drive -> DriveLegCard(leg, units, palette) {
                     onDriveClick(leg.drive.driveId)
                 }
-                is TripLeg.Charge -> ChargeLegCard(leg, palette) {
+                is TripLeg.Charge -> ChargeLegCard(
+                    leg = leg,
+                    palette = palette,
+                    isDc = leg.charge.chargeId in dcChargeIds
+                ) {
                     onChargeClick(leg.charge.chargeId)
                 }
             }
+        }
+
+        if (canEdit) {
+            TripEditActions(
+                onAddLeg = onAddLeg,
+                onMergeTrip = onMergeTrip
+            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -432,6 +549,8 @@ private fun StatItemView(
 
 // === Map ===
 
+private const val GEO_JUMP_THRESHOLD_METERS = 10_000.0
+
 @Composable
 private fun TripMapCard(
     routeSegments: List<TripRouteSegment>,
@@ -466,19 +585,12 @@ private fun TripMapCard(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(R.string.trip_route_map),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(250.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(320.dp)
+                .clip(RoundedCornerShape(12.dp))
+        ) {
                 AndroidView(
                     factory = { mapCtx ->
                         MapView(mapCtx).apply {
@@ -492,22 +604,44 @@ private fun TripMapCard(
                         // Clear previous overlays and redraw
                         mapView.overlays.clear()
 
+                        var previousEnd: GeoPoint? = null
                         routeSegments.forEachIndexed { index, segment ->
                             val geoPoints = segment.points.map {
                                 GeoPoint(it.latitude, it.longitude)
                             }
-                            if (geoPoints.size >= 2) {
-                                val polyline = Polyline().apply {
-                                    setPoints(geoPoints)
-                                    outlinePaint.color =
-                                        if (index % 2 == 0) oddLegColorArgb
-                                        else evenLegColorArgb
-                                    outlinePaint.strokeWidth = 8f
-                                    outlinePaint.strokeCap = Paint.Cap.ROUND
-                                    outlinePaint.strokeJoin = Paint.Join.ROUND
+                            if (geoPoints.size < 2) return@forEachIndexed
+
+                            // If there's a previous leg, check if this leg's start is geographically
+                            // far from the previous leg's end (car was transported, or between
+                            // non-contiguous trips that were merged). Draw a dashed connector.
+                            val firstPoint = geoPoints.first()
+                            val prev = previousEnd
+                            if (prev != null) {
+                                val distanceMeters = prev.distanceToAsDouble(firstPoint)
+                                if (distanceMeters > GEO_JUMP_THRESHOLD_METERS) {
+                                    val dashed = Polyline().apply {
+                                        setPoints(listOf(prev, firstPoint))
+                                        outlinePaint.color = oddLegColorArgb
+                                        outlinePaint.strokeWidth = 6f
+                                        outlinePaint.strokeCap = Paint.Cap.ROUND
+                                        outlinePaint.pathEffect =
+                                            android.graphics.DashPathEffect(floatArrayOf(20f, 15f), 0f)
+                                    }
+                                    mapView.overlays.add(dashed)
                                 }
-                                mapView.overlays.add(polyline)
                             }
+
+                            val polyline = Polyline().apply {
+                                setPoints(geoPoints)
+                                outlinePaint.color =
+                                    if (index % 2 == 0) oddLegColorArgb
+                                    else evenLegColorArgb
+                                outlinePaint.strokeWidth = 8f
+                                outlinePaint.strokeCap = Paint.Cap.ROUND
+                                outlinePaint.strokeJoin = Paint.Join.ROUND
+                            }
+                            mapView.overlays.add(polyline)
+                            previousEnd = geoPoints.last()
                         }
 
                         val mapCtx = mapView.context
@@ -589,7 +723,6 @@ private fun TripMapCard(
                         }
                     }
                 }
-            }
         }
     }
 }
@@ -699,14 +832,16 @@ private fun DriveLegCard(
 private fun ChargeLegCard(
     leg: TripLeg.Charge,
     palette: CarColorPalette,
+    isDc: Boolean,
     onClick: () -> Unit
 ) {
+    val chipColor = if (isDc) palette.dcColor else palette.acColor
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = palette.dcColor.copy(alpha = 0.1f)
+            containerColor = chipColor.copy(alpha = 0.1f)
         )
     ) {
         Row(
@@ -717,15 +852,31 @@ private fun ChargeLegCard(
                 Icons.Filled.ElectricBolt,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = palette.dcColor
+                tint = chipColor
             )
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.trip_leg_charge, leg.index),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.trip_leg_charge, leg.index),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(chipColor)
+                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = if (isDc) "DC" else "AC",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
                 Text(
                     text = leg.charge.address,
                     style = MaterialTheme.typography.bodySmall,
@@ -738,7 +889,7 @@ private fun ChargeLegCard(
                     text = "+%.1f kWh".format(leg.charge.energyAdded),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
-                    color = palette.dcColor
+                    color = chipColor
                 )
                 Text(
                     text = formatDuration(leg.charge.durationMin),

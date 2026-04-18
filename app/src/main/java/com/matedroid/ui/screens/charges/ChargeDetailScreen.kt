@@ -74,6 +74,7 @@ import com.matedroid.data.api.models.Units
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
 import com.matedroid.ui.components.createPinMarkerDrawable
+import com.matedroid.ui.screens.trips.displayName
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -91,6 +92,7 @@ fun ChargeDetailScreen(
     chargeId: Int,
     exteriorColor: String? = null,
     onNavigateBack: () -> Unit,
+    onNavigateToTripDetail: (tripStartDate: String) -> Unit = {},
     viewModel: ChargeDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -143,6 +145,9 @@ fun ChargeDetailScreen(
                     units = uiState.units,
                     currencySymbol = uiState.currencySymbol,
                     isDcCharge = uiState.isDcCharge,
+                    containingTrip = uiState.containingTrip,
+                    onNavigateToTripDetail = onNavigateToTripDetail,
+                    onRemoveFromTrip = viewModel::removeFromTrip,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -157,6 +162,9 @@ private fun ChargeDetailContent(
     units: Units?,
     currencySymbol: String,
     isDcCharge: Boolean,
+    containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
+    onNavigateToTripDetail: (String) -> Unit,
+    onRemoveFromTrip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -177,6 +185,16 @@ private fun ChargeDetailContent(
     ) {
         // Location header card
         LocationHeaderCard(detail = detail, currencySymbol = currencySymbol, isDcCharge = isDcCharge)
+
+        // Part-of-trip banner
+        if (containingTrip != null) {
+            val (_, trip) = containingTrip
+            com.matedroid.ui.components.PartOfTripCard(
+                tripRoute = trip.displayName(),
+                onNavigateToTrip = { onNavigateToTripDetail(trip.startDate) },
+                onConfirmRemove = onRemoveFromTrip
+            )
+        }
 
         // Map showing charge location
         if (detail.latitude != null && detail.longitude != null) {

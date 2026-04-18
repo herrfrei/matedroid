@@ -1110,6 +1110,81 @@
     <!-- Tooltip label for a parking gap segment on the trip timeline (time between legs when the car is idle) -->
     <string name="trip_timeline_parked">Parked</string>
 
+    <!-- Button label: opens a bottom sheet to add a drive or charge to this trip -->
+    <string name="trip_edit_add_leg">Add leg</string>
+
+    <!-- Button label: opens a bottom sheet to merge another trip into this one -->
+    <string name="trip_edit_merge_trip">Merge trip</string>
+
+    <!-- Bottom sheet title for picking a drive or charge to add -->
+    <string name="trip_edit_add_leg_title">Add to this trip</string>
+
+    <!-- Empty-state message when no eligible drives or charges are nearby -->
+    <string name="trip_edit_add_leg_empty">No nearby drives or charges</string>
+
+    <!-- Bottom sheet title for picking another trip to merge with -->
+    <string name="trip_edit_merge_title">Merge another trip</string>
+
+    <!-- Empty-state message when no adjacent trips exist within the 2-week window -->
+    <string name="trip_edit_merge_empty">No trips within 2 weeks</string>
+
+    <!-- Confirmation dialog title before merging two trips -->
+    <string name="trip_edit_merge_confirm_title">Merge trips?</string>
+
+    <!-- Confirmation dialog body — explains that the user can undo by deleting the merged trip -->
+    <string name="trip_edit_merge_confirm_body">Combine these trips into one. You can undo by deleting the merged trip.</string>
+
+    <!-- Primary action label on the merge confirmation dialog -->
+    <string name="trip_edit_merge_confirm">Merge</string>
+
+    <!-- Overflow menu action: delete the currently viewed trip -->
+    <string name="trip_edit_delete">Delete trip</string>
+
+    <!-- Confirmation dialog title before deleting a saved trip -->
+    <string name="trip_edit_delete_confirm_title">Delete this trip?</string>
+
+    <!-- Confirmation dialog body — explains that auto-detected originals will come back -->
+    <string name="trip_edit_delete_confirm_body">This removes your edits. Auto-detected trips inside will reappear.</string>
+
+    <!-- Generic delete button label -->
+    <string name="delete">Delete</string>
+
+    <!-- Card on drive/charge detail: informs the user this leg belongs to a saved trip. %s is the trip route like "Rome → Paris". -->
+    <string name="part_of_trip">Part of %s</string>
+
+    <!-- Button on the part-of-trip card: detach this leg from the trip -->
+    <string name="part_of_trip_remove">Remove</string>
+
+    <!-- Dialog title when the user taps Remove on the part-of-trip card -->
+    <string name="part_of_trip_remove_confirm_title">Remove from trip?</string>
+
+    <!-- Dialog body explaining the consequence. %s is the trip route. -->
+    <string name="part_of_trip_remove_confirm_body">This leg will no longer be part of %s.</string>
+
+    <!-- Content description and tooltip for the pencil icon that opens the rename dialog -->
+    <string name="trip_rename_action">Rename</string>
+
+    <!-- Title of the rename dialog -->
+    <string name="trip_rename_dialog_title">Rename trip</string>
+
+    <!-- Label/placeholder for the text field inside the rename dialog -->
+    <string name="trip_rename_field_label">Trip name</string>
+
+    <!-- Hint text below the rename text field explaining that clearing it restores the default label -->
+    <string name="trip_rename_field_hint">Leave empty to use the default name</string>
+
+    <!-- Generic Save button label used in dialogs -->
+    <string name="save">Save</string>
+
+    <!-- Generic Add button label used in selection UIs -->
+    <string name="add">Add</string>
+
+    <!-- Content description of the icon in the Add-leg sheet header that switches to multi-select mode -->
+    <string name="trip_edit_select_multiple">Select multiple</string>
+
+    <!-- Title shown in multi-select mode indicating how many legs are currently selected -->
+    <string name="trip_edit_selected_count">%d selected</string>
+
     <!-- ==================== Car Image Picker ==================== -->
     <!-- Dialog title for selecting car appearance (long-press on car image) -->
     <string name="car_picker_title">Select Car Appearance</string>

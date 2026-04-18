@@ -42,12 +42,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -84,6 +88,22 @@ fun TripsScreen(
     val palette = CarColorPalettes.forExteriorColor(exteriorColor, isDarkTheme)
 
     LaunchedEffect(carId) { viewModel.setCarId(carId) }
+
+    // Reload trips when returning from a child screen — merges / edits in the trip detail
+    // invalidate this screen's cached list. The VM ignores the first ON_RESUME to avoid
+    // doubling up with setCarId's initial load.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE -> viewModel.onScreenPaused()
+                Lifecycle.Event.ON_RESUME -> viewModel.onScreenResumed()
+                else -> {}
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Scaffold(
         topBar = {
@@ -367,18 +387,26 @@ private fun TripItem(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "${extractCity(trip.startAddress)} → ${extractCity(trip.endAddress)}",
+                            text = trip.displayName(),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f),
                             maxLines = 1
                         )
                     }
+                    val hasCustomName = !trip.name.isNullOrBlank()
+                    val subtitle = if (hasCustomName) {
+                        "${extractCity(trip.startAddress)} → ${extractCity(trip.endAddress)} · ${formatDate(trip.startDate)}"
+                    } else {
+                        formatDate(trip.startDate)
+                    }
                     Text(
-                        text = formatDate(trip.startDate),
+                        text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 28.dp, top = 4.dp)
+                        modifier = Modifier.padding(start = 28.dp, top = 4.dp),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }
@@ -551,6 +579,16 @@ private fun YearFilterChips(
 internal fun extractCity(address: String): String {
     val parts = address.split(", ")
     return if (parts.size >= 2) parts.last() else address
+}
+
+/**
+ * Canonical user-facing label for a trip.
+ * If the user set a custom name (non-blank), that wins everywhere — title bar, trips list,
+ * "Part of X" cards, merge sheet rows, etc. Falls back to "startCity → endCity" otherwise.
+ */
+internal fun Trip.displayName(): String {
+    val custom = name?.takeIf { it.isNotBlank() }
+    return custom ?: "${extractCity(startAddress)} → ${extractCity(endAddress)}"
 }
 
 private fun formatDuration(minutes: Int): String {
