@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ElectricBolt
+import androidx.compose.material.icons.filled.LocalParking
+import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -32,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +48,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.vector.VectorPainter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -54,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import com.matedroid.R
+import com.matedroid.ui.icons.CustomIcons
 import com.matedroid.ui.theme.CarColorPalette
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -63,6 +73,7 @@ import kotlin.math.max
 import kotlin.math.sqrt
 
 /** A segment in a trip timeline, representing a slice of the trip's wall-clock time. */
+@Immutable
 sealed class TripTimelineSegment {
     abstract val durationMin: Int
 
@@ -85,6 +96,7 @@ sealed class TripTimelineSegment {
 }
 
 /** A country shown in the timeline's route header (start, end, or intermediate). */
+@Immutable
 data class TripTimelineCountry(
     val countryCode: String,
     val flagEmoji: String
@@ -115,6 +127,9 @@ fun TripTimeline(
     endCity: String,
     countries: List<TripTimelineCountry>,
     palette: CarColorPalette,
+    totalDurationMin: Int,
+    totalDrivingDurationMin: Int,
+    totalChargingDurationMin: Int,
     onCountryClick: (countryCode: String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -150,8 +165,6 @@ fun TripTimeline(
 
             InfoPanel(
                 selection = selectedIndex?.let { idx -> segments.getOrNull(idx)?.let { idx to it } },
-                startDate = startDate,
-                endDate = endDate,
                 startCity = startCity,
                 endCity = endCity,
                 countries = countries,
@@ -176,17 +189,27 @@ fun TripTimeline(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = formatClockTime(startDate),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                DurationSummary(
+                    totalDurationMin = totalDurationMin,
+                    totalDrivingDurationMin = totalDrivingDurationMin,
+                    totalChargingDurationMin = totalChargingDurationMin,
+                    palette = palette,
+                    modifier = Modifier.weight(2f)
                 )
                 Text(
                     text = formatClockTime(endDate),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -194,10 +217,80 @@ fun TripTimeline(
 }
 
 @Composable
+private fun DurationSummary(
+    totalDurationMin: Int,
+    totalDrivingDurationMin: Int,
+    totalChargingDurationMin: Int,
+    palette: CarColorPalette,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        DurationItem(
+            icon = CustomIcons.SteeringWheel,
+            text = formatCompactDuration(totalDrivingDurationMin),
+            tint = palette.accent
+        )
+        if (totalChargingDurationMin > 0) {
+            Spacer(Modifier.width(10.dp))
+            DurationItem(
+                icon = Icons.Filled.ElectricBolt,
+                text = formatCompactDuration(totalChargingDurationMin),
+                tint = palette.accent
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        DurationItem(
+            icon = Icons.Filled.Schedule,
+            text = formatCompactDuration(totalDurationMin),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun DurationItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    text: String,
+    tint: Color
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(12.dp),
+            tint = tint
+        )
+        Spacer(Modifier.width(3.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+private fun formatCompactDuration(minutes: Int): String {
+    val h = minutes / 60
+    val m = minutes % 60
+    return when {
+        h >= 24 -> {
+            val days = h / 24
+            val remH = h % 24
+            if (remH > 0) "${days}d${remH}h" else "${days}d"
+        }
+        h > 0 && m > 0 -> "${h}h${m}m"
+        h > 0 -> "${h}h"
+        else -> "${m}m"
+    }
+}
+
+@Composable
 private fun InfoPanel(
     selection: Pair<Int, TripTimelineSegment>?,
-    startDate: String,
-    endDate: String,
     startCity: String,
     endCity: String,
     countries: List<TripTimelineCountry>,
@@ -220,8 +313,6 @@ private fun InfoPanel(
             )
         } else {
             RouteHeaderContent(
-                startDate = startDate,
-                endDate = endDate,
                 startCity = startCity,
                 endCity = endCity,
                 countries = countries,
@@ -295,8 +386,6 @@ private fun SegmentInfoContent(
 
 @Composable
 private fun RouteHeaderContent(
-    startDate: String,
-    endDate: String,
     startCity: String,
     endCity: String,
     countries: List<TripTimelineCountry>,
@@ -305,9 +394,6 @@ private fun RouteHeaderContent(
     val startCountry = countries.firstOrNull()
     val endCountry = if (countries.size >= 2) countries.last() else startCountry
     val intermediate = if (countries.size > 2) countries.subList(1, countries.size - 1) else emptyList()
-    val startDateShort = formatShortDate(startDate)
-    val endDateShort = formatShortDate(endDate)
-    val sameDay = startDateShort == endDateShort
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -315,7 +401,6 @@ private fun RouteHeaderContent(
     ) {
         Endpoint(
             city = startCity,
-            date = startDateShort,
             country = startCountry,
             alignment = Alignment.Start,
             onCountryClick = onCountryClick,
@@ -349,12 +434,9 @@ private fun RouteHeaderContent(
         }
         Endpoint(
             city = endCity,
-            date = endDateShort,
             country = endCountry,
             alignment = Alignment.End,
             onCountryClick = onCountryClick,
-            // When the trip starts and ends the same day, hide the duplicate date on the end side
-            hideDate = sameDay,
             modifier = Modifier.weight(1f)
         )
     }
@@ -363,12 +445,10 @@ private fun RouteHeaderContent(
 @Composable
 private fun Endpoint(
     city: String,
-    date: String,
     country: TripTimelineCountry?,
     alignment: Alignment.Horizontal,
     onCountryClick: (countryCode: String) -> Unit,
-    modifier: Modifier = Modifier,
-    hideDate: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val isEnd = alignment == Alignment.End
     Row(
@@ -384,23 +464,13 @@ private fun Endpoint(
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        Column(horizontalAlignment = alignment) {
-            Text(
-                text = city,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            if (!hideDate) {
-                Text(
-                    text = date,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-            }
-        }
+        Text(
+            text = city,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
         if (isEnd && country != null) {
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -492,8 +562,11 @@ private fun SingleBar(
     val barHeightPx = with(density) { 16.dp.toPx() }
     val selectedExtraPx = with(density) { 4.dp.toPx() }
     val gapPx = with(density) { 1.dp.toPx() }
+    val iconSizePx = with(density) { 11.dp.toPx() }
 
     val ratios = remember(segments) { computeSegmentRatios(segments) }
+    val firstByKind = remember(segments) { firstOccurrenceByKind(segments) }
+    val iconPainters = rememberSegmentIconPainters()
 
     Box(
         modifier = Modifier
@@ -540,6 +613,18 @@ private fun SingleBar(
                         topLeft = Offset(x, y),
                         size = Size(drawWidth, thisBarHeight)
                     )
+                    val kind = seg.kind()
+                    if (firstByKind[kind] == idx) {
+                        iconPainters[kind]?.let { painter ->
+                            drawSegmentIcon(
+                                painter = painter,
+                                centerX = x + drawWidth / 2f,
+                                centerY = size.height / 2f,
+                                iconSizePx = iconSizePx,
+                                segmentWidthPx = drawWidth
+                            )
+                        }
+                    }
                     x += segWidth
                 }
             }
@@ -657,7 +742,11 @@ private fun ScrollableDetailBar(
     val barHeightPx = with(density) { 20.dp.toPx() }
     val selectedExtraPx = with(density) { 6.dp.toPx() }
     val gapPx = with(density) { 1.dp.toPx() }
+    val iconSizePx = with(density) { 13.dp.toPx() }
     val totalDp = with(density) { widthsPx.sum().toDp() }
+
+    val firstByKind = remember(segments) { firstOccurrenceByKind(segments) }
+    val iconPainters = rememberSegmentIconPainters()
 
     Box(
         modifier = Modifier
@@ -688,7 +777,8 @@ private fun ScrollableDetailBar(
             widthsPx.forEachIndexed { idx, w ->
                 val isLast = idx == widthsPx.lastIndex
                 val drawW = if (isLast) w else (w - gapPx).coerceAtLeast(0f)
-                val color = colorForSegment(segments[idx], palette, parkingColor)
+                val seg = segments[idx]
+                val color = colorForSegment(seg, palette, parkingColor)
                 val isSelected = idx == selectedIndex
                 val h = if (isSelected) barHeightPx + selectedExtraPx else barHeightPx
                 val y = (size.height - h) / 2f
@@ -697,8 +787,73 @@ private fun ScrollableDetailBar(
                     topLeft = Offset(x, y),
                     size = Size(drawW, h)
                 )
+                val kind = seg.kind()
+                if (firstByKind[kind] == idx) {
+                    iconPainters[kind]?.let { painter ->
+                        drawSegmentIcon(
+                            painter = painter,
+                            centerX = x + drawW / 2f,
+                            centerY = size.height / 2f,
+                            iconSizePx = iconSizePx,
+                            segmentWidthPx = drawW
+                        )
+                    }
+                }
                 x += w
             }
+        }
+    }
+}
+
+private enum class SegmentKind { DRIVE, DC_CHARGE, AC_CHARGE, PARKING }
+
+private fun TripTimelineSegment.kind(): SegmentKind = when (this) {
+    is TripTimelineSegment.Drive -> SegmentKind.DRIVE
+    is TripTimelineSegment.Charge -> if (isDc) SegmentKind.DC_CHARGE else SegmentKind.AC_CHARGE
+    is TripTimelineSegment.Parking -> SegmentKind.PARKING
+}
+
+/** Index of the first segment of each distinct kind, keyed by [SegmentKind]. */
+private fun firstOccurrenceByKind(segments: List<TripTimelineSegment>): Map<SegmentKind, Int> {
+    val out = HashMap<SegmentKind, Int>(4)
+    for ((idx, seg) in segments.withIndex()) {
+        val k = seg.kind()
+        if (k !in out) out[k] = idx
+    }
+    return out
+}
+
+@Composable
+private fun rememberSegmentIconPainters(): Map<SegmentKind, VectorPainter> {
+    val drive = rememberVectorPainter(com.matedroid.ui.icons.CustomIcons.SteeringWheel)
+    val dc = rememberVectorPainter(Icons.Filled.ElectricBolt)
+    val ac = rememberVectorPainter(Icons.Filled.Power)
+    val parking = rememberVectorPainter(Icons.Filled.LocalParking)
+    return remember(drive, dc, ac, parking) {
+        mapOf(
+            SegmentKind.DRIVE to drive,
+            SegmentKind.DC_CHARGE to dc,
+            SegmentKind.AC_CHARGE to ac,
+            SegmentKind.PARKING to parking
+        )
+    }
+}
+
+/** Draw a small white icon centered on [centerX], [centerY] — skipped if the segment is too narrow. */
+private fun DrawScope.drawSegmentIcon(
+    painter: VectorPainter,
+    centerX: Float,
+    centerY: Float,
+    iconSizePx: Float,
+    segmentWidthPx: Float
+) {
+    if (segmentWidthPx < iconSizePx + 4f) return
+    translate(centerX - iconSizePx / 2f, centerY - iconSizePx / 2f) {
+        with(painter) {
+            draw(
+                size = Size(iconSizePx, iconSizePx),
+                colorFilter = ColorFilter.tint(Color.White.copy(alpha = 0.95f))
+            )
         }
     }
 }
@@ -770,15 +925,3 @@ private fun formatClockTime(dateStr: String): String {
     }
 }
 
-private fun formatShortDate(dateStr: String): String {
-    return try {
-        val dt = try {
-            OffsetDateTime.parse(dateStr).toLocalDateTime()
-        } catch (e: DateTimeParseException) {
-            LocalDateTime.parse(dateStr.replace("Z", ""))
-        }
-        dt.format(DateTimeFormatter.ofPattern("d MMM"))
-    } catch (e: Exception) {
-        dateStr
-    }
-}
