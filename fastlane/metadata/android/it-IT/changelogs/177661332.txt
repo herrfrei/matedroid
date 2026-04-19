@@ -1,0 +1,5 @@
+Piccola release di correzioni. Le sessioni di ricarica AC non attivano più l'avviso di scollegare il cavo riservato alle ricariche DC, ed è stato corretto un refuso nella traduzione spagnola delle stringhe Sentry.
+
+Risolto:
+- Le ricariche AC non attivano più l'avviso "scollega il cavo" dedicato al DC
+- Refuso nelle stringhe Sentry in spagnolo

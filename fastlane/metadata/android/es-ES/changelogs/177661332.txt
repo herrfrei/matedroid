@@ -1,0 +1,5 @@
+Pequeña versión de correcciones. Las sesiones de carga AC ya no activan el aviso de desenchufar reservado a las cargas DC, y se ha corregido una errata en la traducción al español de los textos de Sentry.
+
+Corregido:
+- Las cargas AC ya no activan el aviso "desenchufa el cable" del DC
+- Errata en los textos de Sentry en español

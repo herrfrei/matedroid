@@ -1,0 +1,5 @@
+Small bugfix release. AC charging sessions no longer trigger the DC unplug warning when you leave the cable plugged in, and a typo in the Spanish Sentry translation has been fixed.
+
+Fixed:
+- AC charges no longer trigger the DC "unplug cable" warning
+- Typo in Spanish Sentry alert strings

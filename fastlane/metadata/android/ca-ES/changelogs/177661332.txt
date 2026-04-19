@@ -1,0 +1,5 @@
+Petita versió de correccions. Les sessions de càrrega AC ja no activen l'avís de desconnectar el cable reservat a les càrregues DC, i s'ha corregit una errada en la traducció a l'espanyol dels textos de Sentry.
+
+Corregit:
+- Les càrregues AC ja no activen l'avís "desconnecta el cable" del DC
+- Errada en els textos de Sentry en espanyol
