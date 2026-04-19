@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **DC unplug warning mis-firing on AC**: The warning to unplug after a DC session was also showing after AC sessions completed while plugged in. TeslaMate reports `charger_phases=null` after any session, so the old heuristic "null phases = DC" misclassified AC completions. The DC session type is now persisted while the session is active and reused after completion.
+- **Sentry ES translation**: Fixed a typo in the Spanish localization of the Sentry alert strings.
+
 ## [1.5.0] - 2026-04-15
 
 ### Added
