@@ -1,0 +1,12 @@
+Sección Viajes rediseñada. Filas más cortas con una "huella" timeline por viaje. Nuevo detalle: timeline con iconos por tipo, donut de costes con tonos AC/DC por parada, tarjeta horizontal de flujo de energía de la batería, sparkline del clima durante el viaje.
+
+Añadido:
+- Huellas timeline en la lista
+- Donut costes del viaje + pill
+- Tarjeta flujo energía batería
+- Clima durante el viaje
+- Editar/fusionar/eliminar viajes
+
+Corregido:
+- Aviso DC en cargas AC
+- Zona horaria DatePicker

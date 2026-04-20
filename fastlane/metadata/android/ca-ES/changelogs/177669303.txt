@@ -1,0 +1,12 @@
+Secció Viatges redissenyada. Files més curtes amb una "empremta" timeline per viatge. Nou detall: timeline amb icones per tipus, donut de costos amb tons AC/DC per parada, targeta horitzontal de flux d'energia de la bateria, sparkline del temps durant el viatge.
+
+Afegit:
+- Empremtes timeline a la llista
+- Donut costos del viatge + pill
+- Targeta flux energia bateria
+- Temps durant el viatge
+- Editar/fusionar/eliminar viatges
+
+Corregit:
+- Avís DC en càrregues AC
+- Zona horària DatePicker

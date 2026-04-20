@@ -1,0 +1,12 @@
+Sezione Viaggi ridisegnata. Righe più compatte con "impronta" timeline per ogni viaggio. Nuovo dettaglio: timeline con icone per tipo, donut costi con tonalità AC/DC per tappa, card orizzontale flusso energia batteria, sparkline meteo lungo il percorso.
+
+Aggiunto:
+- Impronte timeline nella lista
+- Donut costi viaggio + pill
+- Card flusso energia batteria
+- Meteo durante il viaggio
+- Modifica / unisci / elimina viaggi
+
+Corretto:
+- Avviso DC su ricariche AC
+- Fuso orario DatePicker

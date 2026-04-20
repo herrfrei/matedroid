@@ -1,0 +1,12 @@
+The Trips tab got a proper makeover. Shorter list rows with a per-trip "fingerprint" strip. Redesigned detail: timeline with kind icons, cost donut with AC/DC per-stop shades, horizontal battery energy-flow card, weather sparkline along the way.
+
+Added:
+- Trips list fingerprint strips
+- Trip cost donut + pills
+- Battery energy-flow card
+- Weather during the trip
+- Edit / merge / delete trips
+
+Fixed:
+- DC unplug warning on AC
+- DatePicker timezone shift
