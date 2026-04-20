@@ -362,7 +362,7 @@
     <string name="speed_distribution">Distribuzione velocità</string>
 
     <!-- Weather section -->
-    <string name="weather_along_way">Meteo lungo il percorso</string>
+    <string name="weather_during_trip">Meteo durante il viaggio</string>
 
     <!-- ==================== Charges Screen ==================== -->
     <!-- Top bar title -->
@@ -1065,7 +1065,6 @@
     <string name="trip_energy_consumed">Energia consumata</string>
     <string name="trip_energy_charged">Energia ricaricata</string>
     <string name="trip_charge_cost">Costo ricarica</string>
-    <string name="trip_cost_per_100">Costo medio per 100</string>
     <string name="trip_leg_drive">Tratta %1$d</string>
     <string name="trip_leg_charge">Ricarica %1$d</string>
 
