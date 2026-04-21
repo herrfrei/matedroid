@@ -1,0 +1,11 @@
+La beta2 pule la nueva lista de viajes y soluciona el fallo de inicio introducido en beta1.
+
+Corregido:
+- La lista de viajes ya no se cuelga cuando viajes guardados y autodetectados se solapan
+
+Cambiado:
+- La fecha en cada viaje ahora incluye el año (21 APR 26)
+- Las duraciones largas usan unidades mayores (2d 3h, 1w 2d, 1mo 2w)
+- Distancia y kWh en el resumen sin decimales
+- Añadir tramo / Fusionar viaje movidos junto a la tarjeta de tramos en el detalle
+- Actualizaciones internas

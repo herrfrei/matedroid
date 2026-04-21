@@ -1,0 +1,11 @@
+Beta2 polishes the new trips list and squashes the startup crash beta1 introduced.
+
+Fixed:
+- Trips list no longer crashes when saved and auto-detected trips overlap
+
+Changed:
+- Date chip on each trip row now shows the year (21 APR 26)
+- Long durations cascade units (2d 3h, 1w 2d, 1mo 2w)
+- Summary card rounds distance and kWh — no more decimals
+- Add leg / Merge trip moved next to the legs card on trip detail
+- Internal library and toolchain updates

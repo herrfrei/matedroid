@@ -1,0 +1,11 @@
+La beta2 poleix la nova llista de viatges i soluciona la fallada d'inici introduïda a la beta1.
+
+Corregit:
+- La llista de viatges ja no peta quan viatges desats i autodetectats se solapen
+
+Canviat:
+- La data a cada viatge ara mostra l'any (21 APR 26)
+- Les durades llargues fan servir unitats més grans (2d 3h, 1w 2d, 1mo 2w)
+- Distància i kWh al resum sense decimals
+- Afegir tram / Combinar viatge moguts al costat de la targeta de trams al detall
+- Actualitzacions internes

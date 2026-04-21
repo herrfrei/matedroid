@@ -1,0 +1,11 @@
+La beta2 rifinisce la nuova lista dei viaggi e risolve il crash di avvio introdotto in beta1.
+
+Corretto:
+- La lista dei viaggi non va più in crash con viaggi salvati e rilevati che si sovrappongono
+
+Modificato:
+- La data su ogni viaggio ora mostra l'anno (21 APR 26)
+- Le durate lunghe usano unità più grandi (2d 3h, 1w 2d, 1mo 2w)
+- Distanza e kWh nel riepilogo senza decimali
+- Aggiungi tappa / Unisci viaggio spostati vicino alla card tappe nel dettaglio
+- Aggiornamenti interni

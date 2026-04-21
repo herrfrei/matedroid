@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0-beta2] - 2026-04-21
+
 ### Fixed
-- Trips list crash on duplicate start timestamps (saved + auto-detected trips sharing a drive start).
+- **Trips list crash** on duplicate start timestamps. Beta1's trip-persistence feature could legitimately produce two saved trips with overlapping drives (a trip `[1,2]` saved on a first run, then re-detected as `[1,2,3]` once drive 3 arrived) — both with the same `startDate`, which collided in the LazyColumn key. Auto-detect now excludes drives and DC charges already claimed by any saved trip, so overlapping trips can't be created; the LazyColumn key is also hardened with a composite of `startDate|endDate|firstDriveId` as a defensive fallback.
 
 ### Changed
+- **Trips list polish**: date chip on each row now includes the 2-digit year (`21 APR 26`); durations cascade units so long trips no longer show raw hours (`2d 3h`, `1w 2d`, `1mo 2w`) — applied to per-trip durations and to the total driving time in the summary card; total distance and total energy charged in the summary card lost their decimals.
+- **Trip detail**: Add leg / Merge trip actions moved to sit directly under the trip legs card and above the weather card, closer to the content they act on.
 - Internal dependency updates.
 
 ## [1.6.0-beta1] - 2026-04-20
@@ -540,7 +544,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0-beta2...HEAD
+[1.6.0-beta2]: https://github.com/vide/matedroid/compare/v1.6.0-beta1...v1.6.0-beta2
+[1.6.0-beta1]: https://github.com/vide/matedroid/compare/v1.5.1...v1.6.0-beta1
+[1.5.1]: https://github.com/vide/matedroid/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0
 [1.5.0-beta1]: https://github.com/vide/matedroid/compare/v1.4.1...v1.5.0-beta1
 [1.4.1]: https://github.com/vide/matedroid/compare/v1.4.0...v1.4.1
