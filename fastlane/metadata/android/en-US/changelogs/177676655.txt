@@ -1,0 +1,4 @@
+Beta3 finishes the cleanup of the beta1 trips-list crash.
+
+Fixed:
+- Upgrade-from-beta1 crash: devices that already carried literal duplicate saved trips in their database still crashed on every trips list open, even after beta2. The app now heals the database on load — duplicate saved trips are collapsed, keeping user-merged / user-edited ones over auto-detected ones — and the list renders safely while cleanup runs.

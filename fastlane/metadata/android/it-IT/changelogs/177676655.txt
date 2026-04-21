@@ -1,0 +1,4 @@
+La beta3 completa la pulizia del crash della lista viaggi introdotto in beta1.
+
+Corretto:
+- Crash dopo l'aggiornamento da beta1: i dispositivi che avevano già viaggi duplicati salvati nel database andavano in crash aprendo la lista viaggi, anche dopo la beta2. L'app ora ripara il database all'avvio — i viaggi duplicati vengono uniti, mantenendo quelli modificati/uniti dall'utente su quelli auto-rilevati — e la lista si apre in sicurezza mentre la pulizia è in corso.

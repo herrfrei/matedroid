@@ -1,0 +1,4 @@
+La beta3 acaba la neteja de la fallada de la llista de viatges de la beta1.
+
+Corregit:
+- Fallada després d'actualitzar des de la beta1: els dispositius que ja tenien viatges duplicats desats seguien petant en obrir la llista, fins i tot després de la beta2. L'app ara repara la base de dades en carregar — els duplicats es fusionen, mantenint els editats/fusionats per l'usuari sobre els detectats automàticament — i la llista s'obre amb seguretat.

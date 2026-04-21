@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0-beta3] - 2026-04-21
+
+### Fixed
+- **Trips list crash on upgrade from beta1**: beta2's repo-level guard prevents new overlapping auto-detected trips, but users who already had literal duplicate saved trips in their DB (produced under beta1's buggy detection) still crashed the trips list on every open because the composite LazyColumn key collided on identical drive sets. The repository now runs a cleanup on every trips load: saved trips grouped by drive-set fingerprint are collapsed, keeping the most valuable one (user-merged > user-edited > auto-detected, tiebreak on named-over-unnamed then lowest id). As an extra safety net the LazyColumn key also appends the list index so a pre-fix DB still renders while the cleanup runs.
+
 ## [1.6.0-beta2] - 2026-04-21
 
 ### Fixed
@@ -544,7 +549,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0-beta2...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0-beta3...HEAD
+[1.6.0-beta3]: https://github.com/vide/matedroid/compare/v1.6.0-beta2...v1.6.0-beta3
 [1.6.0-beta2]: https://github.com/vide/matedroid/compare/v1.6.0-beta1...v1.6.0-beta2
 [1.6.0-beta1]: https://github.com/vide/matedroid/compare/v1.5.1...v1.6.0-beta1
 [1.5.1]: https://github.com/vide/matedroid/compare/v1.5.0...v1.5.1

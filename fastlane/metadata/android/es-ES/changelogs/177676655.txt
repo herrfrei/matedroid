@@ -1,0 +1,4 @@
+La beta3 completa la limpieza del fallo de la lista de viajes de beta1.
+
+Corregido:
+- Fallo tras actualizar desde beta1: los dispositivos que ya tenían viajes duplicados guardados seguían fallando al abrir la lista, incluso después de beta2. La app ahora repara la base de datos al cargar — los duplicados se fusionan, manteniendo los editados/fusionados por el usuario sobre los autodetectados — y la lista se abre de forma segura mientras tanto.
