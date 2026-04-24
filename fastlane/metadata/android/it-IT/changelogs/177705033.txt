@@ -1,0 +1,4 @@
+Tocca il widget e l'app si apre di nuovo.
+
+Correzioni:
+- Il tocco sul widget in home ora apre l'app su Android 15+ — l'ultimo aggiornamento delle librerie si scontrava con le nuove restrizioni sugli avvii in background e toccare il widget non faceva nulla. Ora passa dal dispatcher del launcher, così si apre sempre. Un nuovo test di regressione evita che il problema si ripresenti.

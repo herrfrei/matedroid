@@ -1,0 +1,4 @@
+Tap-to-open is back on the home screen widget.
+
+Fixed:
+- Widget tap now opens the app on Android 15+ — the last library bump ran into new background-launch restrictions, and tapping the widget silently did nothing. Routed through the launcher's own dispatch so it opens reliably. Also guarded by a new regression test so it stays fixed.

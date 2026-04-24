@@ -1,0 +1,4 @@
+Tocar el widget torna a obrir l'app.
+
+Correccions:
+- El toc sobre el widget de la pantalla d'inici torna a obrir l'app a Android 15+ — l'última actualització de llibreries xocava amb noves restriccions de llançament en segon pla i tocar el widget no feia res. Ara passa pel dispatcher del launcher, així que obre sempre. Un nou test de regressió evita que es torni a trencar.

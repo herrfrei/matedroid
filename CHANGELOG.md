@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0-beta4] - 2026-04-24
+
 ### Fixed
 - **Home screen widget tap no longer opens the app** on Android 15+ after the AGP 9 / Kotlin 2.3 / targetSdk 36 bump. Background Activity Launch restrictions silently blocked the `startActivity` call inside the widget's Glance `ActionCallback`. Switched to `actionStartActivity`, which routes through a PendingIntent the launcher dispatches directly, so the tap opens the app reliably. Also covered by a new regression test.
 
@@ -552,7 +554,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0-beta3...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0-beta4...HEAD
+[1.6.0-beta4]: https://github.com/vide/matedroid/compare/v1.6.0-beta3...v1.6.0-beta4
 [1.6.0-beta3]: https://github.com/vide/matedroid/compare/v1.6.0-beta2...v1.6.0-beta3
 [1.6.0-beta2]: https://github.com/vide/matedroid/compare/v1.6.0-beta1...v1.6.0-beta2
 [1.6.0-beta1]: https://github.com/vide/matedroid/compare/v1.5.1...v1.6.0-beta1
