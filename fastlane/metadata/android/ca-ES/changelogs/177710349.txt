@@ -1,0 +1,11 @@
+Viatges ha estat reconstruït des de zero.
+
+Afegit:
+- Viatges: llista amb timeline "fingerprint", timeline interactiva al detall, edició i fusió de trams, donut de cost, meteo, flux d'energia horitzontal
+- Llista de càrregues: nou filtre Cost (troba sessions sense preu) — Tipus/Cost/Ubicació en una única fila de dropdowns
+
+Canvis:
+- Gràfics a 90 dies i anuals inclouen setmanes/mesos buits
+
+Correccions:
+- DatePicker fallava el dia en alguns fusos horaris

@@ -1,0 +1,11 @@
+Trips just got a top-to-bottom rebuild.
+
+Added:
+- Trips: redesigned list with timeline fingerprints, an interactive timeline on detail, edit & merge legs, cost donut, weather sparkline, horizontal energy-flow card
+- Charges list: new Cost filter (find sessions still missing a price) — Type/Cost/Location now share one tidy dropdown row
+
+Changed:
+- 90-day and yearly charts include empty weeks/months so gaps are visible
+
+Fixed:
+- DatePicker off-by-one in some time zones

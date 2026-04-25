@@ -7,51 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **Cost filter on the charges list**: a new chip group (All / Has cost / No cost) sits next to AC/DC and stacks with the existing filters, so you can quickly isolate sessions still missing a cost — most useful for cleaning up DC charges where TeslaMate doesn't pull a cost automatically. From there the existing "edit on TeslaMate" link gets you to the right place. "No cost" matches sessions that haven't had a value entered yet (it leaves explicit zeros — e.g. a free session you've already confirmed — under "Has cost"). For cars with `free_supercharging` enabled in TeslaMate's car settings, selecting "No cost" surfaces a small one-line hint that Supercharger sessions are legitimately free, so the filter is most useful there for non-Supercharger DC stops.
+## [1.6.0] - 2026-04-25
 
-### Fixed
-- **Charges / Drives list flashed on date-filter change when a secondary filter was active**: the 1.3.x spinner-flicker fix only suppressed the full-screen spinner when the currently-*displayed* list was non-empty, so toggling the date range (e.g. 30 days → 7 days) while AC/DC or distance filters had zeroed out the visible list made `isLoading` flip back to `true` for the duration of the refetch and swap the whole content for a `CircularProgressIndicator`. The guard now checks the raw unfiltered load instead, so the spinner only appears on the true initial load and filter transitions stay smooth.
-
-## [1.6.0-beta4] - 2026-04-24
-
-### Fixed
-- **Home screen widget tap no longer opens the app** on Android 15+ after the AGP 9 / Kotlin 2.3 / targetSdk 36 bump. Background Activity Launch restrictions silently blocked the `startActivity` call inside the widget's Glance `ActionCallback`. Switched to `actionStartActivity`, which routes through a PendingIntent the launcher dispatches directly, so the tap opens the app reliably. Also covered by a new regression test.
-
-## [1.6.0-beta3] - 2026-04-21
-
-### Fixed
-- **Trips list crash on upgrade from beta1**: beta2's repo-level guard prevents new overlapping auto-detected trips, but users who already had literal duplicate saved trips in their DB (produced under beta1's buggy detection) still crashed the trips list on every open because the composite LazyColumn key collided on identical drive sets. The repository now runs a cleanup on every trips load: saved trips grouped by drive-set fingerprint are collapsed, keeping the most valuable one (user-merged > user-edited > auto-detected, tiebreak on named-over-unnamed then lowest id). As an extra safety net the LazyColumn key also appends the list index so a pre-fix DB still renders while the cleanup runs.
-
-## [1.6.0-beta2] - 2026-04-21
-
-### Fixed
-- **Trips list crash** on duplicate start timestamps. Beta1's trip-persistence feature could legitimately produce two saved trips with overlapping drives (a trip `[1,2]` saved on a first run, then re-detected as `[1,2,3]` once drive 3 arrived) — both with the same `startDate`, which collided in the LazyColumn key. Auto-detect now excludes drives and DC charges already claimed by any saved trip, so overlapping trips can't be created; the LazyColumn key is also hardened with a composite of `startDate|endDate|firstDriveId` as a defensive fallback.
-
-### Changed
-- **Trips list polish**: date chip on each row now includes the 2-digit year (`21 APR 26`); durations cascade units so long trips no longer show raw hours (`2d 3h`, `1w 2d`, `1mo 2w`) — applied to per-trip durations and to the total driving time in the summary card; total distance and total energy charged in the summary card lost their decimals.
-- **Trip detail**: Add leg / Merge trip actions moved to sit directly under the trip legs card and above the weather card, closer to the content they act on.
-- Internal dependency updates.
-
-## [1.6.0-beta1] - 2026-04-20
+This release is a top-to-bottom rebuild of the **Trips experience**, plus a handful of refinements elsewhere.
 
 ### Added
-- **Trips list redesign**: Trip rows are now about 60% of their previous height and carry a subtle 6dp timeline "fingerprint" strip beneath the route — a compressed version of the detail screen's timeline so different trips (multi-day with DC + AC overnight, daily commute with a parking gap, a single short drive) are visually distinguishable before you read any text. Date chip + route + distance up top, fingerprint middle, duration · stops · kWh meta below.
+- **Trips list redesign**: Trip rows are now about 60% of their previous height and carry a subtle 6dp timeline "fingerprint" strip beneath the route — a compressed version of the detail screen's timeline so different trips (multi-day with DC + AC overnight, daily commute with a parking gap, a single short drive) are visually distinguishable before you read any text. Date chip + route + distance up top, fingerprint middle, duration · stops · kWh meta below. Date chip includes a 2-digit year (`21 APR 26`); durations cascade units so long trips no longer show raw hours (`2d 3h`, `1w 2d`, `1mo 2w`).
 - **Trip detail timeline**: Horizontal timeline bar on the trip detail screen, under the map, visualizing each drive, charge, and parking gap as a colored segment proportional to its duration. Drives use the car's accent color, charges use the established AC/DC palette (green/orange, harmonized with the car's theme), parking gaps use a muted neutral. Tap any segment to see its details; multi-day parking stretches are compressed with a sqrt curve so driving and charging stay readable. A small white icon appears on the first segment of each kind (steering wheel for drives, bolt for DC, plug for AC, P for parking) so the color legend is self-explanatory. Below the bar: driving / charging / total durations centered between the start and end clock times.
 - **Edit trips**: Two new buttons below the trip legs — "Add leg" and "Merge trip". "Add leg" opens a bottom sheet listing drives and charges within ±2 days of the trip that aren't already in another saved trip. "Merge trip" opens a bottom sheet listing adjacent trips within ±14 days and, after confirmation, combines them into one trip — automatically rolling in all drives and charges (AC included) between them. Dashed line on the map connects legs that are geographically far apart (e.g., when the car was transported). Delete a trip via the top-bar overflow menu: the underlying auto-detected trips reappear automatically, which is the built-in way to undo a merge or edit.
 - **Trip cost donut**: New breakdown of charging costs on the trip detail. Each charge stop becomes a donut segment sized by its share of the total, with DC and AC stops getting distinct lightness shades of their palette color so individual charges are visually distinguishable within their type. Total cost sits in the center; tap a segment to pop it outward and swap the center for that stop's city + AC/DC chip + cost + kWh + duration. Expand the card to reveal the avg-cost-per-100 km/mi and per-kWh pills plus a per-charge list tinted with matching segment shades.
 - **Horizontal battery energy-flow card**: The old battery stats grid is replaced by a horizontal Sankey-style flow. A battery pictogram (body + tip) in the middle shows total kWh charged. Two inflow streams on the left — DC on top and AC below — start very thin at the source, stay flat for 80% of their run, then expand via cubic bezier to their proportional share of battery height over the last 20%. One outflow on the right has the inverse profile: full battery height, tapering to thin. Gradients fade out near the battery and in towards the outer ends, reinforcing the flow direction. Labels: per-inflow kWh + avg kW, per-outflow kWh + Wh/km (or Wh/mi).
 - **Weather during the trip**: New temperature sparkline card — temperature over time with weather condition icons floating on the line at each sample. Samples are drawn from the trip's driving GPS points, ~1 per hour of drive time (clamped between 3 and 12), and fetched in parallel from Open-Meteo. Fahrenheit honored when the units setting is imperial. Card hides itself if the trip is too recent for Open-Meteo's archive (2–5 day delay).
 - **Trip legs count in header**: The "Trip legs" card now shows the composition summary inline — `3 🚘 + 2 ⚡` — and is collapsible, mirroring the cost card UX. Drive and Charge leg cards also dropped their redundant "Drive N" / "Charge N" labels; icon + city + distance/kWh already conveys it.
-- **Trip persistence**: Trips are now stored as first-class database entities. Auto-detected trips are silently persisted on first detection, unlocking the ability to edit and merge trips. No visible change for users; existing trip history is unaffected.
-- **Trip map overlays**: Date range (top-left) and total distance (bottom-right) now render as translucent accent-color chips directly on the trip map, removing the duplicate entries in the stats card and timeline endpoints.
+- **Trip persistence**: Trips are now stored as first-class database entities. Auto-detected trips are silently persisted on first detection, unlocking the ability to edit and merge trips. Existing trip history is unaffected.
+- **Trip map overlays**: Date range (top-left) and total distance (bottom-right) now render as translucent accent-color chips directly on the trip map.
+- **Cost filter on the charges list**: a new `Cost` dropdown sits next to `Type` and `Location` (the filter row was reshuffled into three single-select dropdowns: ⚡ Type, 💰 Cost, 📍 Location). Pick `No cost` to isolate sessions where no price has been recorded — most useful for cleaning up DC charges where TeslaMate doesn't pull a cost automatically. From there, the existing "edit on TeslaMate" trailing icon gets you to the right place. For cars with Free Supercharging enabled in TeslaMate's car settings, picking `No cost` surfaces a one-line hint clarifying that Supercharger sessions are legitimately free, so the filter is most useful for non-Supercharger DC stops.
 
 ### Changed
-- **Trip detail performance**: On-resume revalidation is non-destructive — back-nav no longer blanks the screen to a spinner, so the map keeps its tiles and polyline, the donut doesn't re-animate, and the timeline doesn't rebuild. `@Immutable` annotations on the hot-path models let Compose skip recomposition when values are structurally equal. Map overlay preparation (GeoPoint conversion, bounding box) runs on `Dispatchers.Default`, so the `AndroidView` update only does cheap attach work. MapView mount is deferred a frame to keep scroll responsive right after back-nav.
-- **Charts for weeks and months**: "Last 90 days" and "Last year" filters on charges/drives/trips charts now render every week / every month in the range, including empty ones, so gaps of inactivity are visible in the trend line. Week labels include the year (`W52'25`, `W1'26`) to avoid duplicates across year boundaries.
+- **Trip detail**: Add leg / Merge trip actions moved to sit directly under the trip legs card and above the weather card.
+- **Trip detail performance**: On-resume revalidation is non-destructive — back-nav no longer blanks the screen to a spinner, so the map keeps its tiles and polyline, the donut doesn't re-animate, and the timeline doesn't rebuild. `@Immutable` annotations on hot-path models let Compose skip recomposition when values are structurally equal. Map overlay preparation runs on `Dispatchers.Default`. MapView mount is deferred a frame to keep scroll responsive after back-nav.
+- **Charts for weeks and months**: "Last 90 days" and "Last year" filters on charges / drives / trips charts now render every week / every month in the range, including empty ones, so gaps of inactivity are visible in the trend line. Week labels include the year (`W52'25`, `W1'26`) to avoid duplicates across year boundaries.
+- **Trips list summary card**: total distance and total energy charged lost their decimals; total driving time uses the new cascading-unit format too.
+- Internal dependency bumps (AGP 9.1 / Kotlin 2.3 / Hilt 2.59 / WorkManager 2.10 / OkHttp 5 / Retrofit 3).
 
 ### Fixed
 - **DatePicker timezone off-by-one**: "Where was I that day?" on the dashboard could pick the previous day in some time zones because `DatePicker.selectedDateMillis` (UTC midnight) was being reinterpreted via `ZoneId.systemDefault()`. The extraction is now UTC-anchored and the system zone is applied only at the final timestamp composition, so the picked date matches what the user tapped in every zone.
+- **Charges / Drives list flashed on date-filter change when a secondary filter was active**: the 1.3.x spinner-flicker guard only kicked in if the currently-displayed list was non-empty, so toggling the date range while AC/DC or distance filters had zeroed out the visible list made the screen swap to a full-screen spinner during the refetch. The guard now checks the raw unfiltered load instead, so the spinner only appears on the true initial load and filter transitions stay smooth.
 
 ## [1.5.1] - 2026-04-19
 
@@ -560,7 +541,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard with basic vehicle status
 - Charges screen with history list
 
-[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0-beta4...HEAD
+[Unreleased]: https://github.com/vide/matedroid/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/vide/matedroid/compare/v1.5.1...v1.6.0
 [1.6.0-beta4]: https://github.com/vide/matedroid/compare/v1.6.0-beta3...v1.6.0-beta4
 [1.6.0-beta3]: https://github.com/vide/matedroid/compare/v1.6.0-beta2...v1.6.0-beta3
 [1.6.0-beta2]: https://github.com/vide/matedroid/compare/v1.6.0-beta1...v1.6.0-beta2

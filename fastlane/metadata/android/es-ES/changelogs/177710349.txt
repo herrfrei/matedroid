@@ -1,0 +1,11 @@
+Viajes ha sido reconstruido desde cero.
+
+Añadido:
+- Viajes: lista con timeline "fingerprint", timeline interactiva en el detalle, edición y fusión de tramos, donut de coste, meteo, flujo de energía horizontal
+- Lista de cargas: nuevo filtro Coste (encuentra sesiones sin precio) — Tipo/Coste/Ubicación en una sola fila de dropdowns
+
+Cambios:
+- Gráficos a 90 días y anuales incluyen semanas/meses vacíos
+
+Correcciones:
+- DatePicker fallaba el día en algunos husos horarios
